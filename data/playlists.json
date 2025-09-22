@@ -2,7 +2,7 @@
   "tracks": [
     {
       "title": "Beispielsong",
-      "path": "./audio/beispiel.mp3"
+      "path": "./audio/beispiel.wav"
     }
   ]
 }

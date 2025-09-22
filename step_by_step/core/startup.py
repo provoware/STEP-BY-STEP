@@ -26,6 +26,8 @@ REQUIRED_FILES: Dict[Path, str] = {
             "accessibility_mode": True,
             "shortcuts_enabled": True,
             "contrast_theme": "high_contrast",
+            "color_mode": "high_contrast",
+            "audio_volume": 0.8,
         },
         indent=2,
     ),
@@ -38,6 +40,7 @@ REQUIRED_FILES: Dict[Path, str] = {
 
 DEPENDENCY_COMMANDS: Dict[str, List[str]] = {
     "ttkbootstrap": ["-m", "pip", "install", "ttkbootstrap"],
+    "simpleaudio": ["-m", "pip", "install", "simpleaudio"],
 }
 
 VENV_PATH = Path(".venv")

@@ -1,8 +1,8 @@
-Fortschritt: 35%
+Fortschritt: 55%
 
 Nächste Schritte:
-- Audio-Modul um tatsächliche Wiedergabe erweitern.
-- Datenbankmodul mit echter Datenbank (z.B. SQLite) verbinden.
-- Erweiterte Barrierefreiheits-Optionen implementieren.
-- Info-Center um konfigurierbare Schnellaktionen ergänzen.
-- Farbprofile (hell/dunkel) neben dem High-Contrast-Standard anbieten.
+- Aufgaben im Dashboard direkt abhaken und zurückschreiben.
+- Audio-Modul um Formatprüfung/Konvertierung ergänzen.
+- Datenbankmodul perspektivisch an SQLite anbinden.
+- Screenreader-Feedback weiter ausbauen (z.B. sprachliche Rückmeldungen).
+- Optionales Audio-Preview (Wellenform/Restlaufzeit) vorbereiten.

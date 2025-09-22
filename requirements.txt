@@ -1,1 +1,2 @@
 ttkbootstrap>=1.10
+simpleaudio>=1.0.4

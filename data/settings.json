@@ -3,5 +3,8 @@
   "theme": "light",
   "autosave_interval_minutes": 10,
   "accessibility_mode": true,
-  "shortcuts_enabled": true
+  "shortcuts_enabled": true,
+  "contrast_theme": "high_contrast",
+  "color_mode": "high_contrast",
+  "audio_volume": 0.8
 }

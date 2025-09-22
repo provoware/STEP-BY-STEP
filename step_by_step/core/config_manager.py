@@ -28,6 +28,8 @@ class UserPreferences:
     accessibility_mode: bool = True
     shortcuts_enabled: bool = True
     contrast_theme: str = "high_contrast"
+    color_mode: str = "high_contrast"
+    audio_volume: float = 0.8
     extra: Dict[str, Any] = field(default_factory=dict)
 
     @classmethod

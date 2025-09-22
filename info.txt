@@ -6,6 +6,8 @@ Beschreibung:
 - Enthält Module für Datenbank-Archiv, Audioplaylist und Aufgabenverwaltung.
 - Startet über `python start_tool.py`, legt automatisch eine virtuelle Umgebung `.venv` an
   und prüft/instal­liert Abhängigkeiten selbstständig.
+- Audioplayer (WAV) mit Lautstärkeregler, Suchfunktionen im Archiv und
+  Schnelllinks zu wichtigen Dateien.
 
 Anleitung:
 1. Python 3.10+ installieren.
@@ -21,9 +23,12 @@ Wichtige Dateien:
 Abhängigkeiten:
 - Python-Standardbibliothek
 - ttkbootstrap (für modernes Design, wird automatisch nachinstalliert)
+- simpleaudio (für WAV-Wiedergabe, wird automatisch nachinstalliert)
 
 Problembehebung (Kettenbefehle):
 - Virtuelle Umgebung zurücksetzen und Abhängigkeiten reparieren:
   `rm -rf .venv && python -m venv .venv && .venv/bin/python -m pip install -r requirements.txt`
+- Audiowiedergabe reparieren (falls `simpleaudio` fehlt):
+  `python -m pip install --upgrade pip && python -m pip install simpleaudio`
 - Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`
 - Beschädigte Daten auf Werkseinstellungen zurücksetzen: `python start_tool.py --headless`

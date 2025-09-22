@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import ttk
-from typing import Dict, Iterable, Optional, Tuple
+from typing import Callable, Dict, Iterable, Optional, Sequence, Tuple
 
 LegendEntry = Tuple[str, str]
+QuickLink = Tuple[str, str, Callable[[], None]]
 
 
 def build_legend_panel(parent: ttk.LabelFrame, colors: Optional[Dict[str, str]] = None) -> None:
@@ -101,8 +102,42 @@ def build_structure_panel(
     insert_nodes("", schema)
 
 
+def build_quicklinks_panel(
+    parent: ttk.LabelFrame,
+    links: Sequence[QuickLink],
+    colors: Optional[Dict[str, str]] = None,
+) -> None:
+    """Render accessible quick actions for common tool workflows."""
+
+    ttk.Label(parent, text="Schnelllinks", font=("Arial", 12, "bold")).pack(anchor="w")
+    ttk.Label(
+        parent,
+        text=(
+            "Tipp: Wählen Sie einen Button, um eine häufige Aktion zu starten. "
+            "Alle Links besitzen eine Kurzbeschreibung."
+        ),
+        wraplength=260,
+        justify="left",
+    ).pack(anchor="w", pady=(2, 8))
+
+    for label, description, command in links:
+        frame = ttk.Frame(parent)
+        frame.pack(fill="x", pady=4)
+        button = ttk.Button(frame, text=label, command=command)
+        if colors:
+            button.configure(style="HighContrast.TButton")
+        button.pack(side="left")
+        ttk.Label(
+            frame,
+            text=description,
+            wraplength=200,
+            justify="left",
+        ).pack(side="left", padx=(8, 0))
+
+
 __all__ = [
     "build_legend_panel",
     "build_mockup_panel",
     "build_structure_panel",
+    "build_quicklinks_panel",
 ]

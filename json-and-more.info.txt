@@ -7,7 +7,8 @@ beim Start automatisch geprüft und bei Bedarf repariert oder neu erzeugt.
 
 Enthaltene Kernressourcen
 ------------------------
-- data/settings.json: Nutzer-Voreinstellungen (z.B. Schriftgröße, Farbmodus).
+- data/settings.json: Nutzer-Voreinstellungen (z.B. Schriftgröße, Farbmodus,
+  Audiolautstärke).
 - data/todo_items.json: Aufgabenlisten mit Datum und Status.
 - data/playlists.json: Audioplaylist mit Titeln und Quellen.
 - data/archive.json: Ablage für erledigte Einträge.
@@ -26,6 +27,7 @@ Zusatzbefehle für die Wartung
 - Virtuelle Umgebung manuell aktivieren (Linux/macOS): ``source .venv/bin/activate``.
 - Virtuelle Umgebung manuell aktivieren (Windows): ``.venv\\Scripts\\activate``.
 - Abhängigkeiten nachinstallieren: ``python -m pip install -r requirements.txt``.
+- Audiowiedergabe prüfen: ``python -m pip install simpleaudio``.
 - Tool im Diagnosemodus starten: ``python start_tool.py --headless``.
 
 Alle Schritte werden mit aussagekräftigen Logs unter ``logs/`` dokumentiert.

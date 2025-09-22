@@ -30,6 +30,13 @@ python start_tool.py --headless
 - **Hoher Kontrast:** Die Oberfläche nutzt einen High-Contrast-Stil für beste
   Lesbarkeit (z.B. dunkler Hintergrund mit gelbem Akzent) und passt Buttons,
   Listen und Notizfelder automatisch an.
+- **Audioplayer:** Playlistbereich mit Abspiel- und Stopp-Taste, Lautstärkeregler
+  und Hinweisen für Screenreader. Unterstützt aktuell WAV-Dateien über
+  `simpleaudio`.
+- **Farbprofile:** Umschaltbarer Modus im Header (High Contrast, Hell, Dunkel)
+  inklusive direktem Feedback und automatischer Aktualisierung aller Bereiche.
+- **Schnelllinks:** Info-Center mit Buttons zum Öffnen von `todo.txt`,
+  `data/settings.json` und für den Headless-Selbsttest.
 - **Autosave:** Notizen werden beim Fokusverlust und zusätzlich in Intervallen
   (Standard 10 Minuten) gespeichert.
 - **Info-Center:** Innerhalb des 3×3-Rasters zeigt ein Notebook eine Legende zum
@@ -44,3 +51,20 @@ python start_tool.py --headless
   Statistiken, Einstellungen).
 - `logs/` speichert Start- und Laufzeitprotokolle für eine einfache Analyse.
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
+
+## Audio & Playlist
+
+- WAV-Dateien (unkomprimiertes Audio) werden per `simpleaudio` abgespielt.
+- Die Lautstärke lässt sich per Regler (0–100 %) einstellen; das Tool merkt sich
+  die letzte Einstellung.
+- Fehlende Abhängigkeiten meldet das Tool direkt und schlagen auch im Log auf.
+- Die Playlist ist duplikatfrei und sortiert die Titel automatisch alphabetisch.
+
+## Datenbank & Aufgaben
+
+- Das Archiv-Modul (`step_by_step/modules/database/module.py`) bietet jetzt
+  Such- und Präfixfilter sowie das Entfernen einzelner Einträge.
+- Die Aufgabenliste zeigt Fälligkeitsdaten im Format `• Titel (bis YYYY-MM-DD)`
+  und markiert erledigte Aufgaben mit einem Häkchen.
+- Screenreader-Hinweise erklären Tastaturkürzel (Tab, Enter, Pfeiltasten) direkt
+  an den jeweiligen Listen.
