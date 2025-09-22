@@ -14,9 +14,11 @@
 - [x] Fokusrahmen und Tastaturmeldungen für wichtige Elemente aktivieren
 - [x] Vollautomatische Selbsttests in der Startroutine aktivieren
 - [x] Standardschrift auf 120 % anheben und dauerhaft speichern
-- [ ] Aufgaben direkt im Tool abhaken können
+- [x] Aufgaben direkt im Tool abhaken können
 - [ ] Audio-Modul um einfache Konvertierung/Formatprüfung erweitern
-- [ ] Schriftgrößen-Empfehlungen je Modul im Info-Center dokumentieren
-- [ ] Kontrast-Checker integrieren, der eigene Farbkombinationen bewertet
-- [ ] Selbsttest-Ergebnisse direkt im Dashboard anzeigen
+- [x] Schriftgrößen-Empfehlungen je Modul im Info-Center dokumentieren
+- [x] Kontrast-Checker integrieren, der eigene Farbkombinationen bewertet
+- [x] Selbsttest-Ergebnisse direkt im Dashboard anzeigen
+- [ ] Datenbank-Modul mit Export (CSV/JSON) vorbereiten
+- [ ] Release-Checkliste finalisieren (Tests + Dokumentation)
 - [ ] Startprotokoll in der Oberfläche durchsuchbar machen

@@ -12,7 +12,7 @@ import tkinter.font as tkfont
 import webbrowser
 from pathlib import Path
 from tkinter import messagebox, ttk
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 try:
     from ttkbootstrap import Style  # type: ignore
@@ -22,9 +22,12 @@ except Exception:  # pragma: no cover - ttkbootstrap optional
 from step_by_step.core.config_manager import UserPreferences
 from step_by_step.core.logging_manager import get_logger
 from step_by_step.modules.audio.module import AudioPlayer, PlaylistManager
+from step_by_step.modules.todo.module import TodoModule, TodoItem
 
 from .info_panels import (
     build_legend_panel,
+    build_font_tips_panel,
+    build_contrast_panel,
     build_mockup_panel,
     build_quicklinks_panel,
     build_structure_panel,
@@ -32,6 +35,7 @@ from .info_panels import (
 
 NOTE_FILE = Path("data/persistent_notes.txt")
 STATS_FILE = Path("data/usage_stats.json")
+SELFTEST_FILE = Path("data/selftest_report.json")
 
 STRUCTURE_SCHEMA: Dict[str, Dict[str, Dict[str, Dict]]] = {
     "STEP-BY-STEP": {
@@ -42,6 +46,7 @@ STRUCTURE_SCHEMA: Dict[str, Dict[str, Dict[str, Dict]]] = {
             "playlists.json": {},
             "todo_items.json": {},
             "usage_stats.json": {},
+            "selftest_report.json": {},
         },
         "docs/": {"coding_guidelines.md": {}},
         "step_by_step/": {
@@ -81,6 +86,9 @@ class MainWindow(tk.Tk):
         self.audio_player = AudioPlayer(logger=self.logger, on_error=self._on_audio_error)
         self.audio_player.set_volume(getattr(self.preferences, "audio_volume", 0.8))
         self.playlist_entries: List[Dict[str, str]] = []
+        self.todo_module = TodoModule()
+        self.todo_entries: List[TodoItem] = []
+        self.session_count: int = 0
         self.color_mode_var = tk.StringVar(
             value=getattr(self.preferences, "color_mode", self.preferences.contrast_theme)
         )
@@ -88,6 +96,7 @@ class MainWindow(tk.Tk):
             value=float(getattr(self.preferences, "font_scale", self.preferences.font_scale))
         )
         self.font_scale_display_var = tk.StringVar(value="100 %")
+        self.selftest_var = tk.StringVar(value="Selbsttest: noch keine Daten")
         self.preferences.color_mode = self.color_mode_var.get()
         self.title("STEP-BY-STEP Dashboard")
         self.geometry("1200x800")
@@ -105,6 +114,7 @@ class MainWindow(tk.Tk):
         self._create_main_grid()
         self._load_notes()
         self._load_stats()
+        self._load_selftest_summary()
         self.after(1000, self._update_clock)
         self._schedule_autosave()
         self.bind_all("<Control-s>", self._handle_ctrl_s)
@@ -127,7 +137,8 @@ class MainWindow(tk.Tk):
         )
         self.clock_label.grid(row=0, column=0, sticky="w")
 
-        self.stats_var = tk.StringVar(value="Bereit für Aktionen")
+        self.stats_overview = "Bereit für Aktionen"
+        self.stats_var = tk.StringVar(value=self.stats_overview)
         self.stats_label = ttk.Label(
             header,
             textvariable=self.stats_var,
@@ -146,13 +157,21 @@ class MainWindow(tk.Tk):
         )
         self.path_label.grid(row=0, column=2, sticky="e")
 
+        self.selftest_label = ttk.Label(
+            header,
+            textvariable=self.selftest_var,
+            font=self.fonts["body"],
+            style="HighContrast.TLabel",
+        )
+        self.selftest_label.grid(row=1, column=0, columnspan=3, sticky="w", pady=(4, 0))
+
         self.color_mode_label = ttk.Label(
             header,
             text="Farbschema wählen:",
             style="HighContrast.TLabel",
             font=self.fonts["body"],
         )
-        self.color_mode_label.grid(row=1, column=0, sticky="w", pady=(8, 0))
+        self.color_mode_label.grid(row=2, column=0, sticky="w", pady=(8, 0))
         self.mode_selector = ttk.Combobox(
             header,
             textvariable=self.color_mode_var,
@@ -160,7 +179,7 @@ class MainWindow(tk.Tk):
             state="readonly",
             font=self.fonts["body"],
         )
-        self.mode_selector.grid(row=1, column=1, sticky="ew", pady=(8, 0))
+        self.mode_selector.grid(row=2, column=1, sticky="ew", pady=(8, 0))
         self.mode_selector.bind("<<ComboboxSelected>>", self._on_color_mode_change)
         self._bind_focus_highlight(
             self.mode_selector,
@@ -177,7 +196,7 @@ class MainWindow(tk.Tk):
             style="HighContrast.TLabel",
             font=self.fonts["small"],
         )
-        self.screenreader_hint_label.grid(row=1, column=2, sticky="e", pady=(8, 0))
+        self.screenreader_hint_label.grid(row=2, column=2, sticky="e", pady=(8, 0))
 
         self.font_scale_label = ttk.Label(
             header,
@@ -185,7 +204,7 @@ class MainWindow(tk.Tk):
             style="HighContrast.TLabel",
             font=self.fonts["body"],
         )
-        self.font_scale_label.grid(row=2, column=0, sticky="w", pady=(8, 0))
+        self.font_scale_label.grid(row=3, column=0, sticky="w", pady=(8, 0))
 
         self.font_scale_slider = ttk.Scale(
             header,
@@ -196,7 +215,7 @@ class MainWindow(tk.Tk):
             command=self._on_font_scale_slider,
             style="HighContrast.Horizontal.TScale",
         )
-        self.font_scale_slider.grid(row=2, column=1, sticky="ew", padx=(0, 10), pady=(8, 0))
+        self.font_scale_slider.grid(row=3, column=1, sticky="ew", padx=(0, 10), pady=(8, 0))
         self.font_scale_slider.configure(takefocus=True)
         self._bind_focus_highlight(
             self.font_scale_slider,
@@ -209,7 +228,7 @@ class MainWindow(tk.Tk):
             style="HighContrast.TLabel",
             font=self.fonts["body"],
         )
-        self.font_scale_value_label.grid(row=2, column=2, sticky="e", pady=(8, 0))
+        self.font_scale_value_label.grid(row=3, column=2, sticky="e", pady=(8, 0))
 
         self.font_scale_reset_button = ttk.Button(
             header,
@@ -217,7 +236,7 @@ class MainWindow(tk.Tk):
             command=self._reset_font_scale,
             style="HighContrast.TButton",
         )
-        self.font_scale_reset_button.grid(row=3, column=2, sticky="e", pady=(4, 0))
+        self.font_scale_reset_button.grid(row=4, column=2, sticky="e", pady=(4, 0))
         self._bind_focus_highlight(
             self.font_scale_reset_button,
             "Standardgröße wiederherstellen. Enter setzt 100 % Schriftgröße.",
@@ -401,6 +420,13 @@ class MainWindow(tk.Tk):
             font=self.fonts["heading"],
             style="HighContrast.TLabel",
         ).pack(anchor="w")
+        self.todo_summary_var = tk.StringVar(value="Keine Aufgaben geladen")
+        ttk.Label(
+            parent,
+            textvariable=self.todo_summary_var,
+            style="HighContrast.TLabel",
+            font=self.fonts["small"],
+        ).pack(anchor="w", pady=(0, 4))
         self.todo_list = tk.Listbox(
             parent,
             height=6,
@@ -416,19 +442,44 @@ class MainWindow(tk.Tk):
             highlightbackground=self.colors["background"],
         )
         self.todo_list.pack(fill="both", expand=True)
-        for item in self._load_todo_items():
-            self.todo_list.insert(tk.END, item)
+        self.todo_list.bind("<<ListboxSelect>>", self._on_todo_selected)
+        self.todo_list.bind("<Return>", self._toggle_selected_todo)
+        self.todo_list.bind("<space>", self._toggle_selected_todo)
+        self.todo_list.bind("<Double-Button-1>", self._toggle_selected_todo)
         self._bind_focus_highlight(
             self.todo_list,
-            "ToDo-Liste aktiv. Mit Pfeiltasten navigieren, Enter plant das Abhaken.",
+            "ToDo-Liste aktiv. Mit Pfeiltasten navigieren, Enter oder Leertaste schalten den Status um.",
+        )
+        controls = ttk.Frame(parent, style="HighContrast.TFrame")
+        controls.pack(fill="x", pady=(6, 0))
+        self.todo_toggle_button = ttk.Button(
+            controls,
+            text="Status wechseln",
+            command=self._toggle_selected_todo,
+            style="HighContrast.TButton",
+        )
+        self.todo_toggle_button.pack(side="left")
+        self._bind_focus_highlight(
+            self.todo_toggle_button,
+            "Button: markiert die ausgewählte Aufgabe als erledigt oder offen.",
+        )
+        ttk.Button(
+            controls,
+            text="todo.txt öffnen",
+            command=lambda: self._open_path(Path("todo.txt")),
+            style="HighContrast.TButton",
+        ).pack(side="left", padx=(8, 0))
+        self.todo_status_var = tk.StringVar(
+            value="Mit Enter, Leertaste oder Doppelklick den Status anpassen."
         )
         ttk.Label(
             parent,
-            text="Hinweis: Enter markiert Aufgaben als erledigt (geplant).",
+            textvariable=self.todo_status_var,
             wraplength=260,
             style="HighContrast.TLabel",
             font=self.fonts["small"],
         ).pack(anchor="w", pady=(4, 0))
+        self._refresh_todo_list()
 
     def _build_playlist_preview(self, parent: ttk.LabelFrame) -> None:
         ttk.Label(
@@ -558,11 +609,106 @@ class MainWindow(tk.Tk):
         ]
         build_quicklinks_panel(quicklinks_frame, quick_links, self.colors)
 
+        font_tips_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
+        notebook.add(font_tips_frame, text="Schrift-Tipps")
+        build_font_tips_panel(font_tips_frame, self.colors, float(self.font_scale_var.get()))
+
+        contrast_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
+        notebook.add(contrast_frame, text="Kontrast")
+        build_contrast_panel(contrast_frame, self.colors)
+
+    def _refresh_todo_list(self) -> None:
+        items = self._load_todo_items()
+        self.todo_entries = items
+        if hasattr(self, "todo_list"):
+            self.todo_list.delete(0, tk.END)
+            done_count = 0
+            for index, item in enumerate(items):
+                if item.done:
+                    done_count += 1
+                self.todo_list.insert(tk.END, self._format_todo_item(item))
+                if item.done:
+                    self.todo_list.itemconfig(index, foreground=self.colors.get("accent_hover", self.colors["accent"]))
+            if not items:
+                self.todo_list.insert(tk.END, "Keine Aufgaben vorhanden")
+        open_count = len([item for item in items if not item.done])
+        done_count = len(items) - open_count
+        if hasattr(self, "todo_summary_var"):
+            if items:
+                self.todo_summary_var.set(f"Offen: {open_count} | Erledigt: {done_count}")
+            else:
+                self.todo_summary_var.set("Noch keine Aufgaben gespeichert")
+        if hasattr(self, "todo_status_var") and not items:
+            self.todo_status_var.set("Im Menü 'todo.txt öffnen' neue Aufgaben ergänzen.")
+        self._update_stats_overview(force=False)
+
+    def _format_todo_item(self, item: TodoItem) -> str:
+        status = "✔" if item.done else "⏳"
+        due_text = item.due_date.strftime("%d.%m.%Y")
+        return f"{status} {item.title} (bis {due_text})"
+
+    def _update_stats_overview(self, force: bool = True) -> None:
+        open_tasks = len([item for item in getattr(self, "todo_entries", []) if not item.done])
+        summary = f"Sitzungen: {self.session_count}"
+        summary += f" | Offene Aufgaben: {open_tasks}" if open_tasks else " | Alle Aufgaben erledigt"
+        self.stats_overview = summary
+        if force:
+            self.stats_var.set(summary)
+
     def _refresh_playlist(self) -> None:
         self.playlist_entries = self._load_tracks()
         self.playlist_list.delete(0, tk.END)
         for track in self.playlist_entries:
             self.playlist_list.insert(tk.END, track.get("title", "Unbenannt"))
+
+    def _toggle_selected_todo(self, _event: Optional[tk.Event] = None) -> str:
+        if not getattr(self, "todo_entries", None):
+            messagebox.showinfo("Aufgaben", "Keine Aufgaben vorhanden.")
+            return "break"
+        selection = self.todo_list.curselection()
+        if not selection:
+            messagebox.showinfo("Aufgaben", "Bitte zuerst eine Aufgabe auswählen.")
+            return "break"
+        index = selection[0]
+        if index >= len(self.todo_entries):
+            return "break"
+        item = self.todo_entries[index]
+        toggled = self.todo_module.toggle_item(item.title, item.due_date)
+        if toggled:
+            new_state = not item.done
+            message = f"'{item.title}' ist jetzt {'erledigt' if new_state else 'offen'}."
+            self.todo_status_var.set(message)
+            self.stats_var.set(message)
+            self.logger.info(
+                "Aufgabe umgeschaltet: %s | erledigt=%s | fällig=%s",
+                item.title,
+                new_state,
+                item.due_date.isoformat(),
+            )
+            # Toggle in memory copy for immediate feedback
+            item.done = new_state
+            self._refresh_todo_list()
+            self.after(3500, self._update_stats_overview)
+        else:
+            messagebox.showwarning(
+                "Aufgaben",
+                "Der Aufgabenstatus konnte nicht geändert werden. Bitte todo_items.json prüfen.",
+            )
+            self.logger.warning("Aufgabe konnte nicht umgeschaltet werden: %s", item.title)
+        return "break" if _event is not None else None
+
+    def _on_todo_selected(self, _event: Optional[tk.Event] = None) -> None:
+        selection = self.todo_list.curselection()
+        if not selection:
+            return
+        index = selection[0]
+        if index >= len(self.todo_entries):
+            return
+        item = self.todo_entries[index]
+        status_text = "erledigt" if item.done else "offen"
+        self.todo_status_var.set(
+            f"Ausgewählt: {item.title} – Status {status_text}, fällig am {item.due_date.strftime('%d.%m.%Y')}"
+        )
 
     def _play_selected_track(self) -> None:
         if not self.audio_player.backend_available:
@@ -608,6 +754,15 @@ class MainWindow(tk.Tk):
         self.clock_var.set(now.strftime("%d.%m.%Y %H:%M:%S"))
         self.after(1000, self._update_clock)
 
+    def _format_timestamp(self, timestamp: Optional[str]) -> str:
+        if not timestamp:
+            return "–"
+        try:
+            parsed = dt.datetime.fromisoformat(timestamp)
+            return parsed.strftime("%d.%m.%Y %H:%M")
+        except (ValueError, TypeError):
+            return str(timestamp)
+
     def _load_notes(self) -> None:
         NOTE_FILE.parent.mkdir(parents=True, exist_ok=True)
         if NOTE_FILE.exists():
@@ -626,25 +781,17 @@ class MainWindow(tk.Tk):
             self._save_notes()
             self.logger.debug("Autospeichern ausgelöst")
 
-    def _load_todo_items(self) -> List[str]:
-        data = self._load_json(Path("data/todo_items.json"))
+    def _load_todo_items(self) -> List[TodoItem]:
         items = sorted(
-            data.get("items", []),
-            key=lambda entry: entry.get("due_date", ""),
+            self.todo_module.load_items(),
+            key=lambda entry: (entry.due_date, entry.title.lower()),
         )
-        formatted: List[str] = []
-        for entry in items:
-            title = entry.get("title", "")
-            due = entry.get("due_date", "")
-            done = entry.get("done", False)
-            status = "✔" if done else "•"
-            formatted.append(f"{status} {title} (bis {due})")
-        return formatted
+        return items
 
     def _load_tracks(self) -> List[Dict[str, str]]:
         return self.playlist_manager.load_tracks()
 
-    def _load_json(self, file_path: Path) -> Dict[str, List[Dict[str, str]]]:
+    def _load_json(self, file_path: Path) -> Dict[str, Any]:
         file_path.parent.mkdir(parents=True, exist_ok=True)
         if not file_path.exists():
             return {}
@@ -662,7 +809,8 @@ class MainWindow(tk.Tk):
         data = self._load_json(STATS_FILE)
         counter = data.get("session_count", 0) + 1
         data["session_count"] = counter
-        self.stats_var.set(f"Sitzungen: {counter}")
+        self.session_count = counter
+        self._update_stats_overview()
         STATS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
         self.logger.info("Statistik aktualisiert: Sitzungen=%s", counter)
 
@@ -672,6 +820,29 @@ class MainWindow(tk.Tk):
         STATS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
         self.stats_var.set("Statistik gespeichert")
         self.logger.info("Statistik manuell gespeichert.")
+
+    def _load_selftest_summary(self) -> None:
+        if not SELFTEST_FILE.exists():
+            self.selftest_var.set("Selbsttest: noch keine Daten gespeichert")
+            self.selftest_label.configure(foreground=self.colors.get("warning", self.colors["accent"]))
+            return
+        data = self._load_json(SELFTEST_FILE)
+        if not data:
+            self.selftest_var.set("Selbsttest: Daten konnten nicht gelesen werden")
+            self.selftest_label.configure(foreground=self.colors.get("danger", self.colors["accent"]))
+            return
+        tests = [entry for entry in data.get("self_tests", []) if isinstance(entry, dict)]
+        total = len(tests)
+        passed = len([entry for entry in tests if entry.get("passed")])
+        last_run = self._format_timestamp(data.get("last_run"))
+        if total:
+            message = f"Selbsttest: {passed}/{total} bestanden am {last_run}"
+            color_key = "success" if passed == total else "danger"
+        else:
+            message = f"Selbsttest: keine Ergebnisse gespeichert (Stand {last_run})"
+            color_key = "warning"
+        self.selftest_var.set(message)
+        self.selftest_label.configure(foreground=self.colors.get(color_key, self.colors["on_surface"]))
 
     def _open_path(self, target: Path) -> None:
         try:
@@ -765,6 +936,9 @@ class MainWindow(tk.Tk):
                 "on_surface": "#F2F2F2",
                 "accent": "#FEE715",
                 "accent_hover": "#FFC600",
+                "success": "#2EFFA0",
+                "warning": "#FFC600",
+                "danger": "#FF5C5C",
             }
         if mode == "dark":
             return {
@@ -774,6 +948,9 @@ class MainWindow(tk.Tk):
                 "on_surface": "#E0DEF4",
                 "accent": "#89B4FA",
                 "accent_hover": "#74A0F1",
+                "success": "#94F7C5",
+                "warning": "#F8BD6C",
+                "danger": "#F38BA8",
             }
         return {
             "background": "#f2f2f2",
@@ -782,6 +959,9 @@ class MainWindow(tk.Tk):
             "on_surface": "#0d0d0d",
             "accent": "#0d6efd",
             "accent_hover": "#0b5ed7",
+            "success": "#198754",
+            "warning": "#e29f26",
+            "danger": "#dc3545",
         }
 
     def _configure_fonts(self) -> None:
@@ -898,6 +1078,7 @@ class MainWindow(tk.Tk):
         self._configure_theme()
         self._refresh_theme_widgets()
         self.stats_var.set(f"Farbschema aktiviert: {mode}")
+        self.after(2500, self._update_stats_overview)
 
     def _refresh_theme_widgets(self) -> None:
         if hasattr(self, "note_text"):
@@ -931,6 +1112,9 @@ class MainWindow(tk.Tk):
         for child in self.grid_cells[3].winfo_children():
             child.destroy()
         self._build_info_center(self.grid_cells[3])
+        if hasattr(self, "todo_entries"):
+            self._refresh_todo_list()
+        self._load_selftest_summary()
 
 
 

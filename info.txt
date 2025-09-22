@@ -10,6 +10,12 @@ Beschreibung:
   Schnelllinks zu wichtigen Dateien und sichtbarem Fokusfeedback.
 - Gut sichtbarer Schriftgrößenregler (Zoom 80–160 %) mit Prozentanzeige,
   Reset-Knopf, Statusmeldungen bei Fokuswechsel und Standard-Skalierung 120 %.
+- Aufgabenliste direkt im Dashboard abhaken (Enter/Leertaste oder Button),
+  inklusive Live-Status im Kopfbereich und Synchronisation mit `todo.txt`.
+- Info-Center mit Legende, Mockup, Strukturbaum, Schriftgrößen-Kompass und
+  Kontrast-Checker zum Testen eigener Farbwerte.
+- Selbsttest-Anzeige im Header (letzter Lauf, Ergebnis) auf Basis von
+  `data/selftest_report.json`.
 
 Anleitung:
 1. Python 3.10+ installieren.
@@ -20,6 +26,8 @@ Anleitung:
 
 Wichtige Dateien:
 - `data/` enthält alle gespeicherten Daten.
+- `data/selftest_report.json` speichert die Ergebnisse der automatischen
+  Startroutine (Selbsttests, Reparaturen, Abhängigkeiten).
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
 - `json-and-more.info.txt` listet alle Standardressourcen als lesbares Backup auf.
 
@@ -36,3 +44,4 @@ Problembehebung (Kettenbefehle):
   `python -m pip install --upgrade pip && python -m pip install simpleaudio`
 - Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`
 - Beschädigte Daten auf Werkseinstellungen zurücksetzen: `python start_tool.py --headless`
+- Selbsttest-Log prüfen (UI-Anzeige + Rohdaten): `less data/selftest_report.json`

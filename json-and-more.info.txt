@@ -14,6 +14,8 @@ Enthaltene Kernressourcen
 - data/archive.json: Ablage für erledigte Einträge.
 - data/persistent_notes.txt: Notizblock mit Autospeicher.
 - data/usage_stats.json: Nutzungsstatistiken, Sitzungszähler.
+- data/selftest_report.json: Ergebnisse der automatischen Startroutine
+  (Selbsttests, Reparaturen, Paket-Installationen) für die UI-Anzeige.
 
 So wird alles repariert
 -----------------------
@@ -24,8 +26,8 @@ So wird alles repariert
    Einstellungen). Ergebnisse stehen in ``logs/startup.log``.
 5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
 6. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
-   120 %-Basisschrift und gut sichtbare Fokusmeldungen bereit, damit alle Bereiche
-   sofort erkennbar bleiben.
+   120 %-Basisschrift, ein ToDo-Kontrollfeld zum direkten Abhaken und ein
+   Kontrast-Checker bereit, damit alle Bereiche sofort erkennbar bleiben.
 
 Zusatzbefehle für die Wartung
 ------------------------------
@@ -34,5 +36,6 @@ Zusatzbefehle für die Wartung
 - Abhängigkeiten nachinstallieren: ``python -m pip install -r requirements.txt``.
 - Audiowiedergabe prüfen: ``python -m pip install simpleaudio``.
 - Tool im Diagnosemodus starten: ``python start_tool.py --headless``.
+- Selbsttest-Report ansehen: ``less data/selftest_report.json``.
 
 Alle Schritte werden mit aussagekräftigen Logs unter ``logs/`` dokumentiert.

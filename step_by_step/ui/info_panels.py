@@ -7,6 +7,26 @@ import tkinter.font as tkfont
 from tkinter import ttk
 from typing import Callable, Dict, Iterable, Optional, Sequence, Tuple
 
+
+def _hex_to_rgb(color: str) -> Tuple[float, float, float]:
+    color = color.strip()
+    if color.startswith("#"):
+        color = color[1:]
+    if len(color) != 6:
+        raise ValueError("Farben bitte als #RRGGBB eingeben")
+    r = int(color[0:2], 16) / 255.0
+    g = int(color[2:4], 16) / 255.0
+    b = int(color[4:6], 16) / 255.0
+    return r, g, b
+
+
+def _relative_luminance(rgb: Tuple[float, float, float]) -> float:
+    def adjust(channel: float) -> float:
+        return channel / 12.92 if channel <= 0.03928 else ((channel + 0.055) / 1.055) ** 2.4
+
+    r, g, b = (adjust(channel) for channel in rgb)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
 LegendEntry = Tuple[str, str]
 QuickLink = Tuple[str, str, Callable[[], None]]
 
@@ -158,8 +178,131 @@ def build_quicklinks_panel(
         ).pack(side="left", padx=(8, 0))
 
 
+def build_font_tips_panel(
+    parent: ttk.LabelFrame,
+    colors: Optional[Dict[str, str]] = None,
+    current_scale: float = 1.0,
+) -> None:
+    """Explain recommended zoom levels for each dashboard area."""
+
+    heading_font = tkfont.nametofont("TkHeadingFont")
+    body_font = tkfont.nametofont("TkDefaultFont")
+    ttk.Label(parent, text="Schriftgrößen-Empfehlungen", font=heading_font).pack(anchor="w")
+    ttk.Label(
+        parent,
+        text=(
+            "Aktueller Zoom (Schriftgröße): "
+            f"{int(round(current_scale * 100))}% – über den Slider oben im Fenster anpassen."
+        ),
+        font=body_font,
+        wraplength=320,
+        justify="left",
+    ).pack(anchor="w", pady=(2, 6))
+
+    tree = ttk.Treeview(parent, columns=("bereich", "empfehlung"), show="headings", height=6)
+    tree.heading("bereich", text="Bereich")
+    tree.heading("empfehlung", text="Empfehlung")
+    tree.column("bereich", width=140, anchor="w")
+    tree.column("empfehlung", width=200, anchor="w")
+    if colors:
+        tree.configure(
+            background=colors.get("surface", "white"),
+            foreground=colors.get("on_surface", "black"),
+            fieldbackground=colors.get("surface", "white"),
+        )
+    tree.configure(font=body_font)
+    tree.pack(fill="both", expand=True)
+
+    recommendations = (
+        ("Notizblock", "120 % – 140 % für lange Texte"),
+        ("ToDo-Liste", "100 % – 120 % für mehr Zeilen"),
+        ("Playlist", "100 % – 115 % damit Titel passen"),
+        ("Info-Center", "115 % – 140 % für erklärende Texte"),
+        ("Audiosteuerung", "120 % – 140 % für Regler"),
+        ("Seitenleisten", "110 % – 130 % zum Lesen der Tipps"),
+    )
+    for entry in recommendations:
+        tree.insert("", "end", values=entry)
+
+    ttk.Label(
+        parent,
+        text=(
+            "Tipp: Mit Strg+Plus/Minus (Zoom) bzw. dem Slider oben lässt sich der Wert auch per Tastatur anpassen."
+        ),
+        wraplength=320,
+        justify="left",
+        font=body_font,
+    ).pack(anchor="w", pady=(6, 0))
+
+
+def build_contrast_panel(parent: ttk.LabelFrame, colors: Optional[Dict[str, str]] = None) -> None:
+    """Provide a simple WCAG contrast checker for custom color pairs."""
+
+    heading_font = tkfont.nametofont("TkHeadingFont")
+    body_font = tkfont.nametofont("TkDefaultFont")
+    ttk.Label(parent, text="Kontrast-Checker", font=heading_font).pack(anchor="w")
+    ttk.Label(
+        parent,
+        text=(
+            "Zwei Farben eingeben (Format #RRGGBB). Das Tool prüft, ob der Kontrast für Fließtext (4,5:1) "
+            "und große Schrift (3,0:1) ausreicht."
+        ),
+        wraplength=320,
+        justify="left",
+        font=body_font,
+    ).pack(anchor="w", pady=(2, 8))
+
+    form = ttk.Frame(parent)
+    form.pack(fill="x", pady=(0, 8))
+    ttk.Label(form, text="Farbe 1 (Text)", font=body_font).grid(row=0, column=0, sticky="w")
+    ttk.Label(form, text="Farbe 2 (Hintergrund)", font=body_font).grid(row=1, column=0, sticky="w", pady=(6, 0))
+
+    entry_fg = ttk.Entry(form)
+    entry_bg = ttk.Entry(form)
+    entry_fg.grid(row=0, column=1, sticky="ew", padx=(6, 0))
+    entry_bg.grid(row=1, column=1, sticky="ew", padx=(6, 0), pady=(6, 0))
+    form.columnconfigure(1, weight=1)
+
+    if colors:
+        entry_fg.insert(0, colors.get("on_surface", "#000000"))
+        entry_bg.insert(0, colors.get("surface", "#FFFFFF"))
+    else:
+        entry_fg.insert(0, "#000000")
+        entry_bg.insert(0, "#FFFFFF")
+
+    result_var = tk.StringVar(value="Kontrast noch nicht berechnet")
+
+    def evaluate_contrast() -> None:
+        try:
+            rgb_fg = _hex_to_rgb(entry_fg.get())
+            rgb_bg = _hex_to_rgb(entry_bg.get())
+            lum_fg = _relative_luminance(rgb_fg)
+            lum_bg = _relative_luminance(rgb_bg)
+            lighter = max(lum_fg, lum_bg)
+            darker = min(lum_fg, lum_bg)
+            ratio = (lighter + 0.05) / (darker + 0.05)
+            meets_text = ratio >= 4.5
+            meets_large = ratio >= 3.0
+            text_part = "OK für Text" if meets_text else "zu niedrig für Fließtext"
+            large_part = "; große Schrift passt" if meets_large else "; große Schrift kritisch"
+            message = f"Kontrast {ratio:.2f}:1 – {text_part}{large_part}"
+            result_var.set(message)
+        except ValueError as error:
+            result_var.set(str(error))
+
+    button = ttk.Button(parent, text="Kontrast prüfen", command=evaluate_contrast)
+    if colors:
+        button.configure(style="HighContrast.TButton")
+    button.pack(anchor="w")
+    ttk.Label(parent, textvariable=result_var, wraplength=320, font=body_font).pack(
+        anchor="w", pady=(6, 0)
+    )
+
+
 __all__ = [
     "build_legend_panel",
+    "build_font_tips_panel",
+    "build_contrast_panel",
     "build_mockup_panel",
     "build_structure_panel",
     "build_quicklinks_panel",

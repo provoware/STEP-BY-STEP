@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import compileall
+import datetime as dt
 import json
 import os
 import subprocess
@@ -37,6 +38,18 @@ REQUIRED_FILES: Dict[Path, str] = {
     Path("data/archive.json"): json.dumps({"entries": []}, indent=2),
     Path("data/persistent_notes.txt"): "",
     Path("data/usage_stats.json"): json.dumps({}, indent=2),
+    Path("data/selftest_report.json"): json.dumps(
+        {
+            "last_run": "",
+            "all_passed": False,
+            "self_tests": [],
+            "messages": [],
+            "repaired_paths": [],
+            "dependency_messages": [],
+        },
+        indent=2,
+        ensure_ascii=False,
+    ),
 }
 
 
@@ -107,6 +120,7 @@ class StartupManager:
         self.ensure_virtual_environment()
         self.ensure_dependencies()
         self.run_self_tests()
+        self._persist_report()
 
         self.logger.info("Startroutine beendet")
         self._write_diagnostic("Startroutine beendet.")
@@ -172,6 +186,28 @@ class StartupManager:
                 message = f"{message} {details}"
             self._log_progress(message, level="info" if passed else "error")
         self._log_progress("Selbsttests abgeschlossen.")
+
+    # ------------------------------------------------------------------
+    def _persist_report(self) -> None:
+        """Store the latest startup report for display in the dashboard."""
+
+        payload = {
+            "last_run": dt.datetime.now().isoformat(),
+            "all_passed": self.report.all_self_tests_passed(),
+            "created_virtualenv": self.report.created_virtualenv,
+            "installed_dependencies": self.report.installed_dependencies,
+            "repaired_paths": [str(path) for path in self.report.repaired_paths],
+            "dependency_messages": self.report.dependency_messages,
+            "messages": self.report.messages,
+            "self_tests": [
+                {"name": result.name, "passed": result.passed, "details": result.details}
+                for result in self.report.self_tests
+            ],
+        }
+        target = Path("data/selftest_report.json")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        self._log_progress("Selbsttest-Ergebnisse gespeichert.")
 
     # ------------------------------------------------------------------
     def _create_virtualenv(self, python_in_venv: Path) -> None:

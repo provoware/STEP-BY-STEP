@@ -49,13 +49,20 @@ python start_tool.py --headless
   Orientierung mit Tastatur oder Screenreader.
 - **Farbprofile:** Umschaltbarer Modus im Header (High Contrast, Hell, Dunkel)
   inklusive direktem Feedback und automatischer Aktualisierung aller Bereiche.
+- **Aufgabenverwaltung im Dashboard:** Aufgaben lassen sich per Enter, Leertaste
+  oder Button direkt abhaken; die Liste zeigt offene und erledigte Punkte mit
+  klaren Symbolen und aktualisiert den Statuszähler im Kopfbereich.
+- **Selbsttest-Monitoring:** Ein Live-Hinweis im Header zeigt den letzten
+  Selbsttest mit Datum und Ergebnis (Bestandene/Nicht bestandene Tests) an –
+  die Startroutine schreibt die Daten in `data/selftest_report.json`.
 - **Schnelllinks:** Info-Center mit Buttons zum Öffnen von `todo.txt`,
   `data/settings.json` und für den Headless-Selbsttest.
 - **Autosave:** Notizen werden beim Fokusverlust und zusätzlich in Intervallen
   (Standard 10 Minuten) gespeichert.
-- **Info-Center:** Innerhalb des 3×3-Rasters zeigt ein Notebook eine Legende zum
-  Toolumfang, ein textuelles Mockup (Entwurfsskizze) und den Ordner-/Dateibaum
-  des Projekts an.
+- **Info-Center:** Innerhalb des 3×3-Rasters liefert ein Notebook eine Legende,
+  ein textuelles Mockup, den Ordner-/Dateibaum sowie neue Register für
+  Schriftgrößen-Empfehlungen und einen Kontrast-Checker zur Prüfung eigener
+  Farbprofile.
 
 ## Ressourcenüberblick
 
@@ -79,7 +86,35 @@ python start_tool.py --headless
 
 - Das Archiv-Modul (`step_by_step/modules/database/module.py`) bietet jetzt
   Such- und Präfixfilter sowie das Entfernen einzelner Einträge.
-- Die Aufgabenliste zeigt Fälligkeitsdaten im Format `• Titel (bis YYYY-MM-DD)`
-  und markiert erledigte Aufgaben mit einem Häkchen.
+- Die Aufgabenliste zeigt Fälligkeitsdaten im Format `⏳/✔ Titel (bis DD.MM.YYYY)`
+  und erlaubt das Umschalten per Tastatur (Enter/Leertaste) oder Button. Der
+  aktuelle Status wird im Dashboard zusammen mit dem Sitzungszähler angezeigt.
 - Screenreader-Hinweise erklären Tastaturkürzel (Tab, Enter, Pfeiltasten) direkt
   an den jeweiligen Listen.
+
+## Design- und Barrierefreiheits-Hilfen
+
+- **Schriftgrößen-Kompass:** Das Info-Center listet Empfehlungen für alle
+  Module (Notizen, ToDo, Playlist, Info-Center, Audiosteuerung) und zeigt den
+  aktuellen Zoom-Wert in Prozent an.
+- **Kontrast-Checker:** Ein integriertes Werkzeug prüft zwei beliebige
+  Farbwerte auf WCAG-Konformität (4,5:1 für Fließtext, 3,0:1 für große Schrift)
+  und hilft beim Feintuning eigener Themes.
+- **Live-Statusmeldungen:** Aktionen wie „Aufgabe erledigt“, „Notiz gespeichert“
+  oder „Farbschema aktiviert“ werden im Kopfbereich angezeigt und kehren nach
+  kurzer Zeit automatisch zur Übersicht (Sitzungen + offene Aufgaben) zurück.
+
+## Qualitätssicherung & Releaseplanung
+
+- `data/selftest_report.json` fasst jeden Startlauf zusammen (Ergebnisse der
+  Selbsttests, reparierte Dateien, installierte Abhängigkeiten) und versorgt
+  die Oberfläche mit einer Ampel-Anzeige.
+- `Fortschritt.txt` dokumentiert den Ausbauzustand (aktuell 74 %) und zeigt die
+  letzten Meilensteine sowie anstehende Aufgaben (z.B. Audio-Konvertierung,
+  Datenbank-Export, Release-Checkliste).
+- `todo.txt` wird direkt aus der Oberfläche gepflegt – erledigte Punkte werden
+  automatisch markiert, neue Aufgaben lassen sich weiterhin per Textdatei
+  ergänzen.
+- Für den finalen Release fehlen noch: Audioformat-Prüfung/Konvertierung,
+  erweiterter Datenbank-Export, durchsuchenbares Startprotokoll und der Abschluss
+  der Release-Checkliste (siehe `todo.txt`).

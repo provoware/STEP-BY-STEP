@@ -49,14 +49,17 @@ class TodoModule:
             return []
         return [TodoItem.from_dict(item) for item in data.get("items", [])]
 
-    def add_item(self, item: TodoItem) -> None:
-        items = self.load_items()
-        items.append(item)
+    def save_items(self, items: List[TodoItem]) -> None:
         payload = {"items": [entry.to_dict() for entry in items]}
         self.storage_file.write_text(
             json.dumps(payload, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+
+    def add_item(self, item: TodoItem) -> None:
+        items = self.load_items()
+        items.append(item)
+        self.save_items(items)
 
     def mark_done(self, title: str) -> bool:
         items = self.load_items()
@@ -66,10 +69,21 @@ class TodoModule:
                 item.done = True
                 updated = True
         if updated:
-            self.storage_file.write_text(
-                json.dumps({"items": [entry.to_dict() for entry in items]}, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
+            self.save_items(items)
+        return updated
+
+    def toggle_item(self, title: str, due_date: date) -> bool:
+        """Flip the completion status of a matching todo entry."""
+
+        items = self.load_items()
+        updated = False
+        for item in items:
+            if item.title == title and item.due_date == due_date:
+                item.done = not item.done
+                updated = True
+                break
+        if updated:
+            self.save_items(items)
         return updated
 
     def next_due_items(self, limit: int = 3) -> List[TodoItem]:

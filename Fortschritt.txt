@@ -1,11 +1,9 @@
-Fortschritt: 62%
+Fortschritt: 74%
 
 Nächste Schritte:
-- Aufgaben im Dashboard direkt abhaken und zurückschreiben.
-- Audio-Modul um Formatprüfung/Konvertierung ergänzen.
-- Datenbankmodul perspektivisch an SQLite anbinden.
-- Screenreader-Feedback weiter ausbauen (z.B. sprachliche Rückmeldungen).
+- Audio-Modul um einfache Konvertierung/Formatprüfung erweitern.
+- Datenbankmodul perspektivisch an SQLite anbinden und Exporte (CSV/JSON) anbieten.
+- Screenreader-Feedback weiter ausbauen (z.B. vertonte Statusmeldungen).
 - Optionales Audio-Preview (Wellenform/Restlaufzeit) vorbereiten.
-- Schriftgrößen-Empfehlungen direkt im Info-Center ergänzen.
-- Automatischen Kontrast-Check vorbereiten, um eigene Farbprofile zu prüfen.
-- Selbsttest-Ergebnisse perspektivisch direkt im Dashboard visualisieren.
+- Startprotokoll im Tool durchsuchbar machen und Filter integrieren.
+- Release-Checkliste inkl. End-to-End-Test und Dokumentationsabgleich finalisieren.
