@@ -5,6 +5,7 @@ Nächste Schritte:
 - Erweiterte Screenreader-Ausgabe (z.B. Audio-Feedback) evaluieren.
 - Datenbank optional an SQLite anbinden (Langfrist-Ziel).
 - Farbprofile langfristig um zusätzliche Benutzerpaletten erweitern (Farbaudit deckt Prüfung bereits ab).
+- Die vollständige Ideensammlung steht jetzt in docs/post_release_ideas.md.
 
 Abschluss-Highlights:
 - End-to-End-Review dokumentiert – Selbsttests, Bedienhandbuch und Supporthinweise freigegeben.

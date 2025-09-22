@@ -16,8 +16,9 @@ python start_tool.py
 Der Befehl erstellt bei Bedarf die virtuelle Umgebung `.venv`, installiert alle
 Pakete aus `requirements.txt`, prüft den Code per Selbsttest (Syntax-Check
 und Einstellungs-Validierung), protokolliert jeden Schritt unter `logs/` und
-startet anschließend die barrierearme Oberfläche. Für einen Diagnoselauf ohne
-Fenster:
+startet anschließend die barrierearme Oberfläche. Die Konsole zeigt danach
+eine zusammengefasste Auswertung (Security-Status, Farbaudit, Selbsttests).
+Für einen Diagnoselauf ohne Fenster:
 
 ```bash
 python start_tool.py --headless
@@ -63,10 +64,10 @@ python start_tool.py --headless
   (Standard 10 Minuten) gespeichert.
 - **Info-Center:** Innerhalb des 3×3-Rasters liefert ein Notebook eine Legende,
   ein textuelles Mockup, den Ordner-/Dateibaum, Release-Checkliste, Schnelllinks
--  sowie Register für Schriftgrößen-Empfehlungen, einen Kontrast-Checker, eine
--  Farbpaletten-Übersicht (inkl. berechnetem WCAG-Kontrast), einen Tab mit den
--  Ergebnissen der Datensicherheitsprüfung samt Restore-Status und einen
--  Farbaudit-Tab mit Optimierungstipps.
+  sowie Register für Schriftgrößen-Empfehlungen, einen Kontrast-Checker, eine
+  Farbpaletten-Übersicht (inkl. berechnetem WCAG-Kontrast), einen Tab mit den
+  Ergebnissen der Datensicherheitsprüfung samt Restore-Status und einen
+  Farbaudit-Tab mit Optimierungstipps.
 - **Datensicherheits-Manifest:** Beim Start wird ein Checksummen-Manifest für
   zentrale JSON/TXT-Dateien verifiziert. Abweichungen erzeugen automatische
   Backups unter `data/backups/`, Größenabweichungen werden hervorgehoben und
@@ -148,3 +149,6 @@ python start_tool.py --headless
 - `todo.txt` wird direkt aus der Oberfläche gepflegt – erledigte Punkte werden
   automatisch markiert, neue Aufgaben lassen sich weiterhin per Textdatei
   ergänzen. Nach dem Release bleiben nur noch optionale Ideen erhalten.
+- `docs/post_release_ideas.md` sammelt strukturierte Vorschläge für den
+  Folgeausbau. Die Stichpunkte verwenden einfache Sprache und erklären
+  Fachbegriffe direkt in Klammern.

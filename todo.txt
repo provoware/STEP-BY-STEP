@@ -29,4 +29,4 @@
 - [x] Sicherheitsmanifest um Größenkontrolle und Backup-Aufräumung erweitern
 - [x] Abschlussprüfung dokumentieren (End-to-End-Test + Handbuch-Freigabe)
 - [x] Backup-Wiederherstellung testen und dokumentieren
-- [ ] Nach-Release-Ideen sammeln (z.B. Audio-Preview, erweiterte Screenreader-Hinweise)
+- [x] Nach-Release-Ideen sammeln (z.B. Audio-Preview, erweiterte Screenreader-Hinweise)

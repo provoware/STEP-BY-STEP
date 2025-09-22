@@ -65,6 +65,39 @@ def display_startup_report(report: StartupReport) -> None:
             print(f"    - Warnung: {issue}")
         for backup in summary.backups:
             print(f"    - Sicherung erstellt: {backup}")
+    if report.color_audit:
+        audit = report.color_audit
+        overall = str(audit.get("overall_status", "unknown"))
+        worst_ratio = audit.get("worst_ratio", 0)
+        try:
+            numeric_ratio = float(worst_ratio)
+        except (TypeError, ValueError):
+            numeric_ratio = 0.0
+        label = "OK" if overall == "ok" else "ACHTUNG"
+        print("[Farbaudit] Zusammenfassung:")
+        print(
+            "  "
+            f"[{label}] Niedrigster Kontrast {numeric_ratio:.2f}:1 "
+            "– vollständiger Bericht: data/color_audit.json"
+        )
+        issues = list(audit.get("issues", []))
+        recommendations = list(audit.get("recommendations", []))
+        if issues:
+            print("  • Hinweise auf schwache Kontraste:")
+            for issue in issues[:5]:
+                print(f"    - {issue}")
+            if len(issues) > 5:
+                print(
+                    f"    … {len(issues) - 5} weitere Hinweise im Bericht"
+                )
+        if recommendations:
+            print("  • Tipps zur Verbesserung:")
+            for tip in recommendations[:5]:
+                print(f"    - {tip}")
+            if len(recommendations) > 5:
+                print(
+                    f"    … {len(recommendations) - 5} weitere Tipps im Bericht"
+                )
 
 
 def relaunch_if_needed(report: StartupReport, logger) -> Optional[int]:

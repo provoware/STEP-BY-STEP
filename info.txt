@@ -45,6 +45,8 @@ Wichtige Dateien:
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
 - `docs/release_checklist.md` hält den Freigabe-Ablauf fest.
 - `json-and-more.info.txt` listet alle Standardressourcen als lesbares Backup auf.
+- `docs/post_release_ideas.md` sammelt Folgeideen in einfacher Sprache (Fachwörter
+  werden jeweils in Klammern erklärt).
 - `data/security_manifest.json` enthält die Checksummen aller Kern-Dateien.
 - `data/backups/` speichert automatisch erzeugte Sicherungskopien.
 - `data/color_audit.json` enthält die Auswertung der Farbkontraste je Theme.

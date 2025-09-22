@@ -26,6 +26,8 @@ Enthaltene Kernressourcen
   feststellt.
 - data/converted_audio/: automatisch erzeugte WAV-Kopien (16-Bit).
 - data/exports/: Archiv-Exporte im CSV- und JSON-Format.
+- docs/post_release_ideas.md: Ideensammlung für spätere Ausbauten mit einfachen
+  Erklärungen zu Fachbegriffen.
 
 So wird alles repariert
 -----------------------
