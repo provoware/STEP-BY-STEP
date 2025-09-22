@@ -16,6 +16,9 @@ Enthaltene Kernressourcen
 - data/usage_stats.json: Nutzungsstatistiken, Sitzungszähler.
 - data/selftest_report.json: Ergebnisse der automatischen Startroutine
   (Selbsttests, Reparaturen, Paket-Installationen) für die UI-Anzeige.
+- data/release_checklist.json: Fortschritt der Release-Checkliste.
+- data/converted_audio/: automatisch erzeugte WAV-Kopien (16-Bit).
+- data/exports/: Archiv-Exporte im CSV- und JSON-Format.
 
 So wird alles repariert
 -----------------------
@@ -37,5 +40,8 @@ Zusatzbefehle für die Wartung
 - Audiowiedergabe prüfen: ``python -m pip install simpleaudio``.
 - Tool im Diagnosemodus starten: ``python start_tool.py --headless``.
 - Selbsttest-Report ansehen: ``less data/selftest_report.json``.
+- Release-Checkliste ansehen: ``less data/release_checklist.json``.
+- Archiv-Exporte listen: ``ls data/exports``.
+- Konvertierte WAV-Dateien anzeigen: ``ls data/converted_audio``.
 
 Alle Schritte werden mit aussagekräftigen Logs unter ``logs/`` dokumentiert.

@@ -1,0 +1,30 @@
+{
+  "items": [
+    {
+      "title": "Automatischer Start inklusive Selbsttests",
+      "done": true,
+      "details": "Launcher führt Abhängigkeitsprüfung und Reparaturen durch."
+    },
+    {
+      "title": "Audioformat-Prüfung und Normalisierung",
+      "done": true,
+      "details": "Playlist-Bereich bietet Prüfen und Konvertieren auf WAV-Basis."
+    },
+    {
+      "title": "Archiv-Export als CSV und JSON",
+      "done": true,
+      "details": "Schnelllinks exportieren Datenbankeinträge in data/exports/."
+    },
+    {
+      "title": "Startprotokoll durchsuchbar in der Oberfläche",
+      "done": true,
+      "details": "Eigenes Panel filtert logs/startup.log nach Begriffen."
+    },
+    {
+      "title": "Abschließender Release-Review",
+      "done": false,
+      "details": "Letzte End-to-End-Prüfung und Handbuch-Freigabe."
+    }
+  ],
+  "updated_at": ""
+}

@@ -19,9 +19,12 @@ try:
 except Exception:  # pragma: no cover - ttkbootstrap optional
     Style = None  # type: ignore
 
+from step_by_step.core import LogReader
 from step_by_step.core.config_manager import UserPreferences
 from step_by_step.core.logging_manager import get_logger
-from step_by_step.modules.audio.module import AudioPlayer, PlaylistManager
+from step_by_step.modules.audio.module import AudioFormatInspector, AudioPlayer, PlaylistManager
+from step_by_step.modules.database.module import DatabaseModule
+from step_by_step.modules.release.module import ReleaseChecklist
 from step_by_step.modules.todo.module import TodoModule, TodoItem
 
 from .info_panels import (
@@ -29,6 +32,7 @@ from .info_panels import (
     build_font_tips_panel,
     build_contrast_panel,
     build_mockup_panel,
+    build_release_panel,
     build_quicklinks_panel,
     build_structure_panel,
 )
@@ -47,8 +51,17 @@ STRUCTURE_SCHEMA: Dict[str, Dict[str, Dict[str, Dict]]] = {
             "todo_items.json": {},
             "usage_stats.json": {},
             "selftest_report.json": {},
+            "release_checklist.json": {},
+            "converted_audio/": {},
+            "exports/": {
+                "archive_export.csv": {},
+                "archive_export.json": {},
+            },
         },
-        "docs/": {"coding_guidelines.md": {}},
+        "docs/": {
+            "coding_guidelines.md": {},
+            "release_checklist.md": {},
+        },
         "step_by_step/": {
             "__init__.py": {},
             "core/": {
@@ -56,10 +69,12 @@ STRUCTURE_SCHEMA: Dict[str, Dict[str, Dict[str, Dict]]] = {
                 "config_manager.py": {},
                 "startup.py": {},
                 "validators.py": {},
+                "log_reader.py": {},
             },
             "modules/": {
                 "audio/": {"module.py": {}},
                 "database/": {"module.py": {}},
+                "release/": {"module.py": {}},
                 "todo/": {"module.py": {}},
             },
             "ui/": {
@@ -83,11 +98,23 @@ class MainWindow(tk.Tk):
         self.preferences = preferences
         self.logger = logger or get_logger("ui.main_window")
         self.playlist_manager = PlaylistManager()
+        self.audio_inspector = AudioFormatInspector(logger=self.logger)
         self.audio_player = AudioPlayer(logger=self.logger, on_error=self._on_audio_error)
         self.audio_player.set_volume(getattr(self.preferences, "audio_volume", 0.8))
         self.playlist_entries: List[Dict[str, str]] = []
         self.todo_module = TodoModule()
         self.todo_entries: List[TodoItem] = []
+        self.database_module = DatabaseModule()
+        self.release_checklist = ReleaseChecklist()
+        self.release_items = [item.to_dict() for item in self.release_checklist.load_items()]
+        progress = self.release_checklist.progress()
+        if progress.get("total"):
+            self.release_progress_text = (
+                f"Fortschritt: {progress['done']} von {progress['total']} Aufgaben erledigt"
+            )
+        else:
+            self.release_progress_text = "Noch keine Checkliste gespeichert."
+        self.log_reader = LogReader(Path("logs/startup.log"))
         self.session_count: int = 0
         self.color_mode_var = tk.StringVar(
             value=getattr(self.preferences, "color_mode", self.preferences.contrast_theme)
@@ -97,6 +124,10 @@ class MainWindow(tk.Tk):
         )
         self.font_scale_display_var = tk.StringVar(value="100 %")
         self.selftest_var = tk.StringVar(value="Selbsttest: noch keine Daten")
+        self.log_search_var = tk.StringVar(value="")
+        self.log_status_var = tk.StringVar(
+            value="Letzte Meldungen anzeigen mit 'Neu laden'."
+        )
         self.preferences.color_mode = self.color_mode_var.get()
         self.title("STEP-BY-STEP Dashboard")
         self.geometry("1200x800")
@@ -368,6 +399,7 @@ class MainWindow(tk.Tk):
             1: "ToDo Vorschau",
             2: "Playlist",
             3: "Info-Center",
+            4: "Startprotokoll",
         }
         for index, title in titles.items():
             self.grid_cells[index].configure(text=title)
@@ -376,6 +408,7 @@ class MainWindow(tk.Tk):
         self._build_todo_preview(self.grid_cells[1])
         self._build_playlist_preview(self.grid_cells[2])
         self._build_info_center(self.grid_cells[3])
+        self._build_log_viewer(self.grid_cells[4])
         self._refresh_playlist()
 
     def _build_notepad(self, parent: ttk.LabelFrame) -> None:
@@ -565,10 +598,35 @@ class MainWindow(tk.Tk):
         )
         self.volume_label.pack(side="left")
 
+        format_frame = ttk.Frame(parent, style="HighContrast.TFrame")
+        format_frame.pack(fill="x", pady=(6, 0))
+        inspect_button = ttk.Button(
+            format_frame,
+            text="Format prüfen",
+            command=self._inspect_selected_track,
+            style="HighContrast.TButton",
+        )
+        inspect_button.pack(side="left")
+        self._bind_focus_highlight(
+            inspect_button,
+            "Button Format prüfen. Zeigt Kanäle, Bitbreite und Laufzeit an.",
+        )
+        convert_button = ttk.Button(
+            format_frame,
+            text="Als WAV normalisieren",
+            command=self._normalise_selected_track,
+            style="HighContrast.TButton",
+        )
+        convert_button.pack(side="left", padx=(8, 0))
+        self._bind_focus_highlight(
+            convert_button,
+            "Button normalisieren. Erstellt bei Bedarf eine 16-Bit-WAV-Kopie im Ordner data/converted_audio.",
+        )
+
         backend_hint = "Audiowiedergabe bereit" if self.audio_player.backend_available else "Audiowiedergabe benötigt Zusatzmodul"
         self.audio_status = ttk.Label(
             parent,
-            text=backend_hint,
+            text=f"{backend_hint} – Formatprüfung für WAV verfügbar",
             style="HighContrast.TLabel",
             font=self.fonts["small"],
         )
@@ -579,6 +637,8 @@ class MainWindow(tk.Tk):
     def _build_info_center(self, parent: ttk.LabelFrame) -> None:
         notebook = ttk.Notebook(parent, style="HighContrast.TNotebook")
         notebook.pack(fill="both", expand=True)
+
+        self._refresh_release_data()
 
         legend_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
         notebook.add(legend_frame, text="Legende")
@@ -606,6 +666,16 @@ class MainWindow(tk.Tk):
                 "Startet das Tool im Prüfmodus (ohne Fenster)",
                 self._run_headless_selftest,
             ),
+            (
+                "Archiv als CSV",
+                "Exportiert das Datenbank-Archiv nach data/exports/archive_export.csv",
+                self._export_archive_csv,
+            ),
+            (
+                "Archiv als JSON",
+                "Exportiert das Datenbank-Archiv nach data/exports/archive_export.json",
+                self._export_archive_json,
+            ),
         ]
         build_quicklinks_panel(quicklinks_frame, quick_links, self.colors)
 
@@ -616,6 +686,99 @@ class MainWindow(tk.Tk):
         contrast_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
         notebook.add(contrast_frame, text="Kontrast")
         build_contrast_panel(contrast_frame, self.colors)
+
+        release_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
+        notebook.add(release_frame, text="Release")
+        build_release_panel(release_frame, self.release_items, self.release_progress_text, self.colors)
+
+    def _build_log_viewer(self, parent: ttk.LabelFrame) -> None:
+        ttk.Label(
+            parent,
+            text="Startprotokoll durchsuchen",
+            font=self.fonts["heading"],
+            style="HighContrast.TLabel",
+        ).pack(anchor="w")
+        ttk.Label(
+            parent,
+            text=(
+                "Begriff eingeben und auf 'Suchen' klicken. Ohne Begriff zeigt 'Neu laden' "
+                "die letzten Meldungen aus logs/startup.log."
+            ),
+            wraplength=320,
+            style="HighContrast.TLabel",
+            font=self.fonts["small"],
+        ).pack(anchor="w", pady=(2, 6))
+
+        search_frame = ttk.Frame(parent, style="HighContrast.TFrame")
+        search_frame.pack(fill="x", pady=(0, 6))
+        search_entry = ttk.Entry(search_frame, textvariable=self.log_search_var)
+        search_entry.pack(side="left", fill="x", expand=True)
+        self._bind_focus_highlight(
+            search_entry,
+            "Suchfeld aktiv. Begriff eingeben und Enter drückt die Suche.",
+        )
+        search_entry.bind("<Return>", lambda _event: self._search_logs())
+        search_button = ttk.Button(
+            search_frame,
+            text="Suchen",
+            command=self._search_logs,
+            style="HighContrast.TButton",
+        )
+        search_button.pack(side="left", padx=(6, 0))
+        self._bind_focus_highlight(
+            search_button,
+            "Button Startprotokoll durchsuchen. Enter startet die Suche.",
+        )
+        reload_button = ttk.Button(
+            search_frame,
+            text="Neu laden",
+            command=self._reload_logs,
+            style="HighContrast.TButton",
+        )
+        reload_button.pack(side="left", padx=(6, 0))
+        self._bind_focus_highlight(
+            reload_button,
+            "Button neu laden. Zeigt die letzten Logzeilen ohne Filter.",
+        )
+
+        self.log_listbox = tk.Listbox(
+            parent,
+            height=10,
+            background=self.colors["surface"],
+            foreground=self.colors["on_surface"],
+            selectbackground=self.colors["accent"],
+            selectforeground=self.colors["surface"],
+            font=self.fonts["body"],
+            highlightthickness=2,
+            highlightcolor=self.colors["accent"],
+            highlightbackground=self.colors["background"],
+        )
+        self.log_listbox.pack(fill="both", expand=True)
+        self._bind_focus_highlight(
+            self.log_listbox,
+            "Logliste aktiv. Pfeiltasten bewegen den Fokus, Enter kopiert die Zeile in die Zwischenablage.",
+        )
+        self.log_listbox.bind(
+            "<Return>",
+            lambda _event: self._copy_log_selection(),
+        )
+
+        ttk.Button(
+            parent,
+            text="Logdatei öffnen",
+            command=lambda: self._open_path(Path("logs/startup.log")),
+            style="HighContrast.TButton",
+        ).pack(anchor="w", pady=(6, 0))
+
+        ttk.Label(
+            parent,
+            textvariable=self.log_status_var,
+            style="HighContrast.TLabel",
+            font=self.fonts["small"],
+            wraplength=320,
+        ).pack(anchor="w", pady=(4, 0))
+
+        self._reload_logs()
 
     def _refresh_todo_list(self) -> None:
         items = self._load_todo_items()
@@ -729,6 +892,57 @@ class MainWindow(tk.Tk):
     def _stop_audio(self) -> None:
         self.audio_player.stop()
         self.stats_var.set("Audiowiedergabe gestoppt")
+
+    def _inspect_selected_track(self) -> None:
+        if not self.playlist_list.curselection():
+            messagebox.showinfo("Audiowiedergabe", "Bitte zuerst einen Titel auswählen.")
+            return
+        index = self.playlist_list.curselection()[0]
+        track = self.playlist_entries[index]
+        file_path = Path(track.get("path", ""))
+        info = self.audio_inspector.inspect(file_path)
+        if info is None:
+            messagebox.showwarning("Audiowiedergabe", "Das Format konnte nicht geprüft werden.")
+            return
+        message = (
+            f"Kanäle: {info.channels}, Samplebreite: {info.sample_width * 8}-Bit, "
+            f"Abtastrate: {info.frame_rate} Hz, Dauer: {info.duration_seconds:.1f} s"
+        )
+        self.audio_status.configure(text=message)
+        self.stats_var.set(f"Format geprüft: {track.get('title', 'Unbenannt')}")
+
+    def _normalise_selected_track(self) -> None:
+        if not self.playlist_list.curselection():
+            messagebox.showinfo("Audiowiedergabe", "Bitte zuerst einen Titel auswählen.")
+            return
+        index = self.playlist_list.curselection()[0]
+        track = self.playlist_entries[index]
+        file_path = Path(track.get("path", ""))
+        target = self.audio_inspector.normalise(file_path)
+        if target is None:
+            messagebox.showwarning(
+                "Audiowiedergabe",
+                "Das Format konnte nicht konvertiert werden. Bitte WAV-Dateien verwenden.",
+            )
+            return
+        if target == file_path:
+            messagebox.showinfo(
+                "Audiowiedergabe",
+                "Die Datei erfüllt bereits den Standard (16-Bit, maximal 2 Kanäle).",
+            )
+            self.audio_status.configure(text="Datei ist bereits kompatibel (16-Bit WAV)")
+        else:
+            messagebox.showinfo(
+                "Audiowiedergabe",
+                (
+                    "Die normalisierte WAV-Datei wurde gespeichert unter:\n"
+                    f"{target}"
+                ),
+            )
+            self.audio_status.configure(
+                text=f"Normalisierte Kopie gespeichert: {target.name}"
+            )
+        self.stats_var.set(f"Format normalisiert: {track.get('title', 'Unbenannt')}")
 
     def _on_volume_change(self, value: str) -> None:
         try:
@@ -844,6 +1058,17 @@ class MainWindow(tk.Tk):
         self.selftest_var.set(message)
         self.selftest_label.configure(foreground=self.colors.get(color_key, self.colors["on_surface"]))
 
+    def _refresh_release_data(self) -> None:
+        items = self.release_checklist.load_items()
+        self.release_items = [item.to_dict() for item in items]
+        progress = self.release_checklist.progress()
+        if progress.get("total"):
+            self.release_progress_text = (
+                f"Fortschritt: {progress['done']} von {progress['total']} Aufgaben erledigt"
+            )
+        else:
+            self.release_progress_text = "Noch keine Checkliste gespeichert."
+
     def _open_path(self, target: Path) -> None:
         try:
             target_path = target.resolve()
@@ -866,6 +1091,51 @@ class MainWindow(tk.Tk):
         except Exception as exc:  # pragma: no cover - system dependent
             self.logger.error("Selbsttest konnte nicht gestartet werden", exc_info=exc)
             messagebox.showerror("Selbsttest", f"Start fehlgeschlagen: {exc}")
+
+    def _export_archive_csv(self) -> None:
+        target = self.database_module.export_entries_to_csv()
+        self.stats_var.set(f"Archiv als CSV gespeichert: {target.name}")
+        self.logger.info("Archivexport CSV erzeugt: %s", target)
+
+    def _export_archive_json(self) -> None:
+        target = self.database_module.export_entries_to_json()
+        self.stats_var.set(f"Archiv als JSON gespeichert: {target.name}")
+        self.logger.info("Archivexport JSON erzeugt: %s", target)
+
+    def _reload_logs(self) -> None:
+        entries = self.log_reader.read_tail(limit=80)
+        self._render_log_results(entries, term="")
+
+    def _search_logs(self) -> None:
+        term = self.log_search_var.get().strip()
+        entries = self.log_reader.search(term, limit=80)
+        self._render_log_results(entries, term=term)
+
+    def _render_log_results(self, entries, term: str) -> None:
+        if not hasattr(self, "log_listbox"):
+            return
+        self.log_listbox.delete(0, tk.END)
+        for entry in entries:
+            display = f"{entry.line_number:>5}: {entry.content}"
+            self.log_listbox.insert(tk.END, display)
+        count = len(entries)
+        if term:
+            if count:
+                self.log_status_var.set(f"{count} Treffer für '{term}'")
+            else:
+                self.log_status_var.set(f"Keine Treffer für '{term}' gefunden.")
+        else:
+            self.log_status_var.set(f"Letzte {count} Zeilen aus logs/startup.log")
+
+    def _copy_log_selection(self) -> str:
+        selection = self.log_listbox.curselection()
+        if not selection:
+            return "break"
+        text = self.log_listbox.get(selection[0])
+        self.clipboard_clear()
+        self.clipboard_append(text)
+        self.stats_var.set("Logzeile kopiert (Zwischenablage)")
+        return "break"
 
     # Theme helpers ---------------------------------------------------------
     def _init_style(self):
@@ -1049,6 +1319,8 @@ class MainWindow(tk.Tk):
             self.volume_label.configure(font=self.fonts["body"])
         if hasattr(self, "audio_status"):
             self.audio_status.configure(font=self.fonts["small"])
+        if hasattr(self, "log_listbox"):
+            self.log_listbox.configure(font=self.fonts["body"])
 
     def _update_font_scale_display(self) -> None:
         if hasattr(self, "font_scale_display_var"):
@@ -1109,9 +1381,22 @@ class MainWindow(tk.Tk):
                 highlightbackground=self.colors["background"],
                 highlightcolor=self.colors["accent"],
             )
+        if hasattr(self, "log_listbox"):
+            self.log_listbox.configure(
+                background=self.colors["surface"],
+                foreground=self.colors["on_surface"],
+                selectbackground=self.colors["accent"],
+                selectforeground=self.colors["surface"],
+                highlightbackground=self.colors["background"],
+                highlightcolor=self.colors["accent"],
+            )
         for child in self.grid_cells[3].winfo_children():
             child.destroy()
         self._build_info_center(self.grid_cells[3])
+        if hasattr(self, "log_listbox"):
+            for child in self.grid_cells[4].winfo_children():
+                child.destroy()
+            self._build_log_viewer(self.grid_cells[4])
         if hasattr(self, "todo_entries"):
             self._refresh_todo_list()
         self._load_selftest_summary()

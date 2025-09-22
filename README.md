@@ -56,13 +56,16 @@ python start_tool.py --headless
   Selbsttest mit Datum und Ergebnis (Bestandene/Nicht bestandene Tests) an –
   die Startroutine schreibt die Daten in `data/selftest_report.json`.
 - **Schnelllinks:** Info-Center mit Buttons zum Öffnen von `todo.txt`,
-  `data/settings.json` und für den Headless-Selbsttest.
+  `data/settings.json`, für den Headless-Selbsttest sowie Archiv-Exporte als
+  CSV/JSON.
 - **Autosave:** Notizen werden beim Fokusverlust und zusätzlich in Intervallen
   (Standard 10 Minuten) gespeichert.
 - **Info-Center:** Innerhalb des 3×3-Rasters liefert ein Notebook eine Legende,
-  ein textuelles Mockup, den Ordner-/Dateibaum sowie neue Register für
-  Schriftgrößen-Empfehlungen und einen Kontrast-Checker zur Prüfung eigener
-  Farbprofile.
+  ein textuelles Mockup, den Ordner-/Dateibaum, Release-Checkliste, Schnelllinks
+  sowie Register für Schriftgrößen-Empfehlungen und einen Kontrast-Checker zur
+  Prüfung eigener Farbprofile.
+- **Startprotokoll-Panel:** Ein eigener Bereich durchsucht `logs/startup.log`,
+  kopiert Zeilen in die Zwischenablage und bietet Hilfetexte für Tastaturnutzung.
 
 ## Ressourcenüberblick
 
@@ -81,11 +84,15 @@ python start_tool.py --headless
   werden und nutzt denselben Kontraststil wie der Schriftgrößenregler.
 - Fehlende Abhängigkeiten meldet das Tool direkt und schlagen auch im Log auf.
 - Die Playlist ist duplikatfrei und sortiert die Titel automatisch alphabetisch.
+- Zusätzlich stehen Buttons zum Format-Check und zur Normalisierung bereit: das
+  Tool liest Kanäle/Bitbreite und erzeugt bei Bedarf eine kompatible 16-Bit-WAV-
+  Kopie unter `data/converted_audio/`.
 
 ## Datenbank & Aufgaben
 
 - Das Archiv-Modul (`step_by_step/modules/database/module.py`) bietet jetzt
   Such- und Präfixfilter sowie das Entfernen einzelner Einträge.
+- Über Schnelllinks können CSV- und JSON-Exporte erstellt werden (`data/exports/`).
 - Die Aufgabenliste zeigt Fälligkeitsdaten im Format `⏳/✔ Titel (bis DD.MM.YYYY)`
   und erlaubt das Umschalten per Tastatur (Enter/Leertaste) oder Button. Der
   aktuelle Status wird im Dashboard zusammen mit dem Sitzungszähler angezeigt.
@@ -109,12 +116,12 @@ python start_tool.py --headless
 - `data/selftest_report.json` fasst jeden Startlauf zusammen (Ergebnisse der
   Selbsttests, reparierte Dateien, installierte Abhängigkeiten) und versorgt
   die Oberfläche mit einer Ampel-Anzeige.
-- `Fortschritt.txt` dokumentiert den Ausbauzustand (aktuell 74 %) und zeigt die
-  letzten Meilensteine sowie anstehende Aufgaben (z.B. Audio-Konvertierung,
-  Datenbank-Export, Release-Checkliste).
+- `data/release_checklist.json` dokumentiert erledigte und offene
+  Release-Schritte; die Inhalte erscheinen auch im Info-Center.
+- `Fortschritt.txt` dokumentiert den Ausbauzustand (aktuell 88 %) und zeigt die
+  letzten Meilensteine sowie anstehende Aufgaben (finaler Review).
 - `todo.txt` wird direkt aus der Oberfläche gepflegt – erledigte Punkte werden
   automatisch markiert, neue Aufgaben lassen sich weiterhin per Textdatei
   ergänzen.
-- Für den finalen Release fehlen noch: Audioformat-Prüfung/Konvertierung,
-  erweiterter Datenbank-Export, durchsuchenbares Startprotokoll und der Abschluss
-  der Release-Checkliste (siehe `todo.txt`).
+- Für den finalen Release fehlt jetzt nur noch die formelle Abschlussprüfung
+  (End-to-End-Check & Dokumentationsabnahme), siehe `todo.txt`.

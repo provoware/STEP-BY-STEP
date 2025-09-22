@@ -2,6 +2,14 @@
 
 from .audio.module import PlaylistManager
 from .database.module import DatabaseModule
+from .release.module import ReleaseChecklist, ReleaseChecklistItem
 from .todo.module import TodoItem, TodoModule
 
-__all__ = ["PlaylistManager", "DatabaseModule", "TodoItem", "TodoModule"]
+__all__ = [
+    "PlaylistManager",
+    "DatabaseModule",
+    "ReleaseChecklist",
+    "ReleaseChecklistItem",
+    "TodoItem",
+    "TodoModule",
+]

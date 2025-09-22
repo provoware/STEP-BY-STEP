@@ -17,6 +17,8 @@ from .logging_manager import get_logger
 REQUIRED_FOLDERS: Sequence[Path] = (
     Path("data"),
     Path("logs"),
+    Path("data/exports"),
+    Path("data/converted_audio"),
 )
 
 REQUIRED_FILES: Dict[Path, str] = {
@@ -46,6 +48,40 @@ REQUIRED_FILES: Dict[Path, str] = {
             "messages": [],
             "repaired_paths": [],
             "dependency_messages": [],
+        },
+        indent=2,
+        ensure_ascii=False,
+    ),
+    Path("data/release_checklist.json"): json.dumps(
+        {
+            "items": [
+                {
+                    "title": "Automatischer Start inklusive Selbsttests",
+                    "done": True,
+                    "details": "Launcher führt Abhängigkeitsprüfung und Reparaturen durch.",
+                },
+                {
+                    "title": "Audioformat-Prüfung und Normalisierung",
+                    "done": True,
+                    "details": "Playlist-Bereich bietet Prüfen und Konvertieren auf WAV-Basis.",
+                },
+                {
+                    "title": "Archiv-Export als CSV und JSON",
+                    "done": True,
+                    "details": "Schnelllinks exportieren Datenbankeinträge in data/exports/.",
+                },
+                {
+                    "title": "Startprotokoll durchsuchbar in der Oberfläche",
+                    "done": True,
+                    "details": "Eigenes Panel filtert logs/startup.log nach Begriffen.",
+                },
+                {
+                    "title": "Abschließender Release-Review",
+                    "done": False,
+                    "details": "Letzte End-to-End-Prüfung und Handbuch-Freigabe.",
+                },
+            ],
+            "updated_at": "",
         },
         indent=2,
         ensure_ascii=False,

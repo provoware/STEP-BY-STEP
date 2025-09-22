@@ -299,6 +299,49 @@ def build_contrast_panel(parent: ttk.LabelFrame, colors: Optional[Dict[str, str]
     )
 
 
+def build_release_panel(
+    parent: ttk.LabelFrame,
+    items: Sequence[Dict[str, object]],
+    progress_text: str,
+    colors: Optional[Dict[str, str]] = None,
+) -> None:
+    """Render the release checklist in a table."""
+
+    heading_font = tkfont.nametofont("TkHeadingFont")
+    body_font = tkfont.nametofont("TkDefaultFont")
+    ttk.Label(parent, text="Release-Checkliste", font=heading_font).pack(anchor="w")
+    ttk.Label(parent, text=progress_text, font=body_font).pack(anchor="w", pady=(2, 6))
+
+    tree = ttk.Treeview(parent, columns=("status", "title", "details"), show="headings", height=6)
+    tree.heading("status", text="Status")
+    tree.heading("title", text="Aufgabe")
+    tree.heading("details", text="Details")
+    tree.column("status", width=90, anchor="w")
+    tree.column("title", width=220, anchor="w")
+    tree.column("details", width=260, anchor="w")
+    if colors:
+        tree.configure(
+            background=colors.get("surface", "white"),
+            foreground=colors.get("on_surface", "black"),
+            fieldbackground=colors.get("surface", "white"),
+        )
+    tree.configure(font=body_font)
+    tree.pack(fill="both", expand=True)
+
+    for entry in items:
+        done = bool(entry.get("done"))
+        status = "✔ Erledigt" if done else "⏳ Offen"
+        tree.insert(
+            "",
+            "end",
+            values=(status, entry.get("title", ""), entry.get("details", "")),
+            tags=("done" if done else "open",),
+        )
+
+    tree.tag_configure("done", foreground="#2e8540")
+    tree.tag_configure("open", foreground="#c43c00")
+
+
 __all__ = [
     "build_legend_panel",
     "build_font_tips_panel",
@@ -306,4 +349,5 @@ __all__ = [
     "build_mockup_panel",
     "build_structure_panel",
     "build_quicklinks_panel",
+    "build_release_panel",
 ]

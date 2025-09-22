@@ -12,10 +12,14 @@ Beschreibung:
   Reset-Knopf, Statusmeldungen bei Fokuswechsel und Standard-Skalierung 120 %.
 - Aufgabenliste direkt im Dashboard abhaken (Enter/Leertaste oder Button),
   inklusive Live-Status im Kopfbereich und Synchronisation mit `todo.txt`.
-- Info-Center mit Legende, Mockup, Strukturbaum, Schriftgrößen-Kompass und
-  Kontrast-Checker zum Testen eigener Farbwerte.
+- Info-Center mit Legende, Mockup, Strukturbaum, Release-Checkliste,
+  Schriftgrößen-Kompass und Kontrast-Checker zum Testen eigener Farbwerte.
 - Selbsttest-Anzeige im Header (letzter Lauf, Ergebnis) auf Basis von
   `data/selftest_report.json`.
+- Startprotokoll-Bereich im Dashboard mit Suchfeld, Kopierfunktion und direktem
+  Öffnen von `logs/startup.log`.
+- Playlist mit Formatprüfung und Normalisierung auf 16-Bit-WAV (`data/converted_audio/`).
+- Archiv-Export per Schnelllink als CSV und JSON (`data/exports/`).
 
 Anleitung:
 1. Python 3.10+ installieren.
@@ -29,6 +33,7 @@ Wichtige Dateien:
 - `data/selftest_report.json` speichert die Ergebnisse der automatischen
   Startroutine (Selbsttests, Reparaturen, Abhängigkeiten).
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
+- `docs/release_checklist.md` hält den Freigabe-Ablauf fest.
 - `json-and-more.info.txt` listet alle Standardressourcen als lesbares Backup auf.
 
 Abhängigkeiten:
@@ -42,6 +47,8 @@ Problembehebung (Kettenbefehle):
   `rm -rf .venv && python -m venv .venv && .venv/bin/python -m pip install -r requirements.txt`
 - Audiowiedergabe reparieren (falls `simpleaudio` fehlt):
   `python -m pip install --upgrade pip && python -m pip install simpleaudio`
+- Archiv-Exporte prüfen: `ls data/exports`
+- Konvertierte WAV-Dateien ansehen: `ls data/converted_audio`
 - Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`
 - Beschädigte Daten auf Werkseinstellungen zurücksetzen: `python start_tool.py --headless`
 - Selbsttest-Log prüfen (UI-Anzeige + Rohdaten): `less data/selftest_report.json`

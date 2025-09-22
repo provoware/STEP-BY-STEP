@@ -1,9 +1,7 @@
-Fortschritt: 74%
+Fortschritt: 88%
 
 Nächste Schritte:
-- Audio-Modul um einfache Konvertierung/Formatprüfung erweitern.
-- Datenbankmodul perspektivisch an SQLite anbinden und Exporte (CSV/JSON) anbieten.
-- Screenreader-Feedback weiter ausbauen (z.B. vertonte Statusmeldungen).
+- End-to-End-Review durchführen (Selbsttests + manuelle Tests dokumentieren).
 - Optionales Audio-Preview (Wellenform/Restlaufzeit) vorbereiten.
-- Startprotokoll im Tool durchsuchbar machen und Filter integrieren.
-- Release-Checkliste inkl. End-to-End-Test und Dokumentationsabgleich finalisieren.
+- Erweiterte Screenreader-Ausgabe (z.B. Audio-Feedback) evaluieren.
+- Datenbank optional an SQLite anbinden (Langfrist-Ziel).

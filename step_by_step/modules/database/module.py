@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -9,6 +10,7 @@ from typing import Dict, List, Optional
 from ...core.validators import ensure_unique
 
 ARCHIVE_FILE = Path("data/archive.json")
+EXPORT_DIR = Path("data/exports")
 
 
 class DatabaseModule:
@@ -76,6 +78,28 @@ class DatabaseModule:
             json.dumps(payload, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+
+    def export_entries_to_csv(self, target: Optional[Path] = None) -> Path:
+        entries = self.list_entries()
+        EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+        target_path = target or EXPORT_DIR / "archive_export.csv"
+        with target_path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=["title", "description"])
+            writer.writeheader()
+            for entry in entries:
+                writer.writerow({
+                    "title": entry.get("title", ""),
+                    "description": entry.get("description", ""),
+                })
+        return target_path
+
+    def export_entries_to_json(self, target: Optional[Path] = None) -> Path:
+        entries = self.list_entries()
+        EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+        target_path = target or EXPORT_DIR / "archive_export.json"
+        payload = {"entries": entries}
+        target_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        return target_path
 
 
 __all__ = ["DatabaseModule"]
