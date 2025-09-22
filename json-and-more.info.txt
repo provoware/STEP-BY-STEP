@@ -1,0 +1,31 @@
+JSON-UND-MEHR SAMMLUNG
+======================
+
+Dieser Ordner ersetzt die frühere ZIP-Datei und fasst alle Basisdateien
+als sofort lesbare Textübersicht zusammen. Die aufgelisteten Dateien werden
+beim Start automatisch geprüft und bei Bedarf repariert oder neu erzeugt.
+
+Enthaltene Kernressourcen
+------------------------
+- data/settings.json: Nutzer-Voreinstellungen (z.B. Schriftgröße, Farbmodus).
+- data/todo_items.json: Aufgabenlisten mit Datum und Status.
+- data/playlists.json: Audioplaylist mit Titeln und Quellen.
+- data/archive.json: Ablage für erledigte Einträge.
+- data/persistent_notes.txt: Notizblock mit Autospeicher.
+- data/usage_stats.json: Nutzungsstatistiken, Sitzungszähler.
+
+So wird alles repariert
+-----------------------
+1. Starte das Klick-und-Start-Tool: ``python start_tool.py``.
+2. Das Tool legt automatisch eine virtuelle Umgebung ``.venv`` an.
+3. Danach installiert es alle Pakete aus ``requirements.txt``.
+4. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
+
+Zusatzbefehle für die Wartung
+------------------------------
+- Virtuelle Umgebung manuell aktivieren (Linux/macOS): ``source .venv/bin/activate``.
+- Virtuelle Umgebung manuell aktivieren (Windows): ``.venv\\Scripts\\activate``.
+- Abhängigkeiten nachinstallieren: ``python -m pip install -r requirements.txt``.
+- Tool im Diagnosemodus starten: ``python start_tool.py --headless``.
+
+Alle Schritte werden mit aussagekräftigen Logs unter ``logs/`` dokumentiert.

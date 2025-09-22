@@ -1,0 +1,12 @@
+# TODO-Liste
+- [x] Basisstruktur für Tool erstellen
+- [x] Startskript mit automatischer Abhängigkeitsprüfung
+- [x] Persistente Datenordner anlegen
+- [x] Virtuelle Umgebung & detailliertes Logging im Startskript ergänzen
+- [ ] Audiofunktion um Abspielen ergänzen
+- [ ] Datenbankmodul mit Such- und Filterfunktionen erweitern
+- [ ] Erweiterte Screenreader-Hinweise in der Oberfläche ergänzen
+- [x] Info-Center mit Legende, Mockup und Strukturübersicht integrieren
+- [ ] Info-Center mit interaktiven Schnelllinks erweitern
+- [ ] Audiowiedergabe mit Lautstärkeregelung integrieren
+- [ ] Konfiguration für flexible Farbthemen (z.B. hell/dunkel umschalten) anbieten

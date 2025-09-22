@@ -1,0 +1,8 @@
+{
+  "tracks": [
+    {
+      "title": "Beispielsong",
+      "path": "./audio/beispiel.mp3"
+    }
+  ]
+}

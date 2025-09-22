@@ -1,0 +1,29 @@
+STEP-BY-STEP Tool
+=================
+
+Beschreibung:
+- Modulares Dashboard mit 3x3 Raster, einklappbaren Seitenleisten und persistenten Daten.
+- Enthält Module für Datenbank-Archiv, Audioplaylist und Aufgabenverwaltung.
+- Startet über `python start_tool.py`, legt automatisch eine virtuelle Umgebung `.venv` an
+  und prüft/instal­liert Abhängigkeiten selbstständig.
+
+Anleitung:
+1. Python 3.10+ installieren.
+2. Startdatei ausführen: `python start_tool.py` (erstellt virtuelle Umgebung, installiert Pakete).
+3. Für einen Selbsttest ohne GUI: `python start_tool.py --headless`.
+4. Die ausführlichen Protokolle finden Sie in `logs/tool.log` sowie `logs/startup.log`.
+
+Wichtige Dateien:
+- `data/` enthält alle gespeicherten Daten.
+- `docs/coding_guidelines.md` fasst Code-Standards zusammen.
+- `json-and-more.info.txt` listet alle Standardressourcen als lesbares Backup auf.
+
+Abhängigkeiten:
+- Python-Standardbibliothek
+- ttkbootstrap (für modernes Design, wird automatisch nachinstalliert)
+
+Problembehebung (Kettenbefehle):
+- Virtuelle Umgebung zurücksetzen und Abhängigkeiten reparieren:
+  `rm -rf .venv && python -m venv .venv && .venv/bin/python -m pip install -r requirements.txt`
+- Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`
+- Beschädigte Daten auf Werkseinstellungen zurücksetzen: `python start_tool.py --headless`
