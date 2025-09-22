@@ -15,8 +15,13 @@ Enthaltene Kernressourcen
 - data/persistent_notes.txt: Notizblock mit Autospeicher.
 - data/usage_stats.json: Nutzungsstatistiken, Sitzungszähler.
 - data/selftest_report.json: Ergebnisse der automatischen Startroutine
-  (Selbsttests, Reparaturen, Paket-Installationen) für die UI-Anzeige.
+  (Selbsttests, Reparaturen, Paket-Installationen, Datensicherheit) für die
+  UI-Anzeige.
 - data/release_checklist.json: Fortschritt der Release-Checkliste.
+- data/security_manifest.json: Checksummen und Prüfzeitpunkt aller wichtigen
+  JSON/TXT-Dateien.
+- data/backups/: Sicherungskopien mit Zeitstempel, wenn das Manifest Abweichungen
+  feststellt.
 - data/converted_audio/: automatisch erzeugte WAV-Kopien (16-Bit).
 - data/exports/: Archiv-Exporte im CSV- und JSON-Format.
 
@@ -29,8 +34,9 @@ So wird alles repariert
    Einstellungen). Ergebnisse stehen in ``logs/startup.log``.
 5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
 6. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
-   120 %-Basisschrift, ein ToDo-Kontrollfeld zum direkten Abhaken und ein
-   Kontrast-Checker bereit, damit alle Bereiche sofort erkennbar bleiben.
+   120 %-Basisschrift, ein ToDo-Kontrollfeld zum direkten Abhaken, ein
+   Kontrast-Checker samt Farbpaletten-Tabelle und ein Sicherheits-Tab bereit,
+   damit alles sichtbar und nachvollziehbar bleibt.
 
 Zusatzbefehle für die Wartung
 ------------------------------
@@ -40,6 +46,8 @@ Zusatzbefehle für die Wartung
 - Audiowiedergabe prüfen: ``python -m pip install simpleaudio``.
 - Tool im Diagnosemodus starten: ``python start_tool.py --headless``.
 - Selbsttest-Report ansehen: ``less data/selftest_report.json``.
+- Sicherheitsmanifest kontrollieren: ``less data/security_manifest.json``.
+- Backups listen: ``ls data/backups``.
 - Release-Checkliste ansehen: ``less data/release_checklist.json``.
 - Archiv-Exporte listen: ``ls data/exports``.
 - Konvertierte WAV-Dateien anzeigen: ``ls data/converted_audio``.

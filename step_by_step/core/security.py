@@ -1,0 +1,179 @@
+"""Data security helpers for STEP-BY-STEP."""
+
+from __future__ import annotations
+
+import datetime as dt
+import hashlib
+import json
+import shutil
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional
+
+from .logging_manager import get_logger
+
+
+DEFAULT_MANIFEST_PATH = Path("data/security_manifest.json")
+DEFAULT_BACKUP_DIR = Path("data/backups")
+
+# Files that should be protected by checksum validation.
+SENSITIVE_FILES: Iterable[Path] = (
+    Path("data/settings.json"),
+    Path("data/todo_items.json"),
+    Path("data/playlists.json"),
+    Path("data/archive.json"),
+    Path("data/release_checklist.json"),
+    Path("data/selftest_report.json"),
+    Path("data/usage_stats.json"),
+    Path("data/persistent_notes.txt"),
+    Path("Fortschritt.txt"),
+    Path("todo.txt"),
+)
+
+
+@dataclass
+class SecuritySummary:
+    """Collect the outcome of a manifest validation run."""
+
+    status: str = "unknown"
+    verified: int = 0
+    issues: List[str] = field(default_factory=list)
+    backups: List[str] = field(default_factory=list)
+    updated_manifest: bool = False
+    timestamp: str = dt.datetime.now().isoformat()
+
+    def to_dict(self) -> Dict[str, object]:
+        return {
+            "status": self.status,
+            "verified": self.verified,
+            "issues": list(self.issues),
+            "backups": list(self.backups),
+            "updated_manifest": self.updated_manifest,
+            "timestamp": self.timestamp,
+        }
+
+
+class SecurityManager:
+    """Manage checksum manifest validation and backups."""
+
+    def __init__(
+        self,
+        manifest_path: Path = DEFAULT_MANIFEST_PATH,
+        backup_dir: Path = DEFAULT_BACKUP_DIR,
+    ) -> None:
+        self.manifest_path = manifest_path
+        self.backup_dir = backup_dir
+        self.logger = get_logger("core.security")
+
+    # ------------------------------------------------------------------
+    def ensure_manifest(self) -> Dict[str, object]:
+        """Ensure that a checksum manifest exists and is well-formed."""
+
+        manifest = self._load_manifest()
+        if manifest:
+            return manifest
+        manifest = self._initial_manifest()
+        self._write_manifest(manifest)
+        self.logger.info("Sicherheitsmanifest neu angelegt: %s", self.manifest_path)
+        return manifest
+
+    # ------------------------------------------------------------------
+    def verify_files(self) -> SecuritySummary:
+        """Verify protected files against the checksum manifest."""
+
+        manifest = self.ensure_manifest()
+        files_section = manifest.setdefault("files", {})
+        summary = SecuritySummary(status="ok")
+
+        for path in SENSITIVE_FILES:
+            rel_path = str(path)
+            entry = files_section.setdefault(rel_path, {})
+            checksum = self._hash_file(path)
+            summary.verified += 1
+
+            expected = entry.get("sha256")
+            if checksum == "missing":
+                summary.issues.append(f"{rel_path}: Datei fehlt – bitte prüfen")
+                summary.status = "attention"
+                summary.updated_manifest = True
+                entry["sha256"] = "missing"
+                entry["last_checked"] = summary.timestamp
+                continue
+            if expected is None:
+                entry["sha256"] = checksum
+                summary.updated_manifest = True
+                self.logger.info("Manifest ergänzt: %s", rel_path)
+            elif checksum != expected:
+                backup_file = self._create_backup(path)
+                message = (
+                    f"Checksum-Abweichung erkannt – Datei gesichert unter {backup_file}"
+                )
+                summary.issues.append(f"{rel_path}: {message}")
+                summary.backups.append(str(backup_file))
+                entry["sha256"] = checksum
+                summary.updated_manifest = True
+                summary.status = "attention"
+                self.logger.warning("%s – neue Prüfsumme gespeichert", message)
+
+            entry["last_checked"] = summary.timestamp
+
+        if summary.updated_manifest:
+            self._write_manifest(manifest)
+            self.logger.info("Sicherheitsmanifest aktualisiert.")
+
+        if summary.issues:
+            summary.status = "attention"
+        elif summary.status != "attention":
+            summary.status = "ok"
+
+        return summary
+
+    # ------------------------------------------------------------------
+    def _initial_manifest(self) -> Dict[str, object]:
+        payload: Dict[str, Dict[str, object]] = {"files": {}}
+        timestamp = dt.datetime.now().isoformat()
+        for path in SENSITIVE_FILES:
+            payload["files"][str(path)] = {
+                "sha256": self._hash_file(path),
+                "last_checked": timestamp,
+            }
+        payload["created_at"] = timestamp
+        payload["updated_at"] = timestamp
+        return payload
+
+    def _load_manifest(self) -> Dict[str, object]:
+        if not self.manifest_path.exists():
+            return {}
+        try:
+            return json.loads(self.manifest_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            self.logger.error("Sicherheitsmanifest konnte nicht gelesen werden – wird neu erstellt")
+            return {}
+
+    def _write_manifest(self, manifest: Dict[str, object]) -> None:
+        manifest.setdefault("updated_at", dt.datetime.now().isoformat())
+        self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
+        self.manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    def _hash_file(self, path: Path) -> str:
+        sha256 = hashlib.sha256()
+        if not path.exists():
+            self.logger.warning("Datei für Sicherheitsprüfung fehlt: %s", path)
+            return "missing"
+        with path.open("rb") as handle:
+            for chunk in iter(lambda: handle.read(65536), b""):
+                sha256.update(chunk)
+        return sha256.hexdigest()
+
+    def _create_backup(self, path: Path) -> Path:
+        self.backup_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
+        backup_name = f"{path.name}.{timestamp}.bak"
+        backup_path = self.backup_dir / backup_name
+        if path.exists():
+            shutil.copy2(path, backup_path)
+        return backup_path
+
+
+__all__ = ["SecurityManager", "SecuritySummary"]
+

@@ -21,6 +21,16 @@
       "details": "Eigenes Panel filtert logs/startup.log nach Begriffen."
     },
     {
+      "title": "Datensicherheitsmanifest mit Backups",
+      "done": true,
+      "details": "Checksummen werden geprüft, Abweichungen automatisch gesichert."
+    },
+    {
+      "title": "Accessible Farbprofile final überprüfen",
+      "done": true,
+      "details": "Palette + Kontrast-Tab dokumentieren WCAG-konforme Werte."
+    },
+    {
       "title": "Abschließender Release-Review",
       "done": false,
       "details": "Letzte End-to-End-Prüfung und Handbuch-Freigabe."

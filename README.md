@@ -33,9 +33,10 @@ python start_tool.py --headless
 - **Automatische Selbsttests:** Beim Start wird der komplette Codebaum mit
   `compileall` (Syntaxprüfung) getestet und die `data/settings.json` wird auf
   Vollständigkeit und barrierefreie Standardeinstellungen geprüft.
-- **Hoher Kontrast:** Die Oberfläche nutzt einen High-Contrast-Stil für beste
-  Lesbarkeit (z.B. dunkler Hintergrund mit gelbem Akzent) und passt Buttons,
-  Listen und Notizfelder automatisch an.
+- **Hoher Kontrast & Accessible Palette:** Die Oberfläche startet mit einer
+  farbenblindenfreundlichen Accessible-Palette (dunkelblau + orange) und bietet
+  zusätzlich High-Contrast-, Hell- und Dunkel-Modi. Buttons, Listen und
+  Notizfelder passen sich automatisch an.
 - **Zoom-Regler:** Ein gut sichtbarer Schriftgrößenregler mit Prozentanzeige
   erlaubt stufenloses Vergrößern (Zoom) zwischen 80 % und 160 % inklusive
   Reset-Knopf.
@@ -62,8 +63,12 @@ python start_tool.py --headless
   (Standard 10 Minuten) gespeichert.
 - **Info-Center:** Innerhalb des 3×3-Rasters liefert ein Notebook eine Legende,
   ein textuelles Mockup, den Ordner-/Dateibaum, Release-Checkliste, Schnelllinks
-  sowie Register für Schriftgrößen-Empfehlungen und einen Kontrast-Checker zur
-  Prüfung eigener Farbprofile.
+  sowie Register für Schriftgrößen-Empfehlungen, einen Kontrast-Checker, eine
+  Farbpaletten-Übersicht (inkl. berechnetem WCAG-Kontrast) und einen Tab mit den
+  Ergebnissen der Datensicherheitsprüfung.
+- **Datensicherheits-Manifest:** Beim Start wird ein Checksummen-Manifest für
+  zentrale JSON/TXT-Dateien verifiziert. Abweichungen erzeugen automatische
+  Backups unter `data/backups/` und werden im Dashboard gemeldet.
 - **Startprotokoll-Panel:** Ein eigener Bereich durchsucht `logs/startup.log`,
   kopiert Zeilen in die Zwischenablage und bietet Hilfetexte für Tastaturnutzung.
 
@@ -74,6 +79,9 @@ python start_tool.py --headless
 - `data/` enthält alle persistenten Informationen (Notizen, Aufgaben, Playlists,
   Statistiken, Einstellungen).
 - `logs/` speichert Start- und Laufzeitprotokolle für eine einfache Analyse.
+- `data/security_manifest.json` dokumentiert die letzten Checksummen-Prüfungen
+  aller wichtigen Dateien. Abweichungen erzeugen Sicherungen unter
+  `data/backups/`.
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
 
 ## Audio & Playlist
@@ -104,9 +112,10 @@ python start_tool.py --headless
 - **Schriftgrößen-Kompass:** Das Info-Center listet Empfehlungen für alle
   Module (Notizen, ToDo, Playlist, Info-Center, Audiosteuerung) und zeigt den
   aktuellen Zoom-Wert in Prozent an.
-- **Kontrast-Checker:** Ein integriertes Werkzeug prüft zwei beliebige
+- **Kontrast-Checker & Palette:** Ein integriertes Werkzeug prüft zwei beliebige
   Farbwerte auf WCAG-Konformität (4,5:1 für Fließtext, 3,0:1 für große Schrift)
-  und hilft beim Feintuning eigener Themes.
+  und hilft beim Feintuning eigener Themes. Eine zusätzliche Paletten-Tabelle
+  zeigt die aktiven Hex-Werte und den berechneten Kontrast.
 - **Live-Statusmeldungen:** Aktionen wie „Aufgabe erledigt“, „Notiz gespeichert“
   oder „Farbschema aktiviert“ werden im Kopfbereich angezeigt und kehren nach
   kurzer Zeit automatisch zur Übersicht (Sitzungen + offene Aufgaben) zurück.
@@ -117,8 +126,12 @@ python start_tool.py --headless
   Selbsttests, reparierte Dateien, installierte Abhängigkeiten) und versorgt
   die Oberfläche mit einer Ampel-Anzeige.
 - `data/release_checklist.json` dokumentiert erledigte und offene
-  Release-Schritte; die Inhalte erscheinen auch im Info-Center.
-- `Fortschritt.txt` dokumentiert den Ausbauzustand (aktuell 88 %) und zeigt die
+  Release-Schritte; die Inhalte erscheinen auch im Info-Center. Neue Punkte
+  decken die Manifest-Prüfung und die finale Freigabe der Accessible-Farbprofile
+  ab.
+- `data/security_manifest.json` plus Sicherungsordner `data/backups/` zeigen den
+  Verlauf der Datensicherheitsprüfungen samt angelegter Backups.
+- `Fortschritt.txt` dokumentiert den Ausbauzustand (aktuell 92 %) und zeigt die
   letzten Meilensteine sowie anstehende Aufgaben (finaler Review).
 - `todo.txt` wird direkt aus der Oberfläche gepflegt – erledigte Punkte werden
   automatisch markiert, neue Aufgaben lassen sich weiterhin per Textdatei

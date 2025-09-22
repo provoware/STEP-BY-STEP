@@ -4,5 +4,13 @@
   "self_tests": [],
   "messages": [],
   "repaired_paths": [],
-  "dependency_messages": []
+  "dependency_messages": [],
+  "security_summary": {
+    "status": "unknown",
+    "verified": 0,
+    "issues": [],
+    "backups": [],
+    "updated_manifest": false,
+    "timestamp": ""
+  }
 }

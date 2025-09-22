@@ -27,8 +27,8 @@ class UserPreferences:
     autosave_interval_minutes: int = 10
     accessibility_mode: bool = True
     shortcuts_enabled: bool = True
-    contrast_theme: str = "high_contrast"
-    color_mode: str = "high_contrast"
+    contrast_theme: str = "accessible"
+    color_mode: str = "accessible"
     audio_volume: float = 0.8
     extra: Dict[str, Any] = field(default_factory=dict)
 

@@ -35,6 +35,8 @@ from .info_panels import (
     build_release_panel,
     build_quicklinks_panel,
     build_structure_panel,
+    build_palette_panel,
+    build_security_panel,
 )
 
 NOTE_FILE = Path("data/persistent_notes.txt")
@@ -52,7 +54,9 @@ STRUCTURE_SCHEMA: Dict[str, Dict[str, Dict[str, Dict]]] = {
             "usage_stats.json": {},
             "selftest_report.json": {},
             "release_checklist.json": {},
+            "security_manifest.json": {},
             "converted_audio/": {},
+            "backups/": {},
             "exports/": {
                 "archive_export.csv": {},
                 "archive_export.json": {},
@@ -128,6 +132,8 @@ class MainWindow(tk.Tk):
         self.log_status_var = tk.StringVar(
             value="Letzte Meldungen anzeigen mit 'Neu laden'."
         )
+        self.security_var = tk.StringVar(value="Datensicherheit: lädt...")
+        self.security_summary_data: Dict[str, object] = {}
         self.preferences.color_mode = self.color_mode_var.get()
         self.title("STEP-BY-STEP Dashboard")
         self.geometry("1200x800")
@@ -146,6 +152,11 @@ class MainWindow(tk.Tk):
         self._load_notes()
         self._load_stats()
         self._load_selftest_summary()
+        self._apply_security_summary(self.security_summary_data or None)
+        if hasattr(self, "grid_cells") and len(self.grid_cells) > 3:
+            for child in self.grid_cells[3].winfo_children():
+                child.destroy()
+            self._build_info_center(self.grid_cells[3])
         self.after(1000, self._update_clock)
         self._schedule_autosave()
         self.bind_all("<Control-s>", self._handle_ctrl_s)
@@ -206,7 +217,7 @@ class MainWindow(tk.Tk):
         self.mode_selector = ttk.Combobox(
             header,
             textvariable=self.color_mode_var,
-            values=("high_contrast", "light", "dark"),
+            values=("accessible", "high_contrast", "light", "dark"),
             state="readonly",
             font=self.fonts["body"],
         )
@@ -228,6 +239,14 @@ class MainWindow(tk.Tk):
             font=self.fonts["small"],
         )
         self.screenreader_hint_label.grid(row=2, column=2, sticky="e", pady=(8, 0))
+
+        self.security_label = ttk.Label(
+            header,
+            textvariable=self.security_var,
+            font=self.fonts["body"],
+            style="HighContrast.TLabel",
+        )
+        self.security_label.grid(row=3, column=0, columnspan=3, sticky="w", pady=(4, 0))
 
         self.font_scale_label = ttk.Label(
             header,
@@ -676,6 +695,16 @@ class MainWindow(tk.Tk):
                 "Exportiert das Datenbank-Archiv nach data/exports/archive_export.json",
                 self._export_archive_json,
             ),
+            (
+                "Sicherheitsmanifest",
+                "Prüfprotokoll der Checksummen öffnen",
+                lambda: self._open_path(Path("data/security_manifest.json")),
+            ),
+            (
+                "Backup-Ordner",
+                "Versionierte Sicherungen ansehen",
+                lambda: self._open_path(Path("data/backups")),
+            ),
         ]
         build_quicklinks_panel(quicklinks_frame, quick_links, self.colors)
 
@@ -687,9 +716,17 @@ class MainWindow(tk.Tk):
         notebook.add(contrast_frame, text="Kontrast")
         build_contrast_panel(contrast_frame, self.colors)
 
+        palette_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
+        notebook.add(palette_frame, text="Palette")
+        build_palette_panel(palette_frame, self.colors)
+
         release_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
         notebook.add(release_frame, text="Release")
         build_release_panel(release_frame, self.release_items, self.release_progress_text, self.colors)
+
+        security_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
+        notebook.add(security_frame, text="Sicherheit")
+        build_security_panel(security_frame, self.security_summary_data or None, self.colors)
 
     def _build_log_viewer(self, parent: ttk.LabelFrame) -> None:
         ttk.Label(
@@ -1039,11 +1076,13 @@ class MainWindow(tk.Tk):
         if not SELFTEST_FILE.exists():
             self.selftest_var.set("Selbsttest: noch keine Daten gespeichert")
             self.selftest_label.configure(foreground=self.colors.get("warning", self.colors["accent"]))
+            self._apply_security_summary(None)
             return
         data = self._load_json(SELFTEST_FILE)
         if not data:
             self.selftest_var.set("Selbsttest: Daten konnten nicht gelesen werden")
             self.selftest_label.configure(foreground=self.colors.get("danger", self.colors["accent"]))
+            self._apply_security_summary(None)
             return
         tests = [entry for entry in data.get("self_tests", []) if isinstance(entry, dict)]
         total = len(tests)
@@ -1057,6 +1096,39 @@ class MainWindow(tk.Tk):
             color_key = "warning"
         self.selftest_var.set(message)
         self.selftest_label.configure(foreground=self.colors.get(color_key, self.colors["on_surface"]))
+        self._apply_security_summary(data.get("security_summary"))
+
+    def _apply_security_summary(self, summary: Optional[Dict[str, object]]) -> None:
+        if not hasattr(self, "security_label"):
+            return
+        if not isinstance(summary, dict) or not summary:
+            self.security_summary_data = {}
+            self.security_var.set("Datensicherheit: keine Prüfwerte vorhanden")
+            self.security_label.configure(
+                foreground=self.colors.get("warning", self.colors["accent"])
+            )
+            return
+
+        self.security_summary_data = dict(summary)
+        status = str(summary.get("status", "unknown"))
+        verified = int(summary.get("verified", 0))
+        issues = summary.get("issues", []) or []
+        backups = summary.get("backups", []) or []
+        timestamp = summary.get("timestamp", "")
+
+        if status == "ok":
+            message = (
+                f"Datensicherheit: {verified} Dateien geprüft – ohne Auffälligkeiten ({timestamp})"
+            )
+            color_key = "success"
+        else:
+            message = (
+                f"Datensicherheit: {len(issues)} Warnungen, "
+                f"{len(backups)} Sicherungen erstellt ({timestamp})"
+            )
+            color_key = "danger"
+        self.security_var.set(message)
+        self.security_label.configure(foreground=self.colors.get(color_key, self.colors["accent"]))
 
     def _refresh_release_data(self) -> None:
         items = self.release_checklist.load_items()
@@ -1198,6 +1270,18 @@ class MainWindow(tk.Tk):
 
     def _select_colors(self) -> Dict[str, str]:
         mode = getattr(self.preferences, "color_mode", None) or self.preferences.contrast_theme
+        if mode == "accessible":
+            return {
+                "background": "#0F1C2E",
+                "on_background": "#F5F5F5",
+                "surface": "#1B2B3C",
+                "on_surface": "#F5F5F5",
+                "accent": "#FF9500",
+                "accent_hover": "#DB7C00",
+                "success": "#4CC38A",
+                "warning": "#FFD43B",
+                "danger": "#FF6B6B",
+            }
         if mode == "high_contrast":
             return {
                 "background": "#101820",
@@ -1400,6 +1484,7 @@ class MainWindow(tk.Tk):
         if hasattr(self, "todo_entries"):
             self._refresh_todo_list()
         self._load_selftest_summary()
+        self._apply_security_summary(self.security_summary_data or None)
 
 
 

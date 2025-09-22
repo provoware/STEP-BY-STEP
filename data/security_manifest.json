@@ -1,0 +1,46 @@
+{
+  "created_at": "2025-09-22T22:33:38.580931",
+  "updated_at": "2025-09-22T22:33:38.580931",
+  "files": {
+    "data/settings.json": {
+      "sha256": "786b7c4a7140f83f704884aab1b598acfb97296da8c2e507f856b7917730d03b",
+      "last_checked": "2025-09-22T22:33:38.580931"
+    },
+    "data/todo_items.json": {
+      "sha256": "5fef2f414a3a3e0d21ede064feb249cadc1395df308939325854cc58ad2be33b",
+      "last_checked": "2025-09-22T22:33:38.580931"
+    },
+    "data/playlists.json": {
+      "sha256": "808dedc9528d86543943e80f46d993a089fa4da692cab774d1e5b51782e6003b",
+      "last_checked": "2025-09-22T22:33:38.580931"
+    },
+    "data/archive.json": {
+      "sha256": "870bf9171a41eaf603c538ffe5326ccf62bcf039bc3f6b66b886dc512bacab4d",
+      "last_checked": "2025-09-22T22:33:38.580931"
+    },
+    "data/release_checklist.json": {
+      "sha256": "31077c94c06e51abd06090d5b32717ff4605560f9408efb7889e94d0ad1d0b9e",
+      "last_checked": "2025-09-22T22:33:38.580931"
+    },
+    "data/selftest_report.json": {
+      "sha256": "1d203af79637b4474535946153c3012eb5337cf6428b7ba219050469ac80de85",
+      "last_checked": "2025-09-22T22:33:38.580931"
+    },
+    "data/usage_stats.json": {
+      "sha256": "f532fbd578a294445194b95f04849cc21724b700910cdbcae6a25620ae61a349",
+      "last_checked": "2025-09-22T22:33:38.580931"
+    },
+    "data/persistent_notes.txt": {
+      "sha256": "e3895837ea44a94f7c1f56c1a0ccfcb4b7603c83445003bd7fd9234f33482f2a",
+      "last_checked": "2025-09-22T22:33:38.580931"
+    },
+    "Fortschritt.txt": {
+      "sha256": "065df364720493d27188095d05d78bcdd96eb756ad50e27f35b54bd596f86271",
+      "last_checked": "2025-09-22T22:33:38.580931"
+    },
+    "todo.txt": {
+      "sha256": "e4fbc2b85595a8b0f256e7dd951e8faa921ff0fb474429836e2c4c58bcdafe00",
+      "last_checked": "2025-09-22T22:33:38.580931"
+    }
+  }
+}

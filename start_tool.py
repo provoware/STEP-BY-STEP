@@ -52,6 +52,19 @@ def display_startup_report(report: StartupReport) -> None:
             print("[Selbsttest] Alle Prüfungen bestanden. Das Startprotokoll liegt unter logs/startup.log.")
         else:
             print("[Selbsttest] Mindestens eine Prüfung meldete Probleme. Details stehen in logs/startup.log.")
+    if report.security_summary:
+        summary = report.security_summary
+        status = "OK" if summary.status == "ok" else "ACHTUNG"
+        print("[Datensicherheit] Manifest-Prüfung:")
+        summary_line = (
+            f"  [{status}] {summary.verified} Dateien kontrolliert, "
+            f"{len(summary.issues)} Abweichungen"
+        )
+        print(summary_line)
+        for issue in summary.issues:
+            print(f"    - Warnung: {issue}")
+        for backup in summary.backups:
+            print(f"    - Sicherung erstellt: {backup}")
 
 
 def relaunch_if_needed(report: StartupReport, logger) -> Optional[int]:

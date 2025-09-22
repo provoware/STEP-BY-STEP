@@ -298,6 +298,134 @@ def build_contrast_panel(parent: ttk.LabelFrame, colors: Optional[Dict[str, str]
         anchor="w", pady=(6, 0)
     )
 
+    evaluate_contrast()
+
+
+def build_palette_panel(parent: ttk.LabelFrame, colors: Dict[str, str]) -> None:
+    """Display the active color palette including contrast ratios."""
+
+    heading_font = tkfont.nametofont("TkHeadingFont")
+    body_font = tkfont.nametofont("TkDefaultFont")
+
+    ttk.Label(parent, text="Aktive Farbpalette", font=heading_font).pack(anchor="w")
+    ttk.Label(
+        parent,
+        text=(
+            "Die Tabelle zeigt die wichtigsten Farbkombinationen des aktuellen Schemas "
+            "inklusive berechnetem Kontrastwert (WCAG-Richtlinie)."
+        ),
+        wraplength=320,
+        font=body_font,
+        justify="left",
+    ).pack(anchor="w", pady=(2, 6))
+
+    tree = ttk.Treeview(parent, columns=("element", "farbe", "kontrast"), show="headings", height=6)
+    tree.heading("element", text="Element")
+    tree.heading("farbe", text="Hex-Wert")
+    tree.heading("kontrast", text="Kontrast")
+    tree.column("element", width=140, anchor="w")
+    tree.column("farbe", width=110, anchor="w")
+    tree.column("kontrast", width=110, anchor="w")
+    tree.configure(font=body_font)
+    tree.pack(fill="both", expand=True)
+
+    def contrast(fg: str, bg: str) -> float:
+        rgb_fg = _hex_to_rgb(fg)
+        rgb_bg = _hex_to_rgb(bg)
+        lum_fg = _relative_luminance(rgb_fg)
+        lum_bg = _relative_luminance(rgb_bg)
+        lighter = max(lum_fg, lum_bg)
+        darker = min(lum_fg, lum_bg)
+        return (lighter + 0.05) / (darker + 0.05)
+
+    entries = (
+        ("Hintergrund", colors.get("on_background", "#FFFFFF"), colors.get("background", "#000000")),
+        ("Flächen", colors.get("on_surface", "#FFFFFF"), colors.get("surface", "#000000")),
+        ("Aktion", colors.get("surface", "#000000"), colors.get("accent", "#FFFFFF")),
+        ("Warnung", colors.get("background", "#000000"), colors.get("warning", "#FFD43B")),
+        ("Erfolg", colors.get("background", "#000000"), colors.get("success", "#4CC38A")),
+    )
+
+    for label, fg, bg in entries:
+        ratio = contrast(fg, bg)
+        tree.insert(
+            "",
+            "end",
+            values=(label, f"FG {fg} / BG {bg}", f"{ratio:.2f}:1"),
+            tags=("ok" if ratio >= 4.5 else "warn",),
+        )
+
+    tree.tag_configure("ok", foreground="#2e8540")
+    tree.tag_configure("warn", foreground="#c43c00")
+
+    ttk.Label(
+        parent,
+        text="Tipp: Im Header kann zwischen High Contrast, Accessible und Dunkel/Hell gewechselt werden.",
+        wraplength=320,
+        font=body_font,
+        justify="left",
+    ).pack(anchor="w", pady=(8, 0))
+
+
+def build_security_panel(
+    parent: ttk.LabelFrame,
+    summary: Optional[Dict[str, object]],
+    colors: Optional[Dict[str, str]] = None,
+) -> None:
+    """Display the latest security manifest summary."""
+
+    heading_font = tkfont.nametofont("TkHeadingFont")
+    body_font = tkfont.nametofont("TkDefaultFont")
+    ttk.Label(parent, text="Datensicherheit", font=heading_font).pack(anchor="w")
+
+    if not summary:
+        ttk.Label(
+            parent,
+            text="Noch keine Sicherheitsprüfung vorhanden – Startroutine ausführen (start_tool.py).",
+            wraplength=320,
+            font=body_font,
+            justify="left",
+        ).pack(anchor="w", pady=(4, 0))
+        return
+
+    status = str(summary.get("status", "unknown"))
+    verified = int(summary.get("verified", 0))
+    issues = summary.get("issues", [])
+    backups = summary.get("backups", [])
+    timestamp = summary.get("timestamp", "")
+
+    message = (
+        f"Status: {'Keine Auffälligkeiten' if status == 'ok' else 'Achtung – Details prüfen'}\n"
+        f"Geprüfte Dateien: {verified}\n"
+        f"Letzte Prüfung: {timestamp}"
+    )
+    ttk.Label(parent, text=message, justify="left", font=body_font).pack(anchor="w", pady=(4, 6))
+
+    tree = ttk.Treeview(parent, columns=("typ", "beschreibung"), show="headings", height=5)
+    tree.heading("typ", text="Typ")
+    tree.heading("beschreibung", text="Beschreibung")
+    tree.column("typ", width=90, anchor="w")
+    tree.column("beschreibung", width=220, anchor="w")
+    tree.configure(font=body_font)
+    tree.pack(fill="both", expand=True)
+
+    for entry in issues:
+        tree.insert("", "end", values=("Warnung", entry), tags=("warn",))
+    for backup in backups:
+        tree.insert("", "end", values=("Backup", backup))
+
+    tree.tag_configure("warn", foreground="#c43c00")
+
+    ttk.Label(
+        parent,
+        text=(
+            "Hinweis: Manifest und Backups liegen unter data/security_manifest.json bzw. data/backups/."
+        ),
+        wraplength=320,
+        font=body_font,
+        justify="left",
+    ).pack(anchor="w", pady=(8, 0))
+
 
 def build_release_panel(
     parent: ttk.LabelFrame,
@@ -346,8 +474,10 @@ __all__ = [
     "build_legend_panel",
     "build_font_tips_panel",
     "build_contrast_panel",
+    "build_palette_panel",
     "build_mockup_panel",
     "build_structure_panel",
     "build_quicklinks_panel",
     "build_release_panel",
+    "build_security_panel",
 ]

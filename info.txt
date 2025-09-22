@@ -13,7 +13,12 @@ Beschreibung:
 - Aufgabenliste direkt im Dashboard abhaken (Enter/Leertaste oder Button),
   inklusive Live-Status im Kopfbereich und Synchronisation mit `todo.txt`.
 - Info-Center mit Legende, Mockup, Strukturbaum, Release-Checkliste,
-  Schriftgrößen-Kompass und Kontrast-Checker zum Testen eigener Farbwerte.
+  Schriftgrößen-Kompass, Kontrast-Checker, Farbpaletten-Tabelle und
+  Datensicherheitsstatus (zeigt Manifest-Ergebnisse und Backups).
+- Datensicherheits-Manifest überwacht zentrale Dateien (Checksummen) und legt
+  Sicherungskopien mit Zeitstempel unter `data/backups/` an.
+- Accessible-Standardpalette (dunkelblau/orange) mit WCAG-konformen Kontrasten
+  plus umschaltbare High-Contrast-, Hell- und Dunkel-Profile.
 - Selbsttest-Anzeige im Header (letzter Lauf, Ergebnis) auf Basis von
   `data/selftest_report.json`.
 - Startprotokoll-Bereich im Dashboard mit Suchfeld, Kopierfunktion und direktem
@@ -31,10 +36,12 @@ Anleitung:
 Wichtige Dateien:
 - `data/` enthält alle gespeicherten Daten.
 - `data/selftest_report.json` speichert die Ergebnisse der automatischen
-  Startroutine (Selbsttests, Reparaturen, Abhängigkeiten).
+  Startroutine (Selbsttests, Reparaturen, Abhängigkeiten, Sicherheitsstatus).
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
 - `docs/release_checklist.md` hält den Freigabe-Ablauf fest.
 - `json-and-more.info.txt` listet alle Standardressourcen als lesbares Backup auf.
+- `data/security_manifest.json` enthält die Checksummen aller Kern-Dateien.
+- `data/backups/` speichert automatisch erzeugte Sicherungskopien.
 
 Abhängigkeiten:
 - Python-Standardbibliothek
@@ -49,6 +56,8 @@ Problembehebung (Kettenbefehle):
   `python -m pip install --upgrade pip && python -m pip install simpleaudio`
 - Archiv-Exporte prüfen: `ls data/exports`
 - Konvertierte WAV-Dateien ansehen: `ls data/converted_audio`
+- Sicherheitsmanifest ansehen: `less data/security_manifest.json`
+- Letzte Sicherungen prüfen: `ls data/backups`
 - Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`
 - Beschädigte Daten auf Werkseinstellungen zurücksetzen: `python start_tool.py --headless`
 - Selbsttest-Log prüfen (UI-Anzeige + Rohdaten): `less data/selftest_report.json`

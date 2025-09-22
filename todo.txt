@@ -22,4 +22,8 @@
 - [x] Datenbank-Modul mit Export (CSV/JSON) vorbereiten
 - [x] Release-Checkliste finalisieren (Tests + Dokumentation)
 - [x] Startprotokoll in der Oberfläche durchsuchbar machen
+- [x] Datensicherheitsmanifest mit automatischen Backups integrieren
+- [x] Sicherheitsstatus im Header und Info-Center sichtbar machen
+- [x] Accessible-Farbpalette samt WCAG-Prüfung dokumentieren
 - [ ] Abschlussprüfung dokumentieren (End-to-End-Test + Handbuch-Freigabe)
+- [ ] Backup-Wiederherstellung testen und dokumentieren

@@ -15,5 +15,11 @@
 - Barrierefreie Texte schreiben: Fachbegriffe kurz erläutern, Fokusmeldungen
   aktualisieren und sichtbare Kontraste verwenden.
 - Dateien im Ordner `data/` behalten lesbare JSON-Struktur (UTF-8, `indent=2`).
+- Bei Änderungen an Dateien aus `SENSITIVE_FILES` (siehe `core/security.py`)
+  nach dem Speichern das Sicherheitsmanifest über die Startroutine oder den
+  `SecurityManager` aktualisieren; so bleiben Prüfsummen und Backups stimmig.
+- Für neue Farbschemata immer die Palette über `build_palette_panel` testen und
+  sicherstellen, dass Hintergrund/Text mindestens den WCAG-Kontrast 4,5:1
+  erfüllen.
 - Neue Module liefern Docstrings am Kopf und exportieren ihre wichtigsten
   Klassen/Funktionen über `__all__`.

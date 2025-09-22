@@ -4,7 +4,7 @@
   "autosave_interval_minutes": 10,
   "accessibility_mode": true,
   "shortcuts_enabled": true,
-  "contrast_theme": "high_contrast",
-  "color_mode": "high_contrast",
+  "contrast_theme": "accessible",
+  "color_mode": "accessible",
   "audio_volume": 0.8
 }

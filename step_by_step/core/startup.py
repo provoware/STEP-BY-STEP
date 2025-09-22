@@ -13,12 +13,14 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .logging_manager import get_logger
+from .security import SecurityManager, SecuritySummary
 
 REQUIRED_FOLDERS: Sequence[Path] = (
     Path("data"),
     Path("logs"),
     Path("data/exports"),
     Path("data/converted_audio"),
+    Path("data/backups"),
 )
 
 REQUIRED_FILES: Dict[Path, str] = {
@@ -29,8 +31,8 @@ REQUIRED_FILES: Dict[Path, str] = {
             "autosave_interval_minutes": 10,
             "accessibility_mode": True,
             "shortcuts_enabled": True,
-            "contrast_theme": "high_contrast",
-            "color_mode": "high_contrast",
+            "contrast_theme": "accessible",
+            "color_mode": "accessible",
             "audio_volume": 0.8,
         },
         indent=2,
@@ -48,6 +50,14 @@ REQUIRED_FILES: Dict[Path, str] = {
             "messages": [],
             "repaired_paths": [],
             "dependency_messages": [],
+            "security_summary": {
+                "status": "unknown",
+                "verified": 0,
+                "issues": [],
+                "backups": [],
+                "updated_manifest": False,
+                "timestamp": "",
+            },
         },
         indent=2,
         ensure_ascii=False,
@@ -124,6 +134,7 @@ class StartupReport:
     self_tests: List[SelfTestResult] = field(default_factory=list)
     relaunch_command: Optional[List[str]] = None
     messages: List[str] = field(default_factory=list)
+    security_summary: Optional[SecuritySummary] = None
 
     def add_message(self, message: str) -> None:
         self.messages.append(message)
@@ -155,6 +166,7 @@ class StartupManager:
         self.ensure_structure()
         self.ensure_virtual_environment()
         self.ensure_dependencies()
+        self.verify_data_security()
         self.run_self_tests()
         self._persist_report()
 
@@ -224,6 +236,24 @@ class StartupManager:
         self._log_progress("Selbsttests abgeschlossen.")
 
     # ------------------------------------------------------------------
+    def verify_data_security(self) -> None:
+        manager = SecurityManager()
+        summary = manager.verify_files()
+        self.report.security_summary = summary
+        self._log_progress(
+            (
+                "Datensicherheit geprüft: "
+                f"{summary.verified} Dateien kontrolliert, "
+                f"{len(summary.issues)} Abweichungen"
+            ),
+            level="error" if summary.issues else "info",
+        )
+        for issue in summary.issues:
+            self._log_progress(f"Sicherheitswarnung: {issue}", level="error")
+        for backup in summary.backups:
+            self._log_progress(f"Sicherung erstellt: {backup}")
+
+    # ------------------------------------------------------------------
     def _persist_report(self) -> None:
         """Store the latest startup report for display in the dashboard."""
 
@@ -240,6 +270,8 @@ class StartupManager:
                 for result in self.report.self_tests
             ],
         }
+        if self.report.security_summary:
+            payload["security_summary"] = self.report.security_summary.to_dict()
         target = Path("data/selftest_report.json")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")

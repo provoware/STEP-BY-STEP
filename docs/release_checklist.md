@@ -17,12 +17,17 @@ Release-Register).
   Fokus-Hilfen.
 - Dokumentation der Coding-Guidelines und des Release-Prozesses (README,
   info.txt, json-and-more.info.txt).
+- Datensicherheits-Manifest mit automatischen Backups (`data/security_manifest.json`
+  + `data/backups/`) sowie sichtbarem Status im Dashboard.
+- Accessible-Farbpalette mit WCAG-konformen Kontrasten und zusätzlicher
+  Paletten-Übersicht im Info-Center.
 
 ## Offen ⏳
 
 - Abschlussprüfung (End-to-End-Test, Bedienhandbuch final freigeben).
 - Optionale Kür: weitere Audioanalyse (z.B. Wellenform-Vorschau) und erweiterte
   Screenreader-Ausgabe.
+- Automatische Wiederherstellung testen (Backups aus `data/backups/` einspielen).
 
 ## Testempfehlungen
 
@@ -32,7 +37,9 @@ Release-Register).
    sowie „Als WAV normalisieren“ testen.
 3. Im Info-Center auf „Archiv als CSV/JSON“ klicken und die erzeugten Dateien in
    `data/exports/` kontrollieren.
-4. Im Bereich „Startprotokoll“ nach Begriffen wie „installiert“ oder „Fehler"
+4. Im Info-Center die Tabs „Palette“ und „Sicherheit“ prüfen: Kontraste sollten
+   mindestens 4,5:1 erreichen, das Manifest muss „Keine Auffälligkeiten“ melden.
+5. Im Bereich „Startprotokoll“ nach Begriffen wie „installiert“ oder „Fehler"
    suchen, um die Filterung zu validieren.
 
 Alle Schritte schreiben detaillierte Logs in `logs/tool.log` und
