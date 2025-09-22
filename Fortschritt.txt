@@ -1,4 +1,4 @@
-Fortschritt: 58%
+Fortschritt: 62%
 
 Nächste Schritte:
 - Aufgaben im Dashboard direkt abhaken und zurückschreiben.
@@ -8,3 +8,4 @@ Nächste Schritte:
 - Optionales Audio-Preview (Wellenform/Restlaufzeit) vorbereiten.
 - Schriftgrößen-Empfehlungen direkt im Info-Center ergänzen.
 - Automatischen Kontrast-Check vorbereiten, um eigene Farbprofile zu prüfen.
+- Selbsttest-Ergebnisse perspektivisch direkt im Dashboard visualisieren.

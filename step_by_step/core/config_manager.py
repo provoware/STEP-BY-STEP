@@ -22,7 +22,7 @@ CONFIG_FILE = Path("data/settings.json")
 class UserPreferences:
     """Typed access (strukturierter Zugriff) to user preference values."""
 
-    font_scale: float = 1.0
+    font_scale: float = 1.2
     theme: str = "light"
     autosave_interval_minutes: int = 10
     accessibility_mode: bool = True

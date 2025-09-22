@@ -7,8 +7,8 @@ beim Start automatisch geprüft und bei Bedarf repariert oder neu erzeugt.
 
 Enthaltene Kernressourcen
 ------------------------
-- data/settings.json: Nutzer-Voreinstellungen (z.B. Schriftgröße, Farbmodus,
-  Audiolautstärke).
+- data/settings.json: Nutzer-Voreinstellungen (z.B. Schriftgröße 120 %,
+  Farbmodus, Audiolautstärke).
 - data/todo_items.json: Aufgabenlisten mit Datum und Status.
 - data/playlists.json: Audioplaylist mit Titeln und Quellen.
 - data/archive.json: Ablage für erledigte Einträge.
@@ -20,9 +20,12 @@ So wird alles repariert
 1. Starte das Klick-und-Start-Tool: ``python start_tool.py``.
 2. Das Tool legt automatisch eine virtuelle Umgebung ``.venv`` an.
 3. Danach installiert es alle Pakete aus ``requirements.txt``.
-4. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
-5. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %) und gut sichtbare
-   Fokusmeldungen zur Verfügung, damit alle Bereiche sofort erkennbar bleiben.
+4. Anschließend laufen automatische Selbsttests (Syntax-Check und
+   Einstellungen). Ergebnisse stehen in ``logs/startup.log``.
+5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
+6. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
+   120 %-Basisschrift und gut sichtbare Fokusmeldungen bereit, damit alle Bereiche
+   sofort erkennbar bleiben.
 
 Zusatzbefehle für die Wartung
 ------------------------------

@@ -3,8 +3,9 @@
 Ein modulares Dashboard-Tool mit automatischer Startroutine. Das Projekt bündelt
 die Bereiche Datenbank-Archiv, Audioplaylist und Aufgabenverwaltung in einer
 barrierearmen Oberfläche. Die Startroutine erledigt nun komplett autonom die
-Anlage einer virtuellen Umgebung, installiert Abhängigkeiten und liefert
-detailiertes Feedback über ein erweitertes Logging.
+Anlage einer virtuellen Umgebung, installiert Abhängigkeiten, führt
+Selbsttests aus und liefert detailiertes Feedback über ein erweitertes
+Logging.
 
 ## Schnellstart (Klick & Start)
 
@@ -13,7 +14,8 @@ python start_tool.py
 ```
 
 Der Befehl erstellt bei Bedarf die virtuelle Umgebung `.venv`, installiert alle
-Pakete aus `requirements.txt`, protokolliert jeden Schritt unter `logs/` und
+Pakete aus `requirements.txt`, prüft den Code per Selbsttest (Syntax-Check
+und Einstellungs-Validierung), protokolliert jeden Schritt unter `logs/` und
 startet anschließend die barrierearme Oberfläche. Für einen Diagnoselauf ohne
 Fenster:
 
@@ -23,16 +25,22 @@ python start_tool.py --headless
 
 ## Wesentliche Merkmale
 
-- **Autonome Startroutine:** Erstellt fehlende Dateien, prüft Pakete und
-  startet sich bei Bedarf innerhalb der virtuellen Umgebung neu.
+- **Autonome Startroutine:** Erstellt fehlende Dateien, prüft Pakete, führt
+  Selbsttests aus und startet sich bei Bedarf innerhalb der virtuellen
+  Umgebung neu.
 - **Detailiertes Logging:** Zentraler Logger mit drehenden Dateien (`logs/tool.log`)
   sowie einer separaten Startprotokollierung (`logs/startup.log`).
+- **Automatische Selbsttests:** Beim Start wird der komplette Codebaum mit
+  `compileall` (Syntaxprüfung) getestet und die `data/settings.json` wird auf
+  Vollständigkeit und barrierefreie Standardeinstellungen geprüft.
 - **Hoher Kontrast:** Die Oberfläche nutzt einen High-Contrast-Stil für beste
   Lesbarkeit (z.B. dunkler Hintergrund mit gelbem Akzent) und passt Buttons,
   Listen und Notizfelder automatisch an.
 - **Zoom-Regler:** Ein gut sichtbarer Schriftgrößenregler mit Prozentanzeige
   erlaubt stufenloses Vergrößern (Zoom) zwischen 80 % und 160 % inklusive
   Reset-Knopf.
+- **Standard-Schriftgröße 120 %:** Die Einstellungen setzen ab sofort dauerhaft
+  eine 1,2er Skalierung, damit Texte auf Anhieb besser lesbar sind.
 - **Audioplayer:** Playlistbereich mit Abspiel- und Stopp-Taste, Lautstärkeregler
   und Hinweisen für Screenreader. Unterstützt aktuell WAV-Dateien über
   `simpleaudio`.

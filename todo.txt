@@ -12,7 +12,11 @@
 - [x] Konfiguration für flexible Farbthemen (z.B. hell/dunkel umschalten) anbieten
 - [x] Schriftgrößen-Regler mit Statusfeedback für bessere Sichtbarkeit ergänzen
 - [x] Fokusrahmen und Tastaturmeldungen für wichtige Elemente aktivieren
+- [x] Vollautomatische Selbsttests in der Startroutine aktivieren
+- [x] Standardschrift auf 120 % anheben und dauerhaft speichern
 - [ ] Aufgaben direkt im Tool abhaken können
 - [ ] Audio-Modul um einfache Konvertierung/Formatprüfung erweitern
 - [ ] Schriftgrößen-Empfehlungen je Modul im Info-Center dokumentieren
 - [ ] Kontrast-Checker integrieren, der eigene Farbkombinationen bewertet
+- [ ] Selbsttest-Ergebnisse direkt im Dashboard anzeigen
+- [ ] Startprotokoll in der Oberfläche durchsuchbar machen

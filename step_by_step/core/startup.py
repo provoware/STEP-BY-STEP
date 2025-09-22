@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import compileall
 import json
 import os
 import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from .logging_manager import get_logger
 
@@ -20,7 +21,7 @@ REQUIRED_FOLDERS: Sequence[Path] = (
 REQUIRED_FILES: Dict[Path, str] = {
     Path("data/settings.json"): json.dumps(
         {
-            "font_scale": 1.0,
+            "font_scale": 1.2,
             "theme": "light",
             "autosave_interval_minutes": 10,
             "accessibility_mode": True,
@@ -38,6 +39,12 @@ REQUIRED_FILES: Dict[Path, str] = {
     Path("data/usage_stats.json"): json.dumps({}, indent=2),
 }
 
+
+def _default_settings() -> Dict[str, object]:
+    """Return a fresh copy of the default settings payload."""
+
+    return json.loads(REQUIRED_FILES[Path("data/settings.json")])
+
 DEPENDENCY_COMMANDS: Dict[str, List[str]] = {
     "ttkbootstrap": ["-m", "pip", "install", "ttkbootstrap"],
     "simpleaudio": ["-m", "pip", "install", "simpleaudio"],
@@ -49,6 +56,15 @@ RELAUNCH_ENV_FLAG = "STEP_BY_STEP_VENV_ACTIVE"
 
 
 @dataclass
+class SelfTestResult:
+    """Represent the outcome of a single self-test."""
+
+    name: str
+    passed: bool
+    details: str = ""
+
+
+@dataclass
 class StartupReport:
     """Collect details about performed startup actions."""
 
@@ -56,11 +72,17 @@ class StartupReport:
     installed_dependencies: bool = False
     repaired_paths: List[Path] = field(default_factory=list)
     dependency_messages: List[str] = field(default_factory=list)
+    self_tests: List[SelfTestResult] = field(default_factory=list)
     relaunch_command: Optional[List[str]] = None
     messages: List[str] = field(default_factory=list)
 
     def add_message(self, message: str) -> None:
         self.messages.append(message)
+
+    def all_self_tests_passed(self) -> bool:
+        if not self.self_tests:
+            return True
+        return all(result.passed for result in self.self_tests)
 
 
 class StartupManager:
@@ -84,6 +106,7 @@ class StartupManager:
         self.ensure_structure()
         self.ensure_virtual_environment()
         self.ensure_dependencies()
+        self.run_self_tests()
 
         self.logger.info("Startroutine beendet")
         self._write_diagnostic("Startroutine beendet.")
@@ -101,6 +124,8 @@ class StartupManager:
                 self._log_progress(f"Datei ergänzt: {path}")
             else:
                 self._log_progress(f"Datei vorhanden: {path}")
+            if path.name == "settings.json":
+                self._ensure_settings_defaults(path)
 
     # ------------------------------------------------------------------
     def ensure_virtual_environment(self) -> None:
@@ -131,6 +156,24 @@ class StartupManager:
                 self._log_progress(f"Paket bereits verfügbar: {package}")
 
     # ------------------------------------------------------------------
+    def run_self_tests(self) -> None:
+        """Execute lightweight self-tests to ensure a safe launch."""
+
+        self._log_progress("Selbsttests starten...")
+        for name, test in (
+            ("Python-Codeprüfung", self._self_test_compileall),
+            ("Einstellungsprüfung", self._self_test_settings),
+        ):
+            passed, details = test()
+            self.report.self_tests.append(SelfTestResult(name=name, passed=passed, details=details))
+            status = "erfolgreich" if passed else "fehlgeschlagen"
+            message = f"Selbsttest {name} {status}."
+            if details:
+                message = f"{message} {details}"
+            self._log_progress(message, level="info" if passed else "error")
+        self._log_progress("Selbsttests abgeschlossen.")
+
+    # ------------------------------------------------------------------
     def _create_virtualenv(self, python_in_venv: Path) -> None:
         self._log_progress("Virtuelle Umgebung wird erstellt...")
         result = subprocess.run([sys.executable, "-m", "venv", str(VENV_PATH)], check=False)
@@ -149,6 +192,80 @@ class StartupManager:
             self._log_progress(f"{description} erfolgreich.")
         else:
             self._log_progress(f"{description} fehlgeschlagen (Code {result.returncode}).", level="error")
+
+    def _self_test_compileall(self) -> Tuple[bool, str]:
+        """Compile the code base to bytecode to spot syntax errors."""
+
+        target = Path("step_by_step")
+        try:
+            success = compileall.compile_dir(
+                str(target), quiet=1, legacy=False, workers=1
+            )
+        except Exception as exc:  # pragma: no cover - defensive guard
+            return False, f"Fehler beim Kompilieren: {exc}"
+        return success, "Alle Module wurden geprüft." if success else "Bitte Protokoll prüfen."
+
+    def _self_test_settings(self) -> Tuple[bool, str]:
+        """Validate settings and ensure recommended accessibility defaults."""
+
+        settings_path = Path("data/settings.json")
+        desired_scale = 1.2
+        try:
+            raw = json.loads(settings_path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            return False, "Einstellungsdatei fehlte und wurde ersetzt."
+        except json.JSONDecodeError:
+            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            return False, "Einstellungsdatei war defekt und wurde erneuert."
+
+        changed = False
+        default_settings = _default_settings()
+        for key, value in default_settings.items():
+            if key not in raw:
+                raw[key] = value
+                changed = True
+        try:
+            scale_value = float(raw.get("font_scale", desired_scale))
+        except (TypeError, ValueError):
+            scale_value = desired_scale
+        if scale_value < desired_scale:
+            raw["font_scale"] = desired_scale
+            changed = True
+        if changed:
+            settings_path.write_text(json.dumps(raw, indent=2), encoding="utf-8")
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            return True, "Einstellungen wurden automatisch aktualisiert."
+        return True, "Einstellungen sind vollständig."
+
+    def _ensure_settings_defaults(self, settings_path: Path) -> None:
+        """Keep persisted settings aligned with recommended defaults."""
+
+        desired_scale = 1.2
+        try:
+            content = json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            self._log_progress("Einstellungen zurückgesetzt (ungültiges Format).", level="error")
+            return
+
+        try:
+            current_scale = float(content.get("font_scale", desired_scale))
+        except (TypeError, ValueError):
+            current_scale = desired_scale
+        if current_scale < desired_scale:
+            content["font_scale"] = desired_scale
+            settings_path.write_text(json.dumps(content, indent=2), encoding="utf-8")
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            self._log_progress("Schriftgröße dauerhaft auf 1.2 angehoben.")
 
     def _python_in_venv(self) -> Path:
         if sys.platform == "win32":
@@ -185,4 +302,4 @@ class StartupManager:
         return Path(__file__).resolve().parents[2] / "start_tool.py"
 
 
-__all__ = ["StartupManager", "StartupReport", "RELAUNCH_ENV_FLAG"]
+__all__ = ["StartupManager", "StartupReport", "SelfTestResult", "RELAUNCH_ENV_FLAG"]
