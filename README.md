@@ -65,13 +65,17 @@ python start_tool.py --headless
   ein textuelles Mockup, den Ordner-/Dateibaum, Release-Checkliste, Schnelllinks
 -  sowie Register für Schriftgrößen-Empfehlungen, einen Kontrast-Checker, eine
 -  Farbpaletten-Übersicht (inkl. berechnetem WCAG-Kontrast), einen Tab mit den
--  Ergebnissen der Datensicherheitsprüfung sowie einen Farbaudit-Tab.
+-  Ergebnissen der Datensicherheitsprüfung samt Restore-Status und einen
+-  Farbaudit-Tab mit Optimierungstipps.
 - **Datensicherheits-Manifest:** Beim Start wird ein Checksummen-Manifest für
   zentrale JSON/TXT-Dateien verifiziert. Abweichungen erzeugen automatische
   Backups unter `data/backups/`, Größenabweichungen werden hervorgehoben und
-  alte Sicherungen nach fünf Generationen aufgeräumt.
+  alte Sicherungen nach fünf Generationen aufgeräumt. Zusätzlich prüft der
+  Startlauf automatisch, ob die jüngsten Backups zu den Manifest-Prüfsummen
+  passen und meldet konkrete Restore-Hinweise.
 - **Automatischer Farbaudit:** Alle Farbschemata werden gegen die WCAG-Grenzwerte
-  geprüft. Die Auswertung landet im Dashboard und in `data/color_audit.json`.
+  geprüft. Die Auswertung landet im Dashboard und in `data/color_audit.json` –
+  inklusive konkreter Tipps, wie sich auffällige Farben nachschärfen lassen.
 - **Startprotokoll-Panel:** Ein eigener Bereich durchsucht `logs/startup.log`,
   kopiert Zeilen in die Zwischenablage und bietet Hilfetexte für Tastaturnutzung.
 
@@ -83,10 +87,9 @@ python start_tool.py --headless
   Statistiken, Einstellungen).
 - `logs/` speichert Start- und Laufzeitprotokolle für eine einfache Analyse.
 - `data/security_manifest.json` dokumentiert die letzten Checksummen-Prüfungen
-  aller wichtigen Dateien. Abweichungen erzeugen Sicherungen unter
-  `data/backups/`.
+  aller wichtigen Dateien und speichert Restore-Checks für jede Sicherung.
 - `data/color_audit.json` hält die Ergebnisse der automatischen
-  Farbkontrast-Prüfung fest.
+  Farbkontrast-Prüfung inklusive Empfehlungen fest.
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
 
 ## Audio & Playlist
@@ -136,13 +139,12 @@ python start_tool.py --headless
   decken die Manifest-Prüfung und die finale Freigabe der Accessible-Farbprofile
   ab.
 - `data/security_manifest.json` plus Sicherungsordner `data/backups/` zeigen den
-  Verlauf der Datensicherheitsprüfungen samt angelegter Backups.
+  Verlauf der Datensicherheitsprüfungen samt angelegter Backups und den
+  automatischen Restore-Abgleich.
 - `data/color_audit.json` listet die geprüften Farbschemata mit niedrigsten
-  Kontrasten und etwaigen Hinweisen.
-- `Fortschritt.txt` dokumentiert den Ausbauzustand (aktuell 94 %) und zeigt die
-  letzten Meilensteine sowie anstehende Aufgaben (finaler Review).
+  Kontrasten, Hinweisen und ergänzenden Empfehlungen.
+- `Fortschritt.txt` dokumentiert den Ausbauzustand (aktuell 100 %) und zeigt die
+  letzten Meilensteine inklusive finaler Abschlussprüfung.
 - `todo.txt` wird direkt aus der Oberfläche gepflegt – erledigte Punkte werden
   automatisch markiert, neue Aufgaben lassen sich weiterhin per Textdatei
-  ergänzen.
-- Für den finalen Release fehlt jetzt nur noch die formelle Abschlussprüfung
-  (End-to-End-Check & Dokumentationsabnahme), siehe `todo.txt`.
+  ergänzen. Nach dem Release bleiben nur noch optionale Ideen erhalten.

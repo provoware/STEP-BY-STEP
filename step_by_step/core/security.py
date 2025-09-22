@@ -42,6 +42,8 @@ class SecuritySummary:
     backups: List[str] = field(default_factory=list)
     size_alerts: List[str] = field(default_factory=list)
     pruned_backups: List[str] = field(default_factory=list)
+    restore_points: List[Dict[str, object]] = field(default_factory=list)
+    restore_issues: List[str] = field(default_factory=list)
     updated_manifest: bool = False
     timestamp: str = dt.datetime.now().isoformat()
 
@@ -53,6 +55,8 @@ class SecuritySummary:
             "backups": list(self.backups),
             "size_alerts": list(self.size_alerts),
             "pruned_backups": list(self.pruned_backups),
+            "restore_points": [dict(item) for item in self.restore_points],
+            "restore_issues": list(self.restore_issues),
             "updated_manifest": self.updated_manifest,
             "timestamp": self.timestamp,
         }
@@ -143,7 +147,16 @@ class SecurityManager:
             self._write_manifest(manifest)
             self.logger.info("Sicherheitsmanifest aktualisiert.")
 
+        summary.restore_points = self._collect_restore_points(files_section)
+        summary.restore_issues.extend(
+            entry["message"]
+            for entry in summary.restore_points
+            if entry.get("status") != "ok" and entry.get("message")
+        )
+
         if summary.issues:
+            summary.status = "attention"
+        if summary.restore_issues:
             summary.status = "attention"
         elif summary.status != "attention":
             summary.status = "ok"
@@ -219,6 +232,65 @@ class SecurityManager:
         if path.exists():
             shutil.copy2(path, backup_path)
         return backup_path
+
+    def _collect_restore_points(self, files_section: Dict[str, Dict[str, object]]) -> List[Dict[str, object]]:
+        """Evaluate whether recent backups can restore protected files."""
+
+        restore_points: List[Dict[str, object]] = []
+        for rel_path, entry in files_section.items():
+            name = Path(rel_path).name
+            latest = self._latest_backup(name)
+            checksum = entry.get("sha256")
+            if not latest:
+                restore_points.append(
+                    {
+                        "file": rel_path,
+                        "status": "missing",
+                        "message": "Kein Backup gefunden",
+                    }
+                )
+                continue
+            if checksum in (None, "missing"):
+                restore_points.append(
+                    {
+                        "file": rel_path,
+                        "status": "unknown",
+                        "backup": str(latest),
+                        "message": "Manifest enthält keine Prüfsumme",
+                    }
+                )
+                continue
+            backup_hash = self._hash_file(latest)
+            if backup_hash == checksum:
+                restore_points.append(
+                    {
+                        "file": rel_path,
+                        "status": "ok",
+                        "backup": str(latest),
+                    }
+                )
+            else:
+                message = (
+                    f"{rel_path}: Backup stimmt nicht mit der aktuellen Prüfsumme überein"
+                    f" ({latest.name})"
+                )
+                restore_points.append(
+                    {
+                        "file": rel_path,
+                        "status": "mismatch",
+                        "backup": str(latest),
+                        "message": message,
+                    }
+                )
+        return restore_points
+
+    def _latest_backup(self, original_name: str) -> Optional[Path]:
+        if not self.backup_dir.exists():
+            return None
+        candidates = list(self.backup_dir.glob(f"{original_name}.*.bak"))
+        if not candidates:
+            return None
+        return max(candidates, key=lambda item: item.stat().st_mtime)
 
 
 __all__ = ["SecurityManager", "SecuritySummary"]

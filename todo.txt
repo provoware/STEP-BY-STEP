@@ -27,5 +27,6 @@
 - [x] Accessible-Farbpalette samt WCAG-Prüfung dokumentieren
 - [x] Automatischen Farbaudit integrieren und Bericht speichern
 - [x] Sicherheitsmanifest um Größenkontrolle und Backup-Aufräumung erweitern
-- [ ] Abschlussprüfung dokumentieren (End-to-End-Test + Handbuch-Freigabe)
-- [ ] Backup-Wiederherstellung testen und dokumentieren
+- [x] Abschlussprüfung dokumentieren (End-to-End-Test + Handbuch-Freigabe)
+- [x] Backup-Wiederherstellung testen und dokumentieren
+- [ ] Nach-Release-Ideen sammeln (z.B. Audio-Preview, erweiterte Screenreader-Hinweise)

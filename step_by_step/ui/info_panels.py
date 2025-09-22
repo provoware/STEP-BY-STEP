@@ -447,6 +447,24 @@ def build_color_audit_panel(
             issue_tree.insert("", "end", values=(issue,), tags=("warn",))
         issue_tree.tag_configure("warn", foreground="#c43c00")
 
+    recommendations = audit.get("recommendations", []) or []
+    if recommendations:
+        ttk.Label(parent, text="Empfehlungen", font=heading_font).pack(anchor="w", pady=(6, 0))
+        tip_tree = ttk.Treeview(parent, columns=("tipp",), show="headings", height=4)
+        tip_tree.heading("tipp", text="Kontrast verbessern")
+        tip_tree.column("tipp", width=320, anchor="w")
+        if colors:
+            tip_tree.configure(
+                background=colors.get("surface", "white"),
+                foreground=colors.get("on_surface", "black"),
+                fieldbackground=colors.get("surface", "white"),
+            )
+        tip_tree.configure(font=body_font)
+        tip_tree.pack(fill="both", expand=True)
+        for recommendation in recommendations:
+            tip_tree.insert("", "end", values=(recommendation,), tags=("tip",))
+        tip_tree.tag_configure("tip", foreground="#2e8540")
+
     ttk.Label(
         parent,
         text=(
@@ -495,11 +513,14 @@ def build_security_panel(
     backups = summary.get("backups", [])
     pruned = summary.get("pruned_backups", []) or []
     timestamp = summary.get("timestamp", "")
+    restore_points = summary.get("restore_points", []) or []
+    restore_issues = summary.get("restore_issues", []) or []
 
     message = (
         f"Status: {'Keine Auffälligkeiten' if status == 'ok' else 'Achtung – Details prüfen'}\n"
         f"Geprüfte Dateien: {verified}\n"
-        f"Letzte Prüfung: {timestamp}"
+        f"Letzte Prüfung: {timestamp}\n"
+        f"Restore-Checks: {len(restore_points)} getestet, {len(restore_issues)} Hinweise"
     )
     ttk.Label(parent, text=message, justify="left", font=body_font).pack(anchor="w", pady=(4, 6))
 
@@ -522,13 +543,27 @@ def build_security_panel(
         tree.insert("", "end", values=("Backup", backup))
     for cleanup in pruned:
         tree.insert("", "end", values=("Bereinigt", cleanup))
+    for restore in restore_points:
+        status_text = restore.get("status")
+        file_label = restore.get("file", "")
+        description = restore.get("message") or restore.get("backup") or "Kein Backup"
+        tag = "ok" if status_text == "ok" else "warn"
+        title = "Restore OK" if status_text == "ok" else "Restore"
+        tree.insert(
+            "",
+            "end",
+            values=(title, f"{file_label}: {description}"),
+            tags=(tag,),
+        )
 
+    tree.tag_configure("ok", foreground="#2e8540")
     tree.tag_configure("warn", foreground="#c43c00")
 
     ttk.Label(
         parent,
         text=(
             "Hinweis: Manifest und Backups liegen unter data/security_manifest.json bzw. data/backups/."
+            " Restore-Test: Letzte Sicherung kann über Kopieren der *.bak-Datei wiederhergestellt werden."
         ),
         wraplength=320,
         font=body_font,

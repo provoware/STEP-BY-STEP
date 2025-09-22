@@ -277,6 +277,22 @@ class StartupManager:
             self._log_progress(f"Sicherung erstellt: {backup}")
         for removed in summary.pruned_backups:
             self._log_progress(f"Altes Backup entfernt: {removed}")
+        for restore in summary.restore_points:
+            filename = restore.get("file", "")
+            status = restore.get("status")
+            backup = restore.get("backup")
+            message = restore.get("message")
+            if status == "ok":
+                detail = backup or "aktuelles Backup"
+                self._log_progress(
+                    f"Restore-Check erfolgreich: {filename} ← {detail}",
+                )
+            else:
+                detail = message or f"Backup prüfen ({backup})"
+                self._log_progress(
+                    f"Restore-Hinweis: {filename} – {detail}",
+                    level="error",
+                )
 
     # ------------------------------------------------------------------
     def audit_color_contrast(self) -> None:
@@ -297,6 +313,8 @@ class StartupManager:
         )
         for issue in report.issues:
             self._log_progress(f"Farbaudit-Hinweis: {issue}", level="error")
+        for recommendation in getattr(report, "recommendations", []):
+            self._log_progress(f"Farbaudit-Tipp: {recommendation}")
         refreshed_summary = SecurityManager().verify_files()
         self.report.security_summary = refreshed_summary
         self._log_progress(
@@ -306,6 +324,22 @@ class StartupManager:
             ),
             level="error" if refreshed_summary.issues else "info",
         )
+        for restore in refreshed_summary.restore_points:
+            filename = restore.get("file", "")
+            status = restore.get("status")
+            backup = restore.get("backup")
+            message = restore.get("message")
+            if status == "ok":
+                detail = backup or "aktuelles Backup"
+                self._log_progress(
+                    f"Restore-Check erfolgreich: {filename} ← {detail}",
+                )
+            else:
+                detail = message or f"Backup prüfen ({backup})"
+                self._log_progress(
+                    f"Restore-Hinweis: {filename} – {detail}",
+                    level="error",
+                )
 
     # ------------------------------------------------------------------
     def _persist_report(self) -> None:

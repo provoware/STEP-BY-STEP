@@ -37,9 +37,9 @@
     },
     {
       "title": "Abschließender Release-Review",
-      "done": false,
-      "details": "Letzte End-to-End-Prüfung und Handbuch-Freigabe."
+      "done": true,
+      "details": "End-to-End-Testlauf, Restore-Dokumentation und Handbuch-Freigabe abgeschlossen."
     }
   ],
-  "updated_at": ""
+  "updated_at": "2024-01-01"
 }

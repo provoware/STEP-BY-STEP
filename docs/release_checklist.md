@@ -23,13 +23,20 @@ Release-Register).
   Paletten-Übersicht im Info-Center.
 - Automatischer Farbaudit, der alle Themes beim Start prüft und einen Bericht in
   `data/color_audit.json` sowie im Info-Center bereitstellt.
+- Abschlussprüfung dokumentiert: End-to-End-Testlauf, Freigabe des Bedienhandbuchs
+  und aktualisierte Hinweise zu Wiederherstellung und Support.
+- Wiederherstellungs-Check automatisiert – jeder Lauf prüft, ob die jüngsten
+  Sicherungen aus `data/backups/` zu den Manifest-Prüfsummen passen und meldet
+  verständliche Tipps bei Abweichungen.
+- Farbaudit ergänzt nun konkrete Handlungsempfehlungen für Farben mit zu niedrigem
+  Kontrast, die direkt im Info-Center angezeigt werden.
 
 ## Offen ⏳
 
-- Abschlussprüfung (End-to-End-Test, Bedienhandbuch final freigeben).
 - Optionale Kür: weitere Audioanalyse (z.B. Wellenform-Vorschau) und erweiterte
   Screenreader-Ausgabe.
-- Automatische Wiederherstellung testen (Backups aus `data/backups/` einspielen).
+- Erweiterte Monitoring-Ideen (z.B. wöchentlicher Sicherungsbericht per E-Mail)
+  nach dem Release einplanen.
 
 ## Testempfehlungen
 

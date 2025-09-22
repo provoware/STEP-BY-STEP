@@ -1149,18 +1149,25 @@ class MainWindow(tk.Tk):
         backups = summary.get("backups", []) or []
         pruned = summary.get("pruned_backups", []) or []
         timestamp = summary.get("timestamp", "")
+        restore_points = summary.get("restore_points", []) or []
+        restore_issues = summary.get("restore_issues", []) or []
+        restore_ok = len([item for item in restore_points if item.get("status") == "ok"])
 
         if status == "ok":
-            extra = f" – {len(pruned)} alte Backups aufgeräumt" if pruned else ""
+            extra_cleanup = f" – {len(pruned)} alte Backups aufgeräumt" if pruned else ""
+            extra_restore = (
+                f" – {restore_ok} Wiederherstellungspunkte getestet" if restore_points else ""
+            )
             message = (
                 f"Datensicherheit: {verified} Dateien geprüft – ohne Auffälligkeiten"
-                f"{extra} ({timestamp})"
+                f"{extra_cleanup}{extra_restore} ({timestamp})"
             )
             color_key = "success"
         else:
             message = (
                 f"Datensicherheit: {len(issues)} Hinweise, {len(backups)} Sicherungen, "
-                f"{len(pruned)} Aufräumaktionen ({timestamp})"
+                f"{len(pruned)} Aufräumaktionen, {len(restore_issues)} Restore-Hinweise "
+                f"({timestamp})"
             )
             color_key = "danger"
         self.security_var.set(message)
@@ -1183,6 +1190,7 @@ class MainWindow(tk.Tk):
         issues = audit.get("issues", []) or []
         worst_ratio = float(audit.get("worst_ratio", 0.0))
         timestamp = self._format_timestamp(audit.get("generated_at"))
+        recommendations = audit.get("recommendations", []) or []
 
         if status == "ok":
             message = (
@@ -1192,8 +1200,8 @@ class MainWindow(tk.Tk):
             color_key = "success"
         else:
             message = (
-                f"Farbaudit: {len(issues)} Hinweise, niedrigster Kontrast {worst_ratio:.2f}:1"
-                f" ({timestamp})"
+                f"Farbaudit: {len(issues)} Hinweise, {len(recommendations)} Tipps, "
+                f"niedrigster Kontrast {worst_ratio:.2f}:1 ({timestamp})"
             )
             color_key = "danger"
 

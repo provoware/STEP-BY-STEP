@@ -92,6 +92,7 @@ class ColorAuditReport:
     generated_at: str
     themes: List[ThemeAudit] = field(default_factory=list)
     issues: List[str] = field(default_factory=list)
+    recommendations: List[str] = field(default_factory=list)
 
     @property
     def overall_status(self) -> str:
@@ -109,6 +110,7 @@ class ColorAuditReport:
             "overall_status": self.overall_status,
             "worst_ratio": self.worst_ratio,
             "issues": list(self.issues),
+            "recommendations": list(self.recommendations),
             "themes": [theme.to_dict() for theme in self.themes],
         }
 
@@ -137,6 +139,23 @@ class ColorAuditor:
                 ratio = _contrast_ratio(fg, bg)
                 worst_ratio = min(worst_ratio, ratio)
                 passes = ratio >= minimum
+                suggestion = None
+                if not passes:
+                    status = "attention"
+                    issue = (
+                        f"Thema '{name}': {rule['label']} erreicht nur {ratio:.2f}:1 (benötigt {minimum}:1)"
+                    )
+                    suggestion = _suggest_adjustment(
+                        theme=name,
+                        element=str(rule["label"]),
+                        foreground=fg,
+                        background=bg,
+                        minimum=minimum,
+                        ratio=ratio,
+                    )
+                    report.issues.append(issue)
+                    if suggestion and suggestion not in report.recommendations:
+                        report.recommendations.append(suggestion)
                 entries.append(
                     {
                         "element": rule["label"],
@@ -145,14 +164,9 @@ class ColorAuditor:
                         "ratio": round(ratio, 2),
                         "minimum": minimum,
                         "passes": passes,
+                        "suggestion": suggestion,
                     }
                 )
-                if not passes:
-                    status = "attention"
-                    issue = (
-                        f"Thema '{name}': {rule['label']} erreicht nur {ratio:.2f}:1 (benötigt {minimum}:1)"
-                    )
-                    report.issues.append(issue)
             report.themes.append(ThemeAudit(name=name, entries=entries, worst_ratio=worst_ratio, status=status))
 
         if report.issues:
@@ -161,6 +175,28 @@ class ColorAuditor:
             self.logger.info("Farbaudit ohne Auffälligkeiten abgeschlossen")
 
         return report
+
+
+def _suggest_adjustment(
+    theme: str,
+    element: str,
+    foreground: str,
+    background: str,
+    minimum: float,
+    ratio: float,
+) -> str:
+    """Return a human-readable hint on how to raise the contrast."""
+
+    delta = max(0.0, minimum - ratio)
+    fg_lum = _relative_luminance(_hex_to_rgb(foreground))
+    bg_lum = _relative_luminance(_hex_to_rgb(background))
+    if fg_lum > bg_lum:
+        action = "Hintergrund dunkler wählen oder Textfarbe leicht aufhellen"
+    else:
+        action = "Textfarbe dunkler setzen oder Hintergrund aufhellen"
+    return (
+        f"{theme}: {element} erreicht {ratio:.2f}:1 – {action} (benötigt {minimum}:1, Differenz {delta:.2f})."
+    )
 
 
 __all__ = ["ColorAuditor", "ColorAuditReport", "ThemeAudit"]

@@ -12,6 +12,8 @@
     "backups": [],
     "size_alerts": [],
     "pruned_backups": [],
+    "restore_points": [],
+    "restore_issues": [],
     "updated_manifest": false,
     "timestamp": ""
   },
@@ -20,6 +22,7 @@
     "overall_status": "unknown",
     "worst_ratio": 0.0,
     "themes": [],
-    "issues": []
+    "issues": [],
+    "recommendations": []
   }
 }

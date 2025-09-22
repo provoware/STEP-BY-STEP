@@ -1,8 +1,9 @@
 {
-  "generated_at": "2025-09-22T22:57:10.735004",
+  "generated_at": "2025-09-22T23:24:01.758108",
   "overall_status": "ok",
   "worst_ratio": 3.15222851186241,
   "issues": [],
+  "recommendations": [],
   "themes": [
     {
       "name": "accessible",
@@ -13,7 +14,8 @@
           "background": "#0F1C2E",
           "ratio": 15.71,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Karten/Textfelder",
@@ -21,7 +23,8 @@
           "background": "#1B2B3C",
           "ratio": 13.22,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Aktionsbutton",
@@ -29,7 +32,8 @@
           "background": "#FF9500",
           "ratio": 6.55,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Warnhinweis",
@@ -37,7 +41,8 @@
           "background": "#C07A00",
           "ratio": 3.2,
           "minimum": 3.0,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Erfolgsnachricht",
@@ -45,7 +50,8 @@
           "background": "#1F9D6F",
           "ratio": 3.15,
           "minimum": 3.0,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         }
       ],
       "worst_ratio": 3.15222851186241,
@@ -60,7 +66,8 @@
           "background": "#101820",
           "ratio": 15.98,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Karten/Textfelder",
@@ -68,7 +75,8 @@
           "background": "#1F2833",
           "ratio": 13.31,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Aktionsbutton",
@@ -76,7 +84,8 @@
           "background": "#FEE715",
           "ratio": 11.82,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Warnhinweis",
@@ -84,7 +93,8 @@
           "background": "#B17900",
           "ratio": 3.35,
           "minimum": 3.0,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Erfolgsnachricht",
@@ -92,7 +102,8 @@
           "background": "#008B5E",
           "ratio": 3.86,
           "minimum": 3.0,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         }
       ],
       "worst_ratio": 3.347112776486057,
@@ -107,7 +118,8 @@
           "background": "#f2f2f2",
           "ratio": 17.36,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Karten/Textfelder",
@@ -115,7 +127,8 @@
           "background": "#ffffff",
           "ratio": 19.44,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Aktionsbutton",
@@ -123,7 +136,8 @@
           "background": "#0d6efd",
           "ratio": 4.5,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Warnhinweis",
@@ -131,7 +145,8 @@
           "background": "#FFB74D",
           "ratio": 11.23,
           "minimum": 3.0,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Erfolgsnachricht",
@@ -139,7 +154,8 @@
           "background": "#4CC38A",
           "ratio": 8.77,
           "minimum": 3.0,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         }
       ],
       "worst_ratio": 4.500782787406787,
@@ -154,7 +170,8 @@
           "background": "#1E1E2E",
           "ratio": 12.44,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Karten/Textfelder",
@@ -162,7 +179,8 @@
           "background": "#2E2E3E",
           "ratio": 10.1,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Aktionsbutton",
@@ -170,7 +188,8 @@
           "background": "#89B4FA",
           "ratio": 6.33,
           "minimum": 4.5,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Warnhinweis",
@@ -178,7 +197,8 @@
           "background": "#8B6000",
           "ratio": 4.22,
           "minimum": 3.0,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         },
         {
           "element": "Erfolgsnachricht",
@@ -186,7 +206,8 @@
           "background": "#0F8055",
           "ratio": 3.76,
           "minimum": 3.0,
-          "passes": true
+          "passes": true,
+          "suggestion": null
         }
       ],
       "worst_ratio": 3.756479178405761,

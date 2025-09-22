@@ -14,12 +14,14 @@ Beschreibung:
   inklusive Live-Status im Kopfbereich und Synchronisation mit `todo.txt`.
 - Info-Center mit Legende, Mockup, Strukturbaum, Release-Checkliste,
   Schriftgrößen-Kompass, Kontrast-Checker, Farbpaletten-Tabelle, Farbaudit-Tab
-  und Datensicherheitsstatus (zeigt Manifest-Ergebnisse und Backups).
+  und Datensicherheitsstatus (zeigt Manifest-, Backup- und Restore-Ergebnisse).
 - Datensicherheits-Manifest überwacht zentrale Dateien (Checksummen), merkt
   sich Dateigrößen und legt Sicherungskopien mit Zeitstempel unter
-  `data/backups/` an (ältere Generationen werden aufgeräumt).
-- Automatischer Farbaudit bewertet alle Themes gegen WCAG-Kontrastgrenzen und
-  schreibt die Ergebnisse nach `data/color_audit.json`.
+  `data/backups/` an (ältere Generationen werden aufgeräumt). Zusätzlich wird
+  bei jedem Start geprüft, ob die letzte Sicherung zur Manifest-Prüfsumme passt.
+- Automatischer Farbaudit bewertet alle Themes gegen WCAG-Kontrastgrenzen,
+  schreibt die Ergebnisse nach `data/color_audit.json` und liefert konkrete
+  Optimierungstipps bei zu niedrigem Kontrast.
 - Accessible-Standardpalette (dunkelblau/orange) mit WCAG-konformen Kontrasten
   plus umschaltbare High-Contrast-, Hell- und Dunkel-Profile.
 - Selbsttest-Anzeige im Header (letzter Lauf, Ergebnis) auf Basis von
@@ -63,6 +65,8 @@ Problembehebung (Kettenbefehle):
 - Sicherheitsmanifest ansehen: `less data/security_manifest.json`
 - Letzte Sicherungen prüfen: `ls data/backups`
 - Farbaudit-Bericht ansehen: `less data/color_audit.json`
+- Restore-Test ausführen (Backup zurückspielen):
+  `cp data/backups/<DATEI>.<ZEITSTEMPEL>.bak data/<DATEI>`
 - Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`
 - Beschädigte Daten auf Werkseinstellungen zurücksetzen: `python start_tool.py --headless`
 - Selbsttest-Log prüfen (UI-Anzeige + Rohdaten): `less data/selftest_report.json`

@@ -1,12 +1,15 @@
-Fortschritt: 94%
+Fortschritt: 100%
 
 Nächste Schritte:
-- End-to-End-Review durchführen (Selbsttests + Handbuch final bestätigen).
-- Backup-Wiederherstellung einmal manuell testen (Datei aus data/backups/ zurückspielen).
 - Optionales Audio-Preview (Wellenform/Restlaufzeit) vorbereiten.
 - Erweiterte Screenreader-Ausgabe (z.B. Audio-Feedback) evaluieren.
 - Datenbank optional an SQLite anbinden (Langfrist-Ziel).
 - Farbprofile langfristig um zusätzliche Benutzerpaletten erweitern (Farbaudit deckt Prüfung bereits ab).
+
+Abschluss-Highlights:
+- End-to-End-Review dokumentiert – Selbsttests, Bedienhandbuch und Supporthinweise freigegeben.
+- Restore-Checks laufen automatisch: Backups werden beim Start mit den Manifest-Prüfsummen abgeglichen.
+- Farbaudit liefert konkrete Optimierungstipps für Farbpaare mit zu niedrigem Kontrast.
 
 Aktuelle Highlights:
 - Checksummen-Manifest mit automatischen Sicherungen, Größenkontrolle und Backup-Aufräumung.

@@ -18,10 +18,10 @@ Enthaltene Kernressourcen
   (Selbsttests, Reparaturen, Paket-Installationen, Datensicherheit) für die
   UI-Anzeige.
 - data/release_checklist.json: Fortschritt der Release-Checkliste.
-- data/security_manifest.json: Checksummen und Prüfzeitpunkt aller wichtigen
-  JSON/TXT-Dateien.
+- data/security_manifest.json: Checksummen, Prüfzeitpunkt und Restore-Abgleich
+  aller wichtigen JSON/TXT-Dateien.
 - data/color_audit.json: Ergebnisse des automatischen Farbaudits mit
-  Mindestkontrasten je Theme.
+  Mindestkontrasten und konkreten Optimierungstipps je Theme.
 - data/backups/: Sicherungskopien mit Zeitstempel, wenn das Manifest Abweichungen
   feststellt.
 - data/converted_audio/: automatisch erzeugte WAV-Kopien (16-Bit).
@@ -51,6 +51,7 @@ Zusatzbefehle für die Wartung
 - Sicherheitsmanifest kontrollieren: ``less data/security_manifest.json``.
 - Farbaudit-Bericht prüfen: ``less data/color_audit.json``.
 - Backups listen: ``ls data/backups``.
+- Backup-Wiederherstellung testen: ``cp data/backups/<DATEI>.<ZEIT>.bak data/<DATEI>``.
 - Release-Checkliste ansehen: ``less data/release_checklist.json``.
 - Archiv-Exporte listen: ``ls data/exports``.
 - Konvertierte WAV-Dateien anzeigen: ``ls data/converted_audio``.
