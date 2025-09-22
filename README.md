@@ -63,12 +63,15 @@ python start_tool.py --headless
   (Standard 10 Minuten) gespeichert.
 - **Info-Center:** Innerhalb des 3×3-Rasters liefert ein Notebook eine Legende,
   ein textuelles Mockup, den Ordner-/Dateibaum, Release-Checkliste, Schnelllinks
-  sowie Register für Schriftgrößen-Empfehlungen, einen Kontrast-Checker, eine
-  Farbpaletten-Übersicht (inkl. berechnetem WCAG-Kontrast) und einen Tab mit den
-  Ergebnissen der Datensicherheitsprüfung.
+-  sowie Register für Schriftgrößen-Empfehlungen, einen Kontrast-Checker, eine
+-  Farbpaletten-Übersicht (inkl. berechnetem WCAG-Kontrast), einen Tab mit den
+-  Ergebnissen der Datensicherheitsprüfung sowie einen Farbaudit-Tab.
 - **Datensicherheits-Manifest:** Beim Start wird ein Checksummen-Manifest für
   zentrale JSON/TXT-Dateien verifiziert. Abweichungen erzeugen automatische
-  Backups unter `data/backups/` und werden im Dashboard gemeldet.
+  Backups unter `data/backups/`, Größenabweichungen werden hervorgehoben und
+  alte Sicherungen nach fünf Generationen aufgeräumt.
+- **Automatischer Farbaudit:** Alle Farbschemata werden gegen die WCAG-Grenzwerte
+  geprüft. Die Auswertung landet im Dashboard und in `data/color_audit.json`.
 - **Startprotokoll-Panel:** Ein eigener Bereich durchsucht `logs/startup.log`,
   kopiert Zeilen in die Zwischenablage und bietet Hilfetexte für Tastaturnutzung.
 
@@ -82,6 +85,8 @@ python start_tool.py --headless
 - `data/security_manifest.json` dokumentiert die letzten Checksummen-Prüfungen
   aller wichtigen Dateien. Abweichungen erzeugen Sicherungen unter
   `data/backups/`.
+- `data/color_audit.json` hält die Ergebnisse der automatischen
+  Farbkontrast-Prüfung fest.
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
 
 ## Audio & Playlist
@@ -112,10 +117,11 @@ python start_tool.py --headless
 - **Schriftgrößen-Kompass:** Das Info-Center listet Empfehlungen für alle
   Module (Notizen, ToDo, Playlist, Info-Center, Audiosteuerung) und zeigt den
   aktuellen Zoom-Wert in Prozent an.
-- **Kontrast-Checker & Palette:** Ein integriertes Werkzeug prüft zwei beliebige
-  Farbwerte auf WCAG-Konformität (4,5:1 für Fließtext, 3,0:1 für große Schrift)
-  und hilft beim Feintuning eigener Themes. Eine zusätzliche Paletten-Tabelle
-  zeigt die aktiven Hex-Werte und den berechneten Kontrast.
+- **Kontrast-Checker, Palette & Farbaudit:** Ein integriertes Werkzeug prüft zwei
+  beliebige Farbwerte auf WCAG-Konformität (4,5:1 für Fließtext, 3,0:1 für große
+  Schrift) und hilft beim Feintuning eigener Themes. Zusätzlich sorgt ein
+  automatischer Farbaudit dafür, dass alle vordefinierten Paletten beim Start
+  geprüft werden – inklusive Tabelle der niedrigsten Kontraste und Hinweisliste.
 - **Live-Statusmeldungen:** Aktionen wie „Aufgabe erledigt“, „Notiz gespeichert“
   oder „Farbschema aktiviert“ werden im Kopfbereich angezeigt und kehren nach
   kurzer Zeit automatisch zur Übersicht (Sitzungen + offene Aufgaben) zurück.
@@ -131,7 +137,9 @@ python start_tool.py --headless
   ab.
 - `data/security_manifest.json` plus Sicherungsordner `data/backups/` zeigen den
   Verlauf der Datensicherheitsprüfungen samt angelegter Backups.
-- `Fortschritt.txt` dokumentiert den Ausbauzustand (aktuell 92 %) und zeigt die
+- `data/color_audit.json` listet die geprüften Farbschemata mit niedrigsten
+  Kontrasten und etwaigen Hinweisen.
+- `Fortschritt.txt` dokumentiert den Ausbauzustand (aktuell 94 %) und zeigt die
   letzten Meilensteine sowie anstehende Aufgaben (finaler Review).
 - `todo.txt` wird direkt aus der Oberfläche gepflegt – erledigte Punkte werden
   automatisch markiert, neue Aufgaben lassen sich weiterhin per Textdatei

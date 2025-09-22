@@ -21,6 +21,8 @@ Release-Register).
   + `data/backups/`) sowie sichtbarem Status im Dashboard.
 - Accessible-Farbpalette mit WCAG-konformen Kontrasten und zusätzlicher
   Paletten-Übersicht im Info-Center.
+- Automatischer Farbaudit, der alle Themes beim Start prüft und einen Bericht in
+  `data/color_audit.json` sowie im Info-Center bereitstellt.
 
 ## Offen ⏳
 
@@ -37,8 +39,9 @@ Release-Register).
    sowie „Als WAV normalisieren“ testen.
 3. Im Info-Center auf „Archiv als CSV/JSON“ klicken und die erzeugten Dateien in
    `data/exports/` kontrollieren.
-4. Im Info-Center die Tabs „Palette“ und „Sicherheit“ prüfen: Kontraste sollten
-   mindestens 4,5:1 erreichen, das Manifest muss „Keine Auffälligkeiten“ melden.
+4. Im Info-Center die Tabs „Palette“, „Farbaudit“ und „Sicherheit“ prüfen:
+   Kontraste müssen mindestens 4,5:1 erreichen, das Manifest darf keine
+   Auffälligkeiten melden und der Farbaudit sollte keine Warnungen enthalten.
 5. Im Bereich „Startprotokoll“ nach Begriffen wie „installiert“ oder „Fehler"
    suchen, um die Filterung zu validieren.
 

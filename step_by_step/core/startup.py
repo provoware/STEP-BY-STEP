@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
+from .color_audit import ColorAuditor
 from .logging_manager import get_logger
 from .security import SecurityManager, SecuritySummary
 
@@ -55,8 +56,17 @@ REQUIRED_FILES: Dict[Path, str] = {
                 "verified": 0,
                 "issues": [],
                 "backups": [],
+                "size_alerts": [],
+                "pruned_backups": [],
                 "updated_manifest": False,
                 "timestamp": "",
+            },
+            "color_audit": {
+                "generated_at": "",
+                "overall_status": "unknown",
+                "worst_ratio": 0.0,
+                "themes": [],
+                "issues": [],
             },
         },
         indent=2,
@@ -92,6 +102,17 @@ REQUIRED_FILES: Dict[Path, str] = {
                 },
             ],
             "updated_at": "",
+        },
+        indent=2,
+        ensure_ascii=False,
+    ),
+    Path("data/color_audit.json"): json.dumps(
+        {
+            "generated_at": "",
+            "overall_status": "unknown",
+            "worst_ratio": 0.0,
+            "themes": [],
+            "issues": [],
         },
         indent=2,
         ensure_ascii=False,
@@ -135,6 +156,7 @@ class StartupReport:
     relaunch_command: Optional[List[str]] = None
     messages: List[str] = field(default_factory=list)
     security_summary: Optional[SecuritySummary] = None
+    color_audit: Optional[Dict[str, object]] = None
 
     def add_message(self, message: str) -> None:
         self.messages.append(message)
@@ -167,6 +189,7 @@ class StartupManager:
         self.ensure_virtual_environment()
         self.ensure_dependencies()
         self.verify_data_security()
+        self.audit_color_contrast()
         self.run_self_tests()
         self._persist_report()
 
@@ -252,6 +275,37 @@ class StartupManager:
             self._log_progress(f"Sicherheitswarnung: {issue}", level="error")
         for backup in summary.backups:
             self._log_progress(f"Sicherung erstellt: {backup}")
+        for removed in summary.pruned_backups:
+            self._log_progress(f"Altes Backup entfernt: {removed}")
+
+    # ------------------------------------------------------------------
+    def audit_color_contrast(self) -> None:
+        auditor = ColorAuditor()
+        report = auditor.generate_report()
+        payload = report.to_dict()
+        self.report.color_audit = payload
+        target = Path("data/color_audit.json")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        status = report.overall_status
+        self._log_progress(
+            (
+                "Farbaudit abgeschlossen: "
+                f"{len(report.themes)} Themen geprüft, niedrigster Kontrast {report.worst_ratio:.2f}:1"
+            ),
+            level="error" if status != "ok" else "info",
+        )
+        for issue in report.issues:
+            self._log_progress(f"Farbaudit-Hinweis: {issue}", level="error")
+        refreshed_summary = SecurityManager().verify_files()
+        self.report.security_summary = refreshed_summary
+        self._log_progress(
+            (
+                "Datensicherheit nach Farbaudit aktualisiert: "
+                f"{refreshed_summary.verified} Dateien geprüft, {len(refreshed_summary.issues)} Hinweise"
+            ),
+            level="error" if refreshed_summary.issues else "info",
+        )
 
     # ------------------------------------------------------------------
     def _persist_report(self) -> None:
@@ -272,6 +326,8 @@ class StartupManager:
         }
         if self.report.security_summary:
             payload["security_summary"] = self.report.security_summary.to_dict()
+        if self.report.color_audit:
+            payload["color_audit"] = self.report.color_audit
         target = Path("data/selftest_report.json")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")

@@ -13,10 +13,13 @@ Beschreibung:
 - Aufgabenliste direkt im Dashboard abhaken (Enter/Leertaste oder Button),
   inklusive Live-Status im Kopfbereich und Synchronisation mit `todo.txt`.
 - Info-Center mit Legende, Mockup, Strukturbaum, Release-Checkliste,
-  Schriftgrößen-Kompass, Kontrast-Checker, Farbpaletten-Tabelle und
-  Datensicherheitsstatus (zeigt Manifest-Ergebnisse und Backups).
-- Datensicherheits-Manifest überwacht zentrale Dateien (Checksummen) und legt
-  Sicherungskopien mit Zeitstempel unter `data/backups/` an.
+  Schriftgrößen-Kompass, Kontrast-Checker, Farbpaletten-Tabelle, Farbaudit-Tab
+  und Datensicherheitsstatus (zeigt Manifest-Ergebnisse und Backups).
+- Datensicherheits-Manifest überwacht zentrale Dateien (Checksummen), merkt
+  sich Dateigrößen und legt Sicherungskopien mit Zeitstempel unter
+  `data/backups/` an (ältere Generationen werden aufgeräumt).
+- Automatischer Farbaudit bewertet alle Themes gegen WCAG-Kontrastgrenzen und
+  schreibt die Ergebnisse nach `data/color_audit.json`.
 - Accessible-Standardpalette (dunkelblau/orange) mit WCAG-konformen Kontrasten
   plus umschaltbare High-Contrast-, Hell- und Dunkel-Profile.
 - Selbsttest-Anzeige im Header (letzter Lauf, Ergebnis) auf Basis von
@@ -42,6 +45,7 @@ Wichtige Dateien:
 - `json-and-more.info.txt` listet alle Standardressourcen als lesbares Backup auf.
 - `data/security_manifest.json` enthält die Checksummen aller Kern-Dateien.
 - `data/backups/` speichert automatisch erzeugte Sicherungskopien.
+- `data/color_audit.json` enthält die Auswertung der Farbkontraste je Theme.
 
 Abhängigkeiten:
 - Python-Standardbibliothek
@@ -58,6 +62,7 @@ Problembehebung (Kettenbefehle):
 - Konvertierte WAV-Dateien ansehen: `ls data/converted_audio`
 - Sicherheitsmanifest ansehen: `less data/security_manifest.json`
 - Letzte Sicherungen prüfen: `ls data/backups`
+- Farbaudit-Bericht ansehen: `less data/color_audit.json`
 - Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`
 - Beschädigte Daten auf Werkseinstellungen zurücksetzen: `python start_tool.py --headless`
 - Selbsttest-Log prüfen (UI-Anzeige + Rohdaten): `less data/selftest_report.json`

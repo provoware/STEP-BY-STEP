@@ -1,46 +1,61 @@
 {
   "created_at": "2025-09-22T22:33:38.580931",
-  "updated_at": "2025-09-22T22:33:38.580931",
+  "updated_at": "2025-09-22T22:57:26.886522",
   "files": {
     "data/settings.json": {
       "sha256": "786b7c4a7140f83f704884aab1b598acfb97296da8c2e507f856b7917730d03b",
-      "last_checked": "2025-09-22T22:33:38.580931"
+      "last_checked": "2025-09-22T22:57:26.877085",
+      "size": 225
     },
     "data/todo_items.json": {
       "sha256": "5fef2f414a3a3e0d21ede064feb249cadc1395df308939325854cc58ad2be33b",
-      "last_checked": "2025-09-22T22:33:38.580931"
+      "last_checked": "2025-09-22T22:57:26.877085",
+      "size": 118
     },
     "data/playlists.json": {
       "sha256": "808dedc9528d86543943e80f46d993a089fa4da692cab774d1e5b51782e6003b",
-      "last_checked": "2025-09-22T22:33:38.580931"
+      "last_checked": "2025-09-22T22:57:26.877085",
+      "size": 102
     },
     "data/archive.json": {
       "sha256": "870bf9171a41eaf603c538ffe5326ccf62bcf039bc3f6b66b886dc512bacab4d",
-      "last_checked": "2025-09-22T22:33:38.580931"
+      "last_checked": "2025-09-22T22:57:26.877085",
+      "size": 122
     },
     "data/release_checklist.json": {
-      "sha256": "31077c94c06e51abd06090d5b32717ff4605560f9408efb7889e94d0ad1d0b9e",
-      "last_checked": "2025-09-22T22:33:38.580931"
+      "sha256": "8ed70ffd76fb6ef24372027151b669b95f870f1a40e342aa90346bf4ef83f34f",
+      "last_checked": "2025-09-22T22:57:26.877085",
+      "size": 1429
     },
     "data/selftest_report.json": {
-      "sha256": "1d203af79637b4474535946153c3012eb5337cf6428b7ba219050469ac80de85",
-      "last_checked": "2025-09-22T22:33:38.580931"
+      "sha256": "011cb16f22dfc03b3069cd38447c7df90085da25dec6a49b897e3165232397fd",
+      "last_checked": "2025-09-22T22:57:26.877085",
+      "size": 485
     },
     "data/usage_stats.json": {
       "sha256": "f532fbd578a294445194b95f04849cc21724b700910cdbcae6a25620ae61a349",
-      "last_checked": "2025-09-22T22:33:38.580931"
+      "last_checked": "2025-09-22T22:57:26.877085",
+      "size": 25
     },
     "data/persistent_notes.txt": {
       "sha256": "e3895837ea44a94f7c1f56c1a0ccfcb4b7603c83445003bd7fd9234f33482f2a",
-      "last_checked": "2025-09-22T22:33:38.580931"
+      "last_checked": "2025-09-22T22:57:26.877085",
+      "size": 41
     },
     "Fortschritt.txt": {
-      "sha256": "065df364720493d27188095d05d78bcdd96eb756ad50e27f35b54bd596f86271",
-      "last_checked": "2025-09-22T22:33:38.580931"
+      "sha256": "a3a8d37dc008c3d02254e7df8614e0ee4cb0abf73f019cd6a634aae7b80c0aba",
+      "last_checked": "2025-09-22T22:57:26.877085",
+      "size": 795
     },
     "todo.txt": {
-      "sha256": "e4fbc2b85595a8b0f256e7dd951e8faa921ff0fb474429836e2c4c58bcdafe00",
-      "last_checked": "2025-09-22T22:33:38.580931"
+      "sha256": "b6db0d2b14dc38d113e66a229b06102eb2f5bb678785ac5fe740417c0667d500",
+      "last_checked": "2025-09-22T22:57:26.877085",
+      "size": 1930
+    },
+    "data/color_audit.json": {
+      "sha256": "f2da964f94d0665e301d5ac4320ba05bbaef7b774926f4978bf09f0393679ff3",
+      "size": 4767,
+      "last_checked": "2025-09-22T22:57:26.877085"
     }
   }
 }

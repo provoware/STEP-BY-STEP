@@ -22,6 +22,7 @@ except Exception:  # pragma: no cover - ttkbootstrap optional
 from step_by_step.core import LogReader
 from step_by_step.core.config_manager import UserPreferences
 from step_by_step.core.logging_manager import get_logger
+from step_by_step.core.themes import THEME_ORDER, get_theme_colors
 from step_by_step.modules.audio.module import AudioFormatInspector, AudioPlayer, PlaylistManager
 from step_by_step.modules.database.module import DatabaseModule
 from step_by_step.modules.release.module import ReleaseChecklist
@@ -31,6 +32,7 @@ from .info_panels import (
     build_legend_panel,
     build_font_tips_panel,
     build_contrast_panel,
+    build_color_audit_panel,
     build_mockup_panel,
     build_release_panel,
     build_quicklinks_panel,
@@ -55,6 +57,7 @@ STRUCTURE_SCHEMA: Dict[str, Dict[str, Dict[str, Dict]]] = {
             "selftest_report.json": {},
             "release_checklist.json": {},
             "security_manifest.json": {},
+            "color_audit.json": {},
             "converted_audio/": {},
             "backups/": {},
             "exports/": {
@@ -71,9 +74,11 @@ STRUCTURE_SCHEMA: Dict[str, Dict[str, Dict[str, Dict]]] = {
             "core/": {
                 "__init__.py": {},
                 "config_manager.py": {},
+                "color_audit.py": {},
                 "startup.py": {},
                 "validators.py": {},
                 "log_reader.py": {},
+                "themes.py": {},
             },
             "modules/": {
                 "audio/": {"module.py": {}},
@@ -120,9 +125,11 @@ class MainWindow(tk.Tk):
             self.release_progress_text = "Noch keine Checkliste gespeichert."
         self.log_reader = LogReader(Path("logs/startup.log"))
         self.session_count: int = 0
-        self.color_mode_var = tk.StringVar(
-            value=getattr(self.preferences, "color_mode", self.preferences.contrast_theme)
-        )
+        default_mode = getattr(self.preferences, "color_mode", None) or self.preferences.contrast_theme
+        if default_mode not in THEME_ORDER:
+            default_mode = THEME_ORDER[0]
+        self.available_color_modes = THEME_ORDER
+        self.color_mode_var = tk.StringVar(value=default_mode)
         self.font_scale_var = tk.DoubleVar(
             value=float(getattr(self.preferences, "font_scale", self.preferences.font_scale))
         )
@@ -134,7 +141,12 @@ class MainWindow(tk.Tk):
         )
         self.security_var = tk.StringVar(value="Datensicherheit: lädt...")
         self.security_summary_data: Dict[str, object] = {}
+        self.color_audit_var = tk.StringVar(value="Farbaudit: lädt...")
+        self.color_audit_data: Dict[str, object] = {}
         self.preferences.color_mode = self.color_mode_var.get()
+        self.preferences.contrast_theme = (
+            "high_contrast" if self.color_mode_var.get() == "high_contrast" else self.color_mode_var.get()
+        )
         self.title("STEP-BY-STEP Dashboard")
         self.geometry("1200x800")
         self.minsize(900, 600)
@@ -153,6 +165,7 @@ class MainWindow(tk.Tk):
         self._load_stats()
         self._load_selftest_summary()
         self._apply_security_summary(self.security_summary_data or None)
+        self._apply_color_audit(self.color_audit_data or None)
         if hasattr(self, "grid_cells") and len(self.grid_cells) > 3:
             for child in self.grid_cells[3].winfo_children():
                 child.destroy()
@@ -217,7 +230,7 @@ class MainWindow(tk.Tk):
         self.mode_selector = ttk.Combobox(
             header,
             textvariable=self.color_mode_var,
-            values=("accessible", "high_contrast", "light", "dark"),
+            values=self.available_color_modes,
             state="readonly",
             font=self.fonts["body"],
         )
@@ -242,11 +255,19 @@ class MainWindow(tk.Tk):
 
         self.security_label = ttk.Label(
             header,
+            font=self.fonts["body"],
+            style="HighContrast.TLabel",
             textvariable=self.security_var,
+        )
+        self.security_label.grid(row=3, column=0, columnspan=3, sticky="w", pady=(4, 0))
+
+        self.color_audit_label = ttk.Label(
+            header,
+            textvariable=self.color_audit_var,
             font=self.fonts["body"],
             style="HighContrast.TLabel",
         )
-        self.security_label.grid(row=3, column=0, columnspan=3, sticky="w", pady=(4, 0))
+        self.color_audit_label.grid(row=4, column=0, columnspan=3, sticky="w", pady=(2, 0))
 
         self.font_scale_label = ttk.Label(
             header,
@@ -254,7 +275,7 @@ class MainWindow(tk.Tk):
             style="HighContrast.TLabel",
             font=self.fonts["body"],
         )
-        self.font_scale_label.grid(row=3, column=0, sticky="w", pady=(8, 0))
+        self.font_scale_label.grid(row=5, column=0, sticky="w", pady=(8, 0))
 
         self.font_scale_slider = ttk.Scale(
             header,
@@ -265,7 +286,7 @@ class MainWindow(tk.Tk):
             command=self._on_font_scale_slider,
             style="HighContrast.Horizontal.TScale",
         )
-        self.font_scale_slider.grid(row=3, column=1, sticky="ew", padx=(0, 10), pady=(8, 0))
+        self.font_scale_slider.grid(row=5, column=1, sticky="ew", padx=(0, 10), pady=(8, 0))
         self.font_scale_slider.configure(takefocus=True)
         self._bind_focus_highlight(
             self.font_scale_slider,
@@ -278,7 +299,7 @@ class MainWindow(tk.Tk):
             style="HighContrast.TLabel",
             font=self.fonts["body"],
         )
-        self.font_scale_value_label.grid(row=3, column=2, sticky="e", pady=(8, 0))
+        self.font_scale_value_label.grid(row=5, column=2, sticky="e", pady=(8, 0))
 
         self.font_scale_reset_button = ttk.Button(
             header,
@@ -286,7 +307,7 @@ class MainWindow(tk.Tk):
             command=self._reset_font_scale,
             style="HighContrast.TButton",
         )
-        self.font_scale_reset_button.grid(row=4, column=2, sticky="e", pady=(4, 0))
+        self.font_scale_reset_button.grid(row=6, column=2, sticky="e", pady=(4, 0))
         self._bind_focus_highlight(
             self.font_scale_reset_button,
             "Standardgröße wiederherstellen. Enter setzt 100 % Schriftgröße.",
@@ -705,6 +726,11 @@ class MainWindow(tk.Tk):
                 "Versionierte Sicherungen ansehen",
                 lambda: self._open_path(Path("data/backups")),
             ),
+            (
+                "Farbaudit",
+                "Auswertung der Farbkontraste ansehen",
+                lambda: self._open_path(Path("data/color_audit.json")),
+            ),
         ]
         build_quicklinks_panel(quicklinks_frame, quick_links, self.colors)
 
@@ -719,6 +745,10 @@ class MainWindow(tk.Tk):
         palette_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
         notebook.add(palette_frame, text="Palette")
         build_palette_panel(palette_frame, self.colors)
+
+        audit_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
+        notebook.add(audit_frame, text="Farbaudit")
+        build_color_audit_panel(audit_frame, self.color_audit_data or None, self.colors)
 
         release_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
         notebook.add(release_frame, text="Release")
@@ -1077,12 +1107,14 @@ class MainWindow(tk.Tk):
             self.selftest_var.set("Selbsttest: noch keine Daten gespeichert")
             self.selftest_label.configure(foreground=self.colors.get("warning", self.colors["accent"]))
             self._apply_security_summary(None)
+            self._apply_color_audit(None)
             return
         data = self._load_json(SELFTEST_FILE)
         if not data:
             self.selftest_var.set("Selbsttest: Daten konnten nicht gelesen werden")
             self.selftest_label.configure(foreground=self.colors.get("danger", self.colors["accent"]))
             self._apply_security_summary(None)
+            self._apply_color_audit(None)
             return
         tests = [entry for entry in data.get("self_tests", []) if isinstance(entry, dict)]
         total = len(tests)
@@ -1097,6 +1129,7 @@ class MainWindow(tk.Tk):
         self.selftest_var.set(message)
         self.selftest_label.configure(foreground=self.colors.get(color_key, self.colors["on_surface"]))
         self._apply_security_summary(data.get("security_summary"))
+        self._apply_color_audit(data.get("color_audit"))
 
     def _apply_security_summary(self, summary: Optional[Dict[str, object]]) -> None:
         if not hasattr(self, "security_label"):
@@ -1114,21 +1147,60 @@ class MainWindow(tk.Tk):
         verified = int(summary.get("verified", 0))
         issues = summary.get("issues", []) or []
         backups = summary.get("backups", []) or []
+        pruned = summary.get("pruned_backups", []) or []
         timestamp = summary.get("timestamp", "")
 
         if status == "ok":
+            extra = f" – {len(pruned)} alte Backups aufgeräumt" if pruned else ""
             message = (
-                f"Datensicherheit: {verified} Dateien geprüft – ohne Auffälligkeiten ({timestamp})"
+                f"Datensicherheit: {verified} Dateien geprüft – ohne Auffälligkeiten"
+                f"{extra} ({timestamp})"
             )
             color_key = "success"
         else:
             message = (
-                f"Datensicherheit: {len(issues)} Warnungen, "
-                f"{len(backups)} Sicherungen erstellt ({timestamp})"
+                f"Datensicherheit: {len(issues)} Hinweise, {len(backups)} Sicherungen, "
+                f"{len(pruned)} Aufräumaktionen ({timestamp})"
             )
             color_key = "danger"
         self.security_var.set(message)
         self.security_label.configure(foreground=self.colors.get(color_key, self.colors["accent"]))
+
+    def _apply_color_audit(self, audit: Optional[Dict[str, object]]) -> None:
+        if not hasattr(self, "color_audit_label"):
+            return
+        if not isinstance(audit, dict) or not audit:
+            self.color_audit_data = {}
+            self.color_audit_var.set("Farbaudit: keine Auswertung gespeichert")
+            self.color_audit_label.configure(
+                foreground=self.colors.get("warning", self.colors["accent"])
+            )
+            return
+
+        self.color_audit_data = dict(audit)
+        status = str(audit.get("overall_status", "unknown"))
+        themes = audit.get("themes", []) or []
+        issues = audit.get("issues", []) or []
+        worst_ratio = float(audit.get("worst_ratio", 0.0))
+        timestamp = self._format_timestamp(audit.get("generated_at"))
+
+        if status == "ok":
+            message = (
+                f"Farbaudit: {len(themes)} Schemata geprüft – Mindestkontraste erfüllt"
+                f" ({timestamp})"
+            )
+            color_key = "success"
+        else:
+            message = (
+                f"Farbaudit: {len(issues)} Hinweise, niedrigster Kontrast {worst_ratio:.2f}:1"
+                f" ({timestamp})"
+            )
+            color_key = "danger"
+
+        self.color_audit_var.set(message)
+        self.color_audit_label.configure(
+            foreground=self.colors.get(color_key, self.colors["accent"])
+        )
 
     def _refresh_release_data(self) -> None:
         items = self.release_checklist.load_items()
@@ -1270,53 +1342,9 @@ class MainWindow(tk.Tk):
 
     def _select_colors(self) -> Dict[str, str]:
         mode = getattr(self.preferences, "color_mode", None) or self.preferences.contrast_theme
-        if mode == "accessible":
-            return {
-                "background": "#0F1C2E",
-                "on_background": "#F5F5F5",
-                "surface": "#1B2B3C",
-                "on_surface": "#F5F5F5",
-                "accent": "#FF9500",
-                "accent_hover": "#DB7C00",
-                "success": "#4CC38A",
-                "warning": "#FFD43B",
-                "danger": "#FF6B6B",
-            }
-        if mode == "high_contrast":
-            return {
-                "background": "#101820",
-                "on_background": "#F2F2F2",
-                "surface": "#1F2833",
-                "on_surface": "#F2F2F2",
-                "accent": "#FEE715",
-                "accent_hover": "#FFC600",
-                "success": "#2EFFA0",
-                "warning": "#FFC600",
-                "danger": "#FF5C5C",
-            }
-        if mode == "dark":
-            return {
-                "background": "#1E1E2E",
-                "on_background": "#E0DEF4",
-                "surface": "#2E2E3E",
-                "on_surface": "#E0DEF4",
-                "accent": "#89B4FA",
-                "accent_hover": "#74A0F1",
-                "success": "#94F7C5",
-                "warning": "#F8BD6C",
-                "danger": "#F38BA8",
-            }
-        return {
-            "background": "#f2f2f2",
-            "on_background": "#0d0d0d",
-            "surface": "#ffffff",
-            "on_surface": "#0d0d0d",
-            "accent": "#0d6efd",
-            "accent_hover": "#0b5ed7",
-            "success": "#198754",
-            "warning": "#e29f26",
-            "danger": "#dc3545",
-        }
+        if mode not in THEME_ORDER:
+            mode = THEME_ORDER[0]
+        return get_theme_colors(mode)
 
     def _configure_fonts(self) -> None:
         scale = float(self.font_scale_var.get()) if hasattr(self, "font_scale_var") else 1.0
@@ -1387,6 +1415,8 @@ class MainWindow(tk.Tk):
             self.color_mode_label.configure(font=self.fonts["body"])
         if hasattr(self, "mode_selector"):
             self.mode_selector.configure(font=self.fonts["body"])
+        if hasattr(self, "color_audit_label"):
+            self.color_audit_label.configure(font=self.fonts["body"])
         if hasattr(self, "screenreader_hint_label"):
             self.screenreader_hint_label.configure(font=self.fonts["small"])
         if hasattr(self, "font_scale_label"):
@@ -1485,6 +1515,7 @@ class MainWindow(tk.Tk):
             self._refresh_todo_list()
         self._load_selftest_summary()
         self._apply_security_summary(self.security_summary_data or None)
+        self._apply_color_audit(self.color_audit_data or None)
 
 
 

@@ -1,4 +1,4 @@
-Fortschritt: 92%
+Fortschritt: 94%
 
 Nächste Schritte:
 - End-to-End-Review durchführen (Selbsttests + Handbuch final bestätigen).
@@ -6,8 +6,9 @@ Nächste Schritte:
 - Optionales Audio-Preview (Wellenform/Restlaufzeit) vorbereiten.
 - Erweiterte Screenreader-Ausgabe (z.B. Audio-Feedback) evaluieren.
 - Datenbank optional an SQLite anbinden (Langfrist-Ziel).
+- Farbprofile langfristig um zusätzliche Benutzerpaletten erweitern (Farbaudit deckt Prüfung bereits ab).
 
 Aktuelle Highlights:
-- Checksummen-Manifest mit automatischen Sicherungen für alle Kern-Dateien.
-- Accessible-Farbpalette inklusive Paletten-Tab mit berechnetem WCAG-Kontrast.
-- Sicherheitsstatus und Manifest-Hinweise direkt im Header sowie im Info-Center.
+- Checksummen-Manifest mit automatischen Sicherungen, Größenkontrolle und Backup-Aufräumung.
+- Automatischer Farbaudit für alle Themes mit Bericht unter data/color_audit.json.
+- Sicherheits-, Audit- und Release-Informationen direkt im Header sowie im Info-Center.

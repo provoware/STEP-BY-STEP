@@ -21,5 +21,8 @@
 - Für neue Farbschemata immer die Palette über `build_palette_panel` testen und
   sicherstellen, dass Hintergrund/Text mindestens den WCAG-Kontrast 4,5:1
   erfüllen.
+- Palette-Definitionen zentral in `step_by_step/core/themes.py` pflegen und nach
+  Änderungen den Farbaudit (Startroutine oder `ColorAuditor`) erneut laufen
+  lassen.
 - Neue Module liefern Docstrings am Kopf und exportieren ihre wichtigsten
   Klassen/Funktionen über `__all__`.

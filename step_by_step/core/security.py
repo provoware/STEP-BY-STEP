@@ -24,6 +24,7 @@ SENSITIVE_FILES: Iterable[Path] = (
     Path("data/archive.json"),
     Path("data/release_checklist.json"),
     Path("data/selftest_report.json"),
+    Path("data/color_audit.json"),
     Path("data/usage_stats.json"),
     Path("data/persistent_notes.txt"),
     Path("Fortschritt.txt"),
@@ -39,6 +40,8 @@ class SecuritySummary:
     verified: int = 0
     issues: List[str] = field(default_factory=list)
     backups: List[str] = field(default_factory=list)
+    size_alerts: List[str] = field(default_factory=list)
+    pruned_backups: List[str] = field(default_factory=list)
     updated_manifest: bool = False
     timestamp: str = dt.datetime.now().isoformat()
 
@@ -48,6 +51,8 @@ class SecuritySummary:
             "verified": self.verified,
             "issues": list(self.issues),
             "backups": list(self.backups),
+            "size_alerts": list(self.size_alerts),
+            "pruned_backups": list(self.pruned_backups),
             "updated_manifest": self.updated_manifest,
             "timestamp": self.timestamp,
         }
@@ -89,6 +94,7 @@ class SecurityManager:
             rel_path = str(path)
             entry = files_section.setdefault(rel_path, {})
             checksum = self._hash_file(path)
+            size = self._file_size(path)
             summary.verified += 1
 
             expected = entry.get("sha256")
@@ -97,10 +103,12 @@ class SecurityManager:
                 summary.status = "attention"
                 summary.updated_manifest = True
                 entry["sha256"] = "missing"
+                entry["size"] = None
                 entry["last_checked"] = summary.timestamp
                 continue
             if expected is None:
                 entry["sha256"] = checksum
+                entry["size"] = size
                 summary.updated_manifest = True
                 self.logger.info("Manifest ergänzt: %s", rel_path)
             elif checksum != expected:
@@ -110,10 +118,24 @@ class SecurityManager:
                 )
                 summary.issues.append(f"{rel_path}: {message}")
                 summary.backups.append(str(backup_file))
+                pruned = self._prune_old_backups(path.name)
+                if pruned:
+                    summary.pruned_backups.extend(str(item) for item in pruned)
                 entry["sha256"] = checksum
+                entry["size"] = size
                 summary.updated_manifest = True
                 summary.status = "attention"
                 self.logger.warning("%s – neue Prüfsumme gespeichert", message)
+            else:
+                previous_size = entry.get("size")
+                if previous_size is not None and size is not None and previous_size != size:
+                    alert = (
+                        f"{rel_path}: Dateigröße von {previous_size} auf {size} Byte geändert"
+                    )
+                    summary.issues.append(alert)
+                    summary.size_alerts.append(alert)
+                    summary.status = "attention"
+                entry["size"] = size
 
             entry["last_checked"] = summary.timestamp
 
@@ -135,6 +157,7 @@ class SecurityManager:
         for path in SENSITIVE_FILES:
             payload["files"][str(path)] = {
                 "sha256": self._hash_file(path),
+                "size": self._file_size(path),
                 "last_checked": timestamp,
             }
         payload["created_at"] = timestamp
@@ -151,7 +174,7 @@ class SecurityManager:
             return {}
 
     def _write_manifest(self, manifest: Dict[str, object]) -> None:
-        manifest.setdefault("updated_at", dt.datetime.now().isoformat())
+        manifest["updated_at"] = dt.datetime.now().isoformat()
         self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
         self.manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
 
@@ -164,6 +187,29 @@ class SecurityManager:
             for chunk in iter(lambda: handle.read(65536), b""):
                 sha256.update(chunk)
         return sha256.hexdigest()
+
+    def _file_size(self, path: Path) -> Optional[int]:
+        try:
+            return path.stat().st_size
+        except FileNotFoundError:
+            return None
+
+    def _prune_old_backups(self, original_name: str, keep: int = 5) -> List[Path]:
+        if not self.backup_dir.exists():
+            return []
+        candidates = sorted(
+            self.backup_dir.glob(f"{original_name}.*.bak"),
+            key=lambda item: item.stat().st_mtime,
+            reverse=True,
+        )
+        removed: List[Path] = []
+        for obsolete in candidates[keep:]:
+            try:
+                obsolete.unlink()
+                removed.append(obsolete)
+            except OSError:
+                self.logger.warning("Backup konnte nicht gelöscht werden: %s", obsolete)
+        return removed
 
     def _create_backup(self, path: Path) -> Path:
         self.backup_dir.mkdir(parents=True, exist_ok=True)

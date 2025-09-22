@@ -23,12 +23,17 @@
     {
       "title": "Datensicherheitsmanifest mit Backups",
       "done": true,
-      "details": "Checksummen werden geprüft, Abweichungen automatisch gesichert."
+      "details": "Checksummen und Dateigrößen werden geprüft, Abweichungen automatisch gesichert und alte Backups bereinigt."
     },
     {
       "title": "Accessible Farbprofile final überprüfen",
       "done": true,
       "details": "Palette + Kontrast-Tab dokumentieren WCAG-konforme Werte."
+    },
+    {
+      "title": "Farbaudit automatisieren",
+      "done": true,
+      "details": "Alle Themes werden geprüft, Bericht liegt unter data/color_audit.json."
     },
     {
       "title": "Abschließender Release-Review",

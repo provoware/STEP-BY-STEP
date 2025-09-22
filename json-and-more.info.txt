@@ -20,6 +20,8 @@ Enthaltene Kernressourcen
 - data/release_checklist.json: Fortschritt der Release-Checkliste.
 - data/security_manifest.json: Checksummen und Prüfzeitpunkt aller wichtigen
   JSON/TXT-Dateien.
+- data/color_audit.json: Ergebnisse des automatischen Farbaudits mit
+  Mindestkontrasten je Theme.
 - data/backups/: Sicherungskopien mit Zeitstempel, wenn das Manifest Abweichungen
   feststellt.
 - data/converted_audio/: automatisch erzeugte WAV-Kopien (16-Bit).
@@ -35,8 +37,8 @@ So wird alles repariert
 5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
 6. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
    120 %-Basisschrift, ein ToDo-Kontrollfeld zum direkten Abhaken, ein
-   Kontrast-Checker samt Farbpaletten-Tabelle und ein Sicherheits-Tab bereit,
-   damit alles sichtbar und nachvollziehbar bleibt.
+   Kontrast-Checker samt Farbpaletten- und Farbaudit-Tab sowie ein
+   Sicherheits-Tab bereit, damit alles sichtbar und nachvollziehbar bleibt.
 
 Zusatzbefehle für die Wartung
 ------------------------------
@@ -47,6 +49,7 @@ Zusatzbefehle für die Wartung
 - Tool im Diagnosemodus starten: ``python start_tool.py --headless``.
 - Selbsttest-Report ansehen: ``less data/selftest_report.json``.
 - Sicherheitsmanifest kontrollieren: ``less data/security_manifest.json``.
+- Farbaudit-Bericht prüfen: ``less data/color_audit.json``.
 - Backups listen: ``ls data/backups``.
 - Release-Checkliste ansehen: ``less data/release_checklist.json``.
 - Archiv-Exporte listen: ``ls data/exports``.

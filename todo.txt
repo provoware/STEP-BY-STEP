@@ -25,5 +25,7 @@
 - [x] Datensicherheitsmanifest mit automatischen Backups integrieren
 - [x] Sicherheitsstatus im Header und Info-Center sichtbar machen
 - [x] Accessible-Farbpalette samt WCAG-Prüfung dokumentieren
+- [x] Automatischen Farbaudit integrieren und Bericht speichern
+- [x] Sicherheitsmanifest um Größenkontrolle und Backup-Aufräumung erweitern
 - [ ] Abschlussprüfung dokumentieren (End-to-End-Test + Handbuch-Freigabe)
 - [ ] Backup-Wiederherstellung testen und dokumentieren

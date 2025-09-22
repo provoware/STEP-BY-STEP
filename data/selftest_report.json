@@ -10,7 +10,16 @@
     "verified": 0,
     "issues": [],
     "backups": [],
+    "size_alerts": [],
+    "pruned_backups": [],
     "updated_manifest": false,
     "timestamp": ""
+  },
+  "color_audit": {
+    "generated_at": "",
+    "overall_status": "unknown",
+    "worst_ratio": 0.0,
+    "themes": [],
+    "issues": []
   }
 }

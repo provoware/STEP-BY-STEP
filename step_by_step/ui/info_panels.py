@@ -358,6 +358,106 @@ def build_palette_panel(parent: ttk.LabelFrame, colors: Dict[str, str]) -> None:
     tree.tag_configure("ok", foreground="#2e8540")
     tree.tag_configure("warn", foreground="#c43c00")
 
+
+def build_color_audit_panel(
+    parent: ttk.LabelFrame,
+    audit: Optional[Dict[str, object]],
+    colors: Optional[Dict[str, str]] = None,
+) -> None:
+    """Show summary of the automated color contrast audit."""
+
+    heading_font = tkfont.nametofont("TkHeadingFont")
+    body_font = tkfont.nametofont("TkDefaultFont")
+    ttk.Label(parent, text="Farbaudit", font=heading_font).pack(anchor="w")
+
+    if not audit:
+        ttk.Label(
+            parent,
+            text=(
+                "Noch keine Auswertung vorhanden – Startroutine (start_tool.py) ausführen,"
+                " um den Farbaudit zu erstellen."
+            ),
+            wraplength=320,
+            font=body_font,
+            justify="left",
+        ).pack(anchor="w", pady=(4, 0))
+        return
+
+    status = str(audit.get("overall_status", "unknown"))
+    worst_ratio = float(audit.get("worst_ratio", 0.0))
+    generated = audit.get("generated_at", "")
+    summary_text = (
+        "Ergebnis: Alle Mindestkontraste erfüllt"
+        if status == "ok"
+        else f"Ergebnis: Hinweise gefunden – niedrigster Kontrast {worst_ratio:.2f}:1"
+    )
+    ttk.Label(
+        parent,
+        text=f"{summary_text}\nStand: {generated}",
+        font=body_font,
+        justify="left",
+    ).pack(anchor="w", pady=(2, 6))
+
+    tree = ttk.Treeview(parent, columns=("schema", "kontrast", "status"), show="headings", height=5)
+    tree.heading("schema", text="Schema")
+    tree.heading("kontrast", text="Niedrigster Kontrast")
+    tree.heading("status", text="Bewertung")
+    tree.column("schema", width=120, anchor="w")
+    tree.column("kontrast", width=120, anchor="w")
+    tree.column("status", width=120, anchor="w")
+    if colors:
+        tree.configure(
+            background=colors.get("surface", "white"),
+            foreground=colors.get("on_surface", "black"),
+            fieldbackground=colors.get("surface", "white"),
+        )
+    tree.configure(font=body_font)
+    tree.pack(fill="both", expand=True)
+
+    for theme in audit.get("themes", []) or []:
+        name = theme.get("name", "")
+        ratio = float(theme.get("worst_ratio", 0.0))
+        status_text = "OK" if theme.get("status") == "ok" else "Bitte prüfen"
+        tag = "ok" if theme.get("status") == "ok" else "warn"
+        tree.insert(
+            "",
+            "end",
+            values=(name, f"{ratio:.2f}:1", status_text),
+            tags=(tag,),
+        )
+
+    tree.tag_configure("ok", foreground="#2e8540")
+    tree.tag_configure("warn", foreground="#c43c00")
+
+    issues = audit.get("issues", []) or []
+    if issues:
+        ttk.Label(parent, text="Hinweise", font=heading_font).pack(anchor="w", pady=(6, 0))
+        issue_tree = ttk.Treeview(parent, columns=("hinweis",), show="headings", height=4)
+        issue_tree.heading("hinweis", text="Beschreibung")
+        issue_tree.column("hinweis", width=320, anchor="w")
+        if colors:
+            issue_tree.configure(
+                background=colors.get("surface", "white"),
+                foreground=colors.get("on_surface", "black"),
+                fieldbackground=colors.get("surface", "white"),
+            )
+        issue_tree.configure(font=body_font)
+        issue_tree.pack(fill="both", expand=True)
+        for issue in issues:
+            issue_tree.insert("", "end", values=(issue,), tags=("warn",))
+        issue_tree.tag_configure("warn", foreground="#c43c00")
+
+    ttk.Label(
+        parent,
+        text=(
+            "Tipp: Die Ergebnisse stehen auch in data/color_audit.json."
+            " Für eigene Paletten zuerst im Header ein Farbschema wählen."
+        ),
+        wraplength=320,
+        justify="left",
+        font=body_font,
+    ).pack(anchor="w", pady=(6, 0))
+
     ttk.Label(
         parent,
         text="Tipp: Im Header kann zwischen High Contrast, Accessible und Dunkel/Hell gewechselt werden.",
@@ -391,7 +491,9 @@ def build_security_panel(
     status = str(summary.get("status", "unknown"))
     verified = int(summary.get("verified", 0))
     issues = summary.get("issues", [])
+    size_alerts = summary.get("size_alerts", []) or []
     backups = summary.get("backups", [])
+    pruned = summary.get("pruned_backups", []) or []
     timestamp = summary.get("timestamp", "")
 
     message = (
@@ -409,10 +511,17 @@ def build_security_panel(
     tree.configure(font=body_font)
     tree.pack(fill="both", expand=True)
 
+    known_size_alerts = set(size_alerts)
     for entry in issues:
+        if entry in known_size_alerts:
+            continue
         tree.insert("", "end", values=("Warnung", entry), tags=("warn",))
+    for entry in size_alerts:
+        tree.insert("", "end", values=("Größe", entry), tags=("warn",))
     for backup in backups:
         tree.insert("", "end", values=("Backup", backup))
+    for cleanup in pruned:
+        tree.insert("", "end", values=("Bereinigt", cleanup))
 
     tree.tag_configure("warn", foreground="#c43c00")
 
@@ -474,6 +583,7 @@ __all__ = [
     "build_legend_panel",
     "build_font_tips_panel",
     "build_contrast_panel",
+    "build_color_audit_panel",
     "build_palette_panel",
     "build_mockup_panel",
     "build_structure_panel",
