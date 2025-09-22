@@ -6,8 +6,10 @@ Beschreibung:
 - Enthält Module für Datenbank-Archiv, Audioplaylist und Aufgabenverwaltung.
 - Startet über `python start_tool.py`, legt automatisch eine virtuelle Umgebung `.venv` an
   und prüft/instal­liert Abhängigkeiten selbstständig.
-- Audioplayer (WAV) mit Lautstärkeregler, Suchfunktionen im Archiv und
-  Schnelllinks zu wichtigen Dateien.
+- Audioplayer (WAV) mit Lautstärkeregler, Suchfunktionen im Archiv,
+  Schnelllinks zu wichtigen Dateien und sichtbarem Fokusfeedback.
+- Gut sichtbarer Schriftgrößenregler (Zoom 80–160 %) mit Prozentanzeige,
+  Reset-Knopf und Statusmeldungen bei Fokuswechsel.
 
 Anleitung:
 1. Python 3.10+ installieren.

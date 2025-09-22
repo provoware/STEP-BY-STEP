@@ -21,6 +21,8 @@ So wird alles repariert
 2. Das Tool legt automatisch eine virtuelle Umgebung ``.venv`` an.
 3. Danach installiert es alle Pakete aus ``requirements.txt``.
 4. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
+5. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %) und gut sichtbare
+   Fokusmeldungen zur Verfügung, damit alle Bereiche sofort erkennbar bleiben.
 
 Zusatzbefehle für die Wartung
 ------------------------------

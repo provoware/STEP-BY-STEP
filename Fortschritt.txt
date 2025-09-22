@@ -1,4 +1,4 @@
-Fortschritt: 55%
+Fortschritt: 58%
 
 Nächste Schritte:
 - Aufgaben im Dashboard direkt abhaken und zurückschreiben.
@@ -6,3 +6,5 @@ Nächste Schritte:
 - Datenbankmodul perspektivisch an SQLite anbinden.
 - Screenreader-Feedback weiter ausbauen (z.B. sprachliche Rückmeldungen).
 - Optionales Audio-Preview (Wellenform/Restlaufzeit) vorbereiten.
+- Schriftgrößen-Empfehlungen direkt im Info-Center ergänzen.
+- Automatischen Kontrast-Check vorbereiten, um eigene Farbprofile zu prüfen.

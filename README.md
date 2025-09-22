@@ -30,9 +30,15 @@ python start_tool.py --headless
 - **Hoher Kontrast:** Die Oberfläche nutzt einen High-Contrast-Stil für beste
   Lesbarkeit (z.B. dunkler Hintergrund mit gelbem Akzent) und passt Buttons,
   Listen und Notizfelder automatisch an.
+- **Zoom-Regler:** Ein gut sichtbarer Schriftgrößenregler mit Prozentanzeige
+  erlaubt stufenloses Vergrößern (Zoom) zwischen 80 % und 160 % inklusive
+  Reset-Knopf.
 - **Audioplayer:** Playlistbereich mit Abspiel- und Stopp-Taste, Lautstärkeregler
   und Hinweisen für Screenreader. Unterstützt aktuell WAV-Dateien über
   `simpleaudio`.
+- **Status-Feedback:** Fokussierte Elemente (z.B. Notizfeld, Listen, Regler)
+  melden sich im Statusfeld und erhalten sichtbare Fokusrahmen für bessere
+  Orientierung mit Tastatur oder Screenreader.
 - **Farbprofile:** Umschaltbarer Modus im Header (High Contrast, Hell, Dunkel)
   inklusive direktem Feedback und automatischer Aktualisierung aller Bereiche.
 - **Schnelllinks:** Info-Center mit Buttons zum Öffnen von `todo.txt`,
@@ -56,7 +62,8 @@ python start_tool.py --headless
 
 - WAV-Dateien (unkomprimiertes Audio) werden per `simpleaudio` abgespielt.
 - Die Lautstärke lässt sich per Regler (0–100 %) einstellen; das Tool merkt sich
-  die letzte Einstellung.
+  die letzte Einstellung. Der Regler kann komplett mit der Tastatur bedient
+  werden und nutzt denselben Kontraststil wie der Schriftgrößenregler.
 - Fehlende Abhängigkeiten meldet das Tool direkt und schlagen auch im Log auf.
 - Die Playlist ist duplikatfrei und sortiert die Titel automatisch alphabetisch.
 

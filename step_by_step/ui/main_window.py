@@ -8,6 +8,7 @@ import logging
 import subprocess
 import sys
 import tkinter as tk
+import tkinter.font as tkfont
 import webbrowser
 from pathlib import Path
 from tkinter import messagebox, ttk
@@ -83,12 +84,17 @@ class MainWindow(tk.Tk):
         self.color_mode_var = tk.StringVar(
             value=getattr(self.preferences, "color_mode", self.preferences.contrast_theme)
         )
+        self.font_scale_var = tk.DoubleVar(
+            value=float(getattr(self.preferences, "font_scale", self.preferences.font_scale))
+        )
+        self.font_scale_display_var = tk.StringVar(value="100 %")
         self.preferences.color_mode = self.color_mode_var.get()
         self.title("STEP-BY-STEP Dashboard")
         self.geometry("1200x800")
         self.minsize(900, 600)
         self.style = self._init_style()
         self._configure_theme()
+        self._configure_fonts()
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
@@ -112,49 +118,56 @@ class MainWindow(tk.Tk):
         header.columnconfigure(2, weight=1)
 
         self.clock_var = tk.StringVar(value="--:--:--")
-        clock_label = ttk.Label(
+        self.clock_label = ttk.Label(
             header,
             textvariable=self.clock_var,
-            font=("Arial", 16, "bold"),
+            font=self.fonts["title"],
             justify="left",
             style="HighContrast.TLabel",
         )
-        clock_label.grid(row=0, column=0, sticky="w")
+        self.clock_label.grid(row=0, column=0, sticky="w")
 
         self.stats_var = tk.StringVar(value="Bereit für Aktionen")
-        stats_label = ttk.Label(
+        self.stats_label = ttk.Label(
             header,
             textvariable=self.stats_var,
-            font=("Arial", 12),
+            font=self.fonts["body"],
             justify="center",
             style="HighContrast.TLabel",
         )
-        stats_label.grid(row=0, column=1, sticky="n")
+        self.stats_label.grid(row=0, column=1, sticky="n")
 
         self.path_var = tk.StringVar(value=str(Path.cwd()))
-        path_label = ttk.Label(
+        self.path_label = ttk.Label(
             header,
             textvariable=self.path_var,
-            font=("Arial", 10),
+            font=self.fonts["small"],
             style="HighContrast.TLabel",
         )
-        path_label.grid(row=0, column=2, sticky="e")
+        self.path_label.grid(row=0, column=2, sticky="e")
 
-        ttk.Label(
+        self.color_mode_label = ttk.Label(
             header,
             text="Farbschema wählen:",
             style="HighContrast.TLabel",
-        ).grid(row=1, column=0, sticky="w", pady=(8, 0))
+            font=self.fonts["body"],
+        )
+        self.color_mode_label.grid(row=1, column=0, sticky="w", pady=(8, 0))
         self.mode_selector = ttk.Combobox(
             header,
             textvariable=self.color_mode_var,
             values=("high_contrast", "light", "dark"),
             state="readonly",
+            font=self.fonts["body"],
         )
         self.mode_selector.grid(row=1, column=1, sticky="ew", pady=(8, 0))
         self.mode_selector.bind("<<ComboboxSelected>>", self._on_color_mode_change)
+        self._bind_focus_highlight(
+            self.mode_selector,
+            "Farbschema-Selector aktiv. Mit Pfeiltasten wechseln, Enter bestätigt.",
+        )
 
-        ttk.Label(
+        self.screenreader_hint_label = ttk.Label(
             header,
             text=(
                 "Hinweis (Screenreader): Mit Tab durch die Bereiche wechseln. "
@@ -162,7 +175,53 @@ class MainWindow(tk.Tk):
             ),
             wraplength=320,
             style="HighContrast.TLabel",
-        ).grid(row=1, column=2, sticky="e", pady=(8, 0))
+            font=self.fonts["small"],
+        )
+        self.screenreader_hint_label.grid(row=1, column=2, sticky="e", pady=(8, 0))
+
+        self.font_scale_label = ttk.Label(
+            header,
+            text="Schriftgröße (Zoom):",
+            style="HighContrast.TLabel",
+            font=self.fonts["body"],
+        )
+        self.font_scale_label.grid(row=2, column=0, sticky="w", pady=(8, 0))
+
+        self.font_scale_slider = ttk.Scale(
+            header,
+            from_=0.8,
+            to=1.6,
+            orient="horizontal",
+            variable=self.font_scale_var,
+            command=self._on_font_scale_slider,
+            style="HighContrast.Horizontal.TScale",
+        )
+        self.font_scale_slider.grid(row=2, column=1, sticky="ew", padx=(0, 10), pady=(8, 0))
+        self.font_scale_slider.configure(takefocus=True)
+        self._bind_focus_highlight(
+            self.font_scale_slider,
+            "Schriftgrößenregler aktiv. Links verkleinert, rechts vergrößert den Text.",
+        )
+
+        self.font_scale_value_label = ttk.Label(
+            header,
+            textvariable=self.font_scale_display_var,
+            style="HighContrast.TLabel",
+            font=self.fonts["body"],
+        )
+        self.font_scale_value_label.grid(row=2, column=2, sticky="e", pady=(8, 0))
+
+        self.font_scale_reset_button = ttk.Button(
+            header,
+            text="Standardgröße",
+            command=self._reset_font_scale,
+            style="HighContrast.TButton",
+        )
+        self.font_scale_reset_button.grid(row=3, column=2, sticky="e", pady=(4, 0))
+        self._bind_focus_highlight(
+            self.font_scale_reset_button,
+            "Standardgröße wiederherstellen. Enter setzt 100 % Schriftgröße.",
+        )
 
     # Sidebars ---------------------------------------------------------------
     def _create_sidebars(self) -> None:
@@ -176,21 +235,27 @@ class MainWindow(tk.Tk):
 
         toggle_frame = ttk.Frame(self.sidebar_container, style="HighContrast.TFrame")
         toggle_frame.grid(row=0, column=1, sticky="n")
-        ttk.Button(
+        left_toggle = ttk.Button(
             toggle_frame,
             text="Links ein/aus",
             command=self._toggle_left,
             style="HighContrast.TButton",
-        ).grid(
-            row=0, column=0, pady=5
         )
-        ttk.Button(
+        left_toggle.grid(row=0, column=0, pady=5)
+        self._bind_focus_highlight(
+            left_toggle,
+            "Linke Seitenleiste umschalten. Enter klappt Hilfebereich links ein oder aus.",
+        )
+        right_toggle = ttk.Button(
             toggle_frame,
             text="Rechts ein/aus",
             command=self._toggle_right,
             style="HighContrast.TButton",
-        ).grid(
-            row=1, column=0, pady=5
+        )
+        right_toggle.grid(row=1, column=0, pady=5)
+        self._bind_focus_highlight(
+            right_toggle,
+            "Rechte Seitenleiste umschalten. Enter blendet zusätzliche Tipps ein oder aus.",
         )
 
         self.main_container = ttk.Frame(self.sidebar_container, style="HighContrast.TFrame")
@@ -205,7 +270,7 @@ class MainWindow(tk.Tk):
         ttk.Label(
             sidebar,
             text=title,
-            font=("Arial", 12, "bold"),
+            font=self.fonts["heading"],
             style="HighContrast.TLabel",
         ).pack(anchor="w")
         ttk.Label(
@@ -216,28 +281,36 @@ class MainWindow(tk.Tk):
             ),
             wraplength=180,
             style="HighContrast.TLabel",
+            font=self.fonts["body"],
         ).pack(anchor="w", pady=5)
         ttk.Label(
             sidebar,
             text="Tastatur: Tab wählt Buttons, Leertaste führt die Aktion aus.",
             wraplength=180,
             style="HighContrast.TLabel",
+            font=self.fonts["small"],
         ).pack(anchor="w", pady=(0, 5))
-        ttk.Button(
+        save_button = ttk.Button(
             sidebar,
             text="Notizen speichern",
             command=self._save_notes,
             style="HighContrast.TButton",
-        ).pack(
-            fill="x", pady=5
         )
-        ttk.Button(
+        save_button.pack(fill="x", pady=5)
+        self._bind_focus_highlight(
+            save_button,
+            "Knopf Notizen speichern aktiv. Enter speichert sofort alle Notizen.",
+        )
+        stats_button = ttk.Button(
             sidebar,
             text="Statistik aktualisieren",
             command=self._save_stats,
             style="HighContrast.TButton",
-        ).pack(
-            fill="x", pady=5
+        )
+        stats_button.pack(fill="x", pady=5)
+        self._bind_focus_highlight(
+            stats_button,
+            "Knopf Statistik aktualisieren aktiv. Enter schreibt aktuelle Werte weg.",
         )
         return sidebar
 
@@ -290,7 +363,7 @@ class MainWindow(tk.Tk):
         ttk.Label(
             parent,
             text="Notizen",
-            font=("Arial", 12, "bold"),
+            font=self.fonts["heading"],
             style="HighContrast.TLabel",
         ).pack(anchor="w")
         self.note_text = tk.Text(
@@ -303,20 +376,29 @@ class MainWindow(tk.Tk):
             selectbackground=self.colors["accent"],
             selectforeground=self.colors["surface"],
             takefocus=True,
+            font=self.fonts["body"],
+            highlightthickness=2,
+            highlightcolor=self.colors["accent"],
+            highlightbackground=self.colors["background"],
         )
         self.note_text.pack(fill="both", expand=True)
         self.note_text.bind("<FocusOut>", lambda _event: self._auto_save())
+        self._bind_focus_highlight(
+            self.note_text,
+            "Notizblock fokussiert. Tippen Sie direkt, speichern erfolgt automatisch.",
+        )
         ttk.Label(
             parent,
             text="Tipp: Strg+S speichert zusätzlich manuell.",
             style="HighContrast.TLabel",
+            font=self.fonts["small"],
         ).pack(anchor="w", pady=(4, 0))
 
     def _build_todo_preview(self, parent: ttk.LabelFrame) -> None:
         ttk.Label(
             parent,
             text="ToDo Vorschau",
-            font=("Arial", 12, "bold"),
+            font=self.fonts["heading"],
             style="HighContrast.TLabel",
         ).pack(anchor="w")
         self.todo_list = tk.Listbox(
@@ -328,22 +410,31 @@ class MainWindow(tk.Tk):
             selectforeground=self.colors["surface"],
             activestyle="dotbox",
             exportselection=False,
+            font=self.fonts["body"],
+            highlightthickness=2,
+            highlightcolor=self.colors["accent"],
+            highlightbackground=self.colors["background"],
         )
         self.todo_list.pack(fill="both", expand=True)
         for item in self._load_todo_items():
             self.todo_list.insert(tk.END, item)
+        self._bind_focus_highlight(
+            self.todo_list,
+            "ToDo-Liste aktiv. Mit Pfeiltasten navigieren, Enter plant das Abhaken.",
+        )
         ttk.Label(
             parent,
             text="Hinweis: Enter markiert Aufgaben als erledigt (geplant).",
             wraplength=260,
             style="HighContrast.TLabel",
+            font=self.fonts["small"],
         ).pack(anchor="w", pady=(4, 0))
 
     def _build_playlist_preview(self, parent: ttk.LabelFrame) -> None:
         ttk.Label(
             parent,
             text="Playlist",
-            font=("Arial", 12, "bold"),
+            font=self.fonts["heading"],
             style="HighContrast.TLabel",
         ).pack(anchor="w")
         ttk.Label(
@@ -351,6 +442,7 @@ class MainWindow(tk.Tk):
             text="Screenreader-Tipp: Mit Pfeiltasten Titel wählen, Enter startet Wiedergabe.",
             wraplength=260,
             style="HighContrast.TLabel",
+            font=self.fonts["small"],
         ).pack(anchor="w", pady=(2, 4))
         self.playlist_list = tk.Listbox(
             parent,
@@ -361,8 +453,16 @@ class MainWindow(tk.Tk):
             selectforeground=self.colors["surface"],
             activestyle="dotbox",
             exportselection=False,
+            font=self.fonts["body"],
+            highlightthickness=2,
+            highlightcolor=self.colors["accent"],
+            highlightbackground=self.colors["background"],
         )
         self.playlist_list.pack(fill="both", expand=True)
+        self._bind_focus_highlight(
+            self.playlist_list,
+            "Playlist aktiv. Pfeiltasten wählen Titel, Enter spielt den Titel.",
+        )
         self.playlist_list.bind("<Double-Button-1>", lambda _event: self._play_selected_track())
         self.playlist_list.bind("<Return>", lambda _event: self._play_selected_track())
 
@@ -385,7 +485,12 @@ class MainWindow(tk.Tk):
 
         volume_frame = ttk.Frame(parent, style="HighContrast.TFrame")
         volume_frame.pack(fill="x", pady=(6, 0))
-        ttk.Label(volume_frame, text="Lautstärke", style="HighContrast.TLabel").pack(side="left")
+        ttk.Label(
+            volume_frame,
+            text="Lautstärke",
+            style="HighContrast.TLabel",
+            font=self.fonts["body"],
+        ).pack(side="left")
         self.volume_var = tk.DoubleVar(value=getattr(self.preferences, "audio_volume", 0.8) * 100)
         self.volume_slider = ttk.Scale(
             volume_frame,
@@ -393,12 +498,19 @@ class MainWindow(tk.Tk):
             to=100,
             variable=self.volume_var,
             command=self._on_volume_change,
+            style="HighContrast.Horizontal.TScale",
         )
         self.volume_slider.pack(side="left", fill="x", expand=True, padx=8)
+        self.volume_slider.configure(takefocus=True)
+        self._bind_focus_highlight(
+            self.volume_slider,
+            "Lautstärkeregler aktiv. Links leiser, rechts lauter.",
+        )
         self.volume_label = ttk.Label(
             volume_frame,
             text=f"{int(self.volume_var.get())}%",
             style="HighContrast.TLabel",
+            font=self.fonts["body"],
         )
         self.volume_label.pack(side="left")
 
@@ -407,6 +519,7 @@ class MainWindow(tk.Tk):
             parent,
             text=backend_hint,
             style="HighContrast.TLabel",
+            font=self.fonts["small"],
         )
         self.audio_status.pack(anchor="w", pady=(6, 0))
         if not self.audio_player.backend_available:
@@ -632,6 +745,15 @@ class MainWindow(tk.Tk):
             background=self.colors["background"],
             foreground=self.colors["on_background"],
         )
+        style.configure(
+            "HighContrast.Horizontal.TScale",
+            background=self.colors["background"],
+            troughcolor=self.colors["surface"],
+        )
+        style.map(
+            "HighContrast.Horizontal.TScale",
+            background=[("active", self.colors["accent_hover"])],
+        )
 
     def _select_colors(self) -> Dict[str, str]:
         mode = getattr(self.preferences, "color_mode", None) or self.preferences.contrast_theme
@@ -662,6 +784,104 @@ class MainWindow(tk.Tk):
             "accent_hover": "#0b5ed7",
         }
 
+    def _configure_fonts(self) -> None:
+        scale = float(self.font_scale_var.get()) if hasattr(self, "font_scale_var") else 1.0
+        clamped = max(0.8, min(1.6, scale))
+        if abs(clamped - scale) > 1e-6 and hasattr(self, "font_scale_var"):
+            self.font_scale_var.set(clamped)
+        if not hasattr(self, "fonts"):
+            self.fonts = {
+                "title": tkfont.Font(family="Arial", weight="bold"),
+                "heading": tkfont.Font(family="Arial", weight="bold"),
+                "body": tkfont.Font(family="Arial"),
+                "small": tkfont.Font(family="Arial"),
+            }
+            self._font_bases = {"title": 16, "heading": 14, "body": 12, "small": 10}
+        for name, font in self.fonts.items():
+            base_size = self._font_bases[name]
+            font.configure(size=max(8, int(round(base_size * clamped))))
+        style = self.style
+        style.configure("HighContrast.TLabel", font=self.fonts["body"])
+        style.configure("HighContrast.TButton", font=self.fonts["body"])
+        style.configure("HighContrast.TLabelframe", font=self.fonts["heading"])
+        style.configure("HighContrast.TNotebook.Tab", font=self.fonts["body"])
+        style.configure("TLabel", font=self.fonts["body"])
+        style.configure("TButton", font=self.fonts["body"])
+        style.configure("Treeview.Heading", font=self.fonts["heading"])
+        style.configure("Treeview", rowheight=max(20, int(round(24 * clamped))))
+        default_font = tkfont.nametofont("TkDefaultFont")
+        text_font = tkfont.nametofont("TkTextFont")
+        heading_font = tkfont.nametofont("TkHeadingFont")
+        menu_font = tkfont.nametofont("TkMenuFont")
+        fixed_font = tkfont.nametofont("TkFixedFont")
+        system_fonts = {
+            default_font: 12,
+            text_font: 12,
+            heading_font: 14,
+            menu_font: 11,
+            fixed_font: 11,
+        }
+        for font_obj, base_size in system_fonts.items():
+            font_obj.configure(family="Arial", size=max(8, int(round(base_size * clamped))))
+        heading_font.configure(weight="bold")
+        self.preferences.font_scale = clamped
+        self._update_font_scale_display()
+
+    def _on_font_scale_slider(self, _value: str) -> None:
+        self._apply_font_scale(float(self.font_scale_var.get()))
+
+    def _reset_font_scale(self) -> None:
+        self._apply_font_scale(1.0)
+
+    def _apply_font_scale(self, scale: float) -> None:
+        clamped = max(0.8, min(1.6, float(scale)))
+        if abs(self.font_scale_var.get() - clamped) > 1e-6:
+            self.font_scale_var.set(clamped)
+        self._configure_fonts()
+        self._refresh_fonts_on_widgets()
+        self._refresh_theme_widgets()
+        self.stats_var.set(f"Schriftgröße gesetzt auf {int(round(clamped * 100))} %")
+
+    def _refresh_fonts_on_widgets(self) -> None:
+        if hasattr(self, "clock_label"):
+            self.clock_label.configure(font=self.fonts["title"])
+        if hasattr(self, "stats_label"):
+            self.stats_label.configure(font=self.fonts["body"])
+        if hasattr(self, "path_label"):
+            self.path_label.configure(font=self.fonts["small"])
+        if hasattr(self, "color_mode_label"):
+            self.color_mode_label.configure(font=self.fonts["body"])
+        if hasattr(self, "mode_selector"):
+            self.mode_selector.configure(font=self.fonts["body"])
+        if hasattr(self, "screenreader_hint_label"):
+            self.screenreader_hint_label.configure(font=self.fonts["small"])
+        if hasattr(self, "font_scale_label"):
+            self.font_scale_label.configure(font=self.fonts["body"])
+        if hasattr(self, "font_scale_value_label"):
+            self.font_scale_value_label.configure(font=self.fonts["body"])
+        if hasattr(self, "note_text"):
+            self.note_text.configure(font=self.fonts["body"])
+        if hasattr(self, "todo_list"):
+            self.todo_list.configure(font=self.fonts["body"])
+        if hasattr(self, "playlist_list"):
+            self.playlist_list.configure(font=self.fonts["body"])
+        if hasattr(self, "volume_label"):
+            self.volume_label.configure(font=self.fonts["body"])
+        if hasattr(self, "audio_status"):
+            self.audio_status.configure(font=self.fonts["small"])
+
+    def _update_font_scale_display(self) -> None:
+        if hasattr(self, "font_scale_display_var"):
+            percent = int(round(float(self.font_scale_var.get()) * 100))
+            self.font_scale_display_var.set(f"{percent} %")
+
+    def _bind_focus_highlight(self, widget: tk.Widget, message: str) -> None:
+        widget.bind("<FocusIn>", lambda _event, text=message: self._announce_focus(text))
+
+    def _announce_focus(self, message: str) -> None:
+        self.stats_var.set(message)
+        self.logger.info("Focus: %s", message)
+
     def _schedule_autosave(self) -> None:
         interval_minutes = max(1, int(self.preferences.autosave_interval_minutes))
         self.after(interval_minutes * 60 * 1000, self._autosave_tick)
@@ -687,6 +907,8 @@ class MainWindow(tk.Tk):
                 insertbackground=self.colors["accent"],
                 selectbackground=self.colors["accent"],
                 selectforeground=self.colors["surface"],
+                highlightbackground=self.colors["background"],
+                highlightcolor=self.colors["accent"],
             )
         if hasattr(self, "todo_list"):
             self.todo_list.configure(
@@ -694,6 +916,8 @@ class MainWindow(tk.Tk):
                 foreground=self.colors["on_surface"],
                 selectbackground=self.colors["accent"],
                 selectforeground=self.colors["surface"],
+                highlightbackground=self.colors["background"],
+                highlightcolor=self.colors["accent"],
             )
         if hasattr(self, "playlist_list"):
             self.playlist_list.configure(
@@ -701,6 +925,8 @@ class MainWindow(tk.Tk):
                 foreground=self.colors["on_surface"],
                 selectbackground=self.colors["accent"],
                 selectforeground=self.colors["surface"],
+                highlightbackground=self.colors["background"],
+                highlightcolor=self.colors["accent"],
             )
         for child in self.grid_cells[3].winfo_children():
             child.destroy()
