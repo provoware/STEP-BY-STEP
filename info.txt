@@ -1,0 +1,78 @@
+STEP-BY-STEP Tool
+=================
+
+Beschreibung:
+- Modulares Dashboard mit 3x3 Raster, einklappbaren Seitenleisten und persistenten Daten.
+- Enthält Module für Datenbank-Archiv, Audioplaylist und Aufgabenverwaltung.
+- Startet über `python start_tool.py`, legt automatisch eine virtuelle Umgebung `.venv` an,
+  prüft/instal­liert Abhängigkeiten selbstständig und führt direkte Selbsttests durch.
+- Audioplayer (WAV) mit Lautstärkeregler, Suchfunktionen im Archiv,
+  Schnelllinks zu wichtigen Dateien und sichtbarem Fokusfeedback.
+- Gut sichtbarer Schriftgrößenregler (Zoom 80–160 %) mit Prozentanzeige,
+  Reset-Knopf, Statusmeldungen bei Fokuswechsel und Standard-Skalierung 120 %.
+- Aufgabenliste direkt im Dashboard abhaken (Enter/Leertaste oder Button),
+  inklusive Live-Status im Kopfbereich und Synchronisation mit `todo.txt`.
+- Info-Center mit Legende, Mockup, Strukturbaum, Release-Checkliste,
+  Schriftgrößen-Kompass, Kontrast-Checker, Farbpaletten-Tabelle, Farbaudit-Tab,
+  Diagnose-Übersicht (Systemprüfung) und Datensicherheitsstatus
+  (zeigt Manifest-, Backup- und Restore-Ergebnisse).
+- Datensicherheits-Manifest überwacht zentrale Dateien (Checksummen), merkt
+  sich Dateigrößen und legt Sicherungskopien mit Zeitstempel unter
+  `data/backups/` an (ältere Generationen werden aufgeräumt). Zusätzlich wird
+  bei jedem Start geprüft, ob die letzte Sicherung zur Manifest-Prüfsumme passt.
+- Automatischer Farbaudit bewertet alle Themes gegen WCAG-Kontrastgrenzen,
+  schreibt die Ergebnisse nach `data/color_audit.json` und liefert konkrete
+  Optimierungstipps bei zu niedrigem Kontrast.
+- Accessible-Standardpalette (dunkelblau/orange) mit WCAG-konformen Kontrasten
+  plus umschaltbare High-Contrast-, Hell- und Dunkel-Profile.
+- Selbsttest-Anzeige im Header (letzter Lauf, Ergebnis) auf Basis von
+  `data/selftest_report.json`.
+- Startprotokoll-Bereich im Dashboard mit Suchfeld, Kopierfunktion und direktem
+  Öffnen von `logs/startup.log`.
+- Playlist mit Formatprüfung und Normalisierung auf 16-Bit-WAV (`data/converted_audio/`).
+- Archiv-Export per Schnelllink als CSV und JSON (`data/exports/`).
+
+Anleitung:
+1. Python 3.10+ installieren.
+2. Startdatei ausführen: `python start_tool.py` (erstellt virtuelle Umgebung, installiert Pakete).
+3. Für einen Selbsttest ohne GUI: `python start_tool.py --headless` (führt dieselben
+   Prüfungen aus und zeigt Einstellungen an).
+4. Die ausführlichen Protokolle finden Sie in `logs/tool.log` sowie `logs/startup.log`.
+
+Wichtige Dateien:
+- `data/` enthält alle gespeicherten Daten.
+- `data/selftest_report.json` speichert die Ergebnisse der automatischen
+  Startroutine (Selbsttests, Reparaturen, Abhängigkeiten, Sicherheitsstatus).
+- `docs/coding_guidelines.md` fasst Code-Standards zusammen.
+- `docs/release_checklist.md` hält den Freigabe-Ablauf fest.
+- `json-and-more.info.txt` listet alle Standardressourcen als lesbares Backup auf.
+- `docs/post_release_ideas.md` sammelt Folgeideen in einfacher Sprache (Fachwörter
+  werden jeweils in Klammern erklärt).
+- `data/security_manifest.json` enthält die Checksummen aller Kern-Dateien.
+- `data/backups/` speichert automatisch erzeugte Sicherungskopien.
+- `data/color_audit.json` enthält die Auswertung der Farbkontraste je Theme.
+- `data/diagnostics_report.json` enthält die Systemdiagnose (Python-Version,
+  Paketstatus, Pfadprüfung) für Support und Fehlersuche.
+
+Abhängigkeiten:
+- Python-Standardbibliothek
+- ttkbootstrap (für modernes Design, wird automatisch nachinstalliert)
+- simpleaudio (für WAV-Wiedergabe, wird automatisch nachinstalliert)
+- compileall (Teil der Standardbibliothek, prüft den Code bei jedem Start)
+
+Problembehebung (Kettenbefehle):
+- Virtuelle Umgebung zurücksetzen und Abhängigkeiten reparieren:
+  `rm -rf .venv && python -m venv .venv && .venv/bin/python -m pip install -r requirements.txt`
+- Audiowiedergabe reparieren (falls `simpleaudio` fehlt):
+  `python -m pip install --upgrade pip && python -m pip install simpleaudio`
+- Archiv-Exporte prüfen: `ls data/exports`
+- Konvertierte WAV-Dateien ansehen: `ls data/converted_audio`
+- Sicherheitsmanifest ansehen: `less data/security_manifest.json`
+- Letzte Sicherungen prüfen: `ls data/backups`
+- Farbaudit-Bericht ansehen: `less data/color_audit.json`
+- Diagnosebericht ansehen: `less data/diagnostics_report.json`
+- Restore-Test ausführen (Backup zurückspielen):
+  `cp data/backups/<DATEI>.<ZEITSTEMPEL>.bak data/<DATEI>`
+- Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`
+- Beschädigte Daten auf Werkseinstellungen zurücksetzen: `python start_tool.py --headless`
+- Selbsttest-Log prüfen (UI-Anzeige + Rohdaten): `less data/selftest_report.json`

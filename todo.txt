@@ -1,0 +1,36 @@
+# TODO-Liste
+- [x] Basisstruktur für Tool erstellen
+- [x] Startskript mit automatischer Abhängigkeitsprüfung
+- [x] Persistente Datenordner anlegen
+- [x] Virtuelle Umgebung & detailliertes Logging im Startskript ergänzen
+- [x] Audiofunktion um Abspielen ergänzen
+- [x] Datenbankmodul mit Such- und Filterfunktionen erweitern
+- [x] Erweiterte Screenreader-Hinweise in der Oberfläche ergänzen
+- [x] Info-Center mit Legende, Mockup und Strukturübersicht integrieren
+- [x] Info-Center mit interaktiven Schnelllinks erweitern
+- [x] Audiowiedergabe mit Lautstärkeregelung integrieren
+- [x] Konfiguration für flexible Farbthemen (z.B. hell/dunkel umschalten) anbieten
+- [x] Schriftgrößen-Regler mit Statusfeedback für bessere Sichtbarkeit ergänzen
+- [x] Fokusrahmen und Tastaturmeldungen für wichtige Elemente aktivieren
+- [x] Vollautomatische Selbsttests in der Startroutine aktivieren
+- [x] Standardschrift auf 120 % anheben und dauerhaft speichern
+- [x] Aufgaben direkt im Tool abhaken können
+- [x] Audio-Modul um einfache Konvertierung/Formatprüfung erweitern
+- [x] Schriftgrößen-Empfehlungen je Modul im Info-Center dokumentieren
+- [x] Kontrast-Checker integrieren, der eigene Farbkombinationen bewertet
+- [x] Selbsttest-Ergebnisse direkt im Dashboard anzeigen
+- [x] Datenbank-Modul mit Export (CSV/JSON) vorbereiten
+- [x] Release-Checkliste finalisieren (Tests + Dokumentation)
+- [x] Startprotokoll in der Oberfläche durchsuchbar machen
+- [x] Datensicherheitsmanifest mit automatischen Backups integrieren
+- [x] Sicherheitsstatus im Header und Info-Center sichtbar machen
+- [x] Accessible-Farbpalette samt WCAG-Prüfung dokumentieren
+- [x] Automatischen Farbaudit integrieren und Bericht speichern
+- [x] Sicherheitsmanifest um Größenkontrolle und Backup-Aufräumung erweitern
+- [x] Abschlussprüfung dokumentieren (End-to-End-Test + Handbuch-Freigabe)
+- [x] Backup-Wiederherstellung testen und dokumentieren
+- [x] Nach-Release-Ideen sammeln (z.B. Audio-Preview, erweiterte Screenreader-Hinweise)
+- [x] Systemdiagnose-Bericht mit Paket- und Pfadstatus erzeugen und im Dashboard anzeigen
+- [x] Info-Center um Diagnose-Tab mit Profi-Details erweitern
+- [ ] Live-Vergleich der Paketversionen gegen requirements.txt ergänzen
+- [ ] Optionalen Export des Diagnoseberichts als HTML vorbereiten

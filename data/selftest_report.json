@@ -1,0 +1,43 @@
+{
+  "last_run": "",
+  "all_passed": false,
+  "self_tests": [],
+  "messages": [],
+  "repaired_paths": [],
+  "dependency_messages": [],
+  "security_summary": {
+    "status": "unknown",
+    "verified": 0,
+    "issues": [],
+    "backups": [],
+    "size_alerts": [],
+    "pruned_backups": [],
+    "restore_points": [],
+    "restore_issues": [],
+    "updated_manifest": false,
+    "timestamp": ""
+  },
+  "color_audit": {
+    "generated_at": "",
+    "overall_status": "unknown",
+    "worst_ratio": 0.0,
+    "themes": [],
+    "issues": [],
+    "recommendations": []
+  },
+  "diagnostics": {
+    "generated_at": "",
+    "python": {},
+    "virtualenv": {},
+    "paths": [],
+    "packages": [],
+    "summary": {
+      "status": "unknown",
+      "issues": [],
+      "recommendations": []
+    },
+    "startup": {}
+  },
+  "diagnostics_messages": [],
+  "diagnostics_report_path": ""
+}
