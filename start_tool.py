@@ -98,6 +98,15 @@ def display_startup_report(report: StartupReport) -> None:
                 print(
                     f"    … {len(recommendations) - 5} weitere Tipps im Bericht"
                 )
+    if report.diagnostics_messages:
+        print("[Diagnose] Systemüberblick:")
+        for line in report.diagnostics_messages:
+            print(f"  • {line}")
+    if report.diagnostics_path:
+        print(
+            "[Diagnose] Vollständiger Bericht: "
+            f"{report.diagnostics_path}"
+        )
 
 
 def relaunch_if_needed(report: StartupReport, logger) -> Optional[int]:

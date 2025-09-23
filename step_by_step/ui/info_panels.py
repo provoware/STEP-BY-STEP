@@ -571,6 +571,159 @@ def build_security_panel(
     ).pack(anchor="w", pady=(8, 0))
 
 
+def build_diagnostics_panel(
+    parent: ttk.LabelFrame,
+    diagnostics: Optional[Dict[str, object]],
+    colors: Optional[Dict[str, str]] = None,
+) -> None:
+    """Render a structured system diagnostics overview."""
+
+    heading_font = tkfont.nametofont("TkHeadingFont")
+    body_font = tkfont.nametofont("TkDefaultFont")
+    ttk.Label(parent, text="Systemdiagnose", font=heading_font).pack(anchor="w")
+
+    if not diagnostics:
+        ttk.Label(
+            parent,
+            text="Noch keine Diagnose gespeichert – Startskript ausführen (start_tool.py).",
+            wraplength=320,
+            justify="left",
+            font=body_font,
+        ).pack(anchor="w", pady=(4, 0))
+        return
+
+    summary = diagnostics.get("summary", {}) or {}
+    generated = diagnostics.get("generated_at", "")
+    issues = summary.get("issues", []) or []
+    recommendations = summary.get("recommendations", []) or []
+    status_label = "Alles in Ordnung" if summary.get("status") == "ok" else "Hinweise prüfen"
+    overview = (
+        f"Stand: {generated}\nStatus: {status_label}\n"
+        f"Hinweise: {len(issues)} – Empfehlungen: {len(recommendations)}"
+    )
+    ttk.Label(parent, text=overview, justify="left", font=body_font).pack(anchor="w", pady=(4, 6))
+
+    python_info = diagnostics.get("python", {})
+    runtime_text = (
+        f"Python {python_info.get('version', '?')} "
+        f"({python_info.get('implementation', 'Unbekannt')}) – "
+        f"Pfad: {python_info.get('executable', 'n/a')}"
+    )
+    ttk.Label(parent, text=runtime_text, wraplength=320, justify="left", font=body_font).pack(anchor="w")
+
+    virtualenv = diagnostics.get("virtualenv", {})
+    venv_state = "aktiv" if virtualenv.get("active") else "nicht aktiv"
+    venv_text = (
+        f"Virtuelle Umgebung: {venv_state} – erwartet: {virtualenv.get('expected_path', '')}"
+    )
+    ttk.Label(parent, text=venv_text, wraplength=320, justify="left", font=body_font).pack(
+        anchor="w", pady=(2, 6)
+    )
+
+    path_tree = ttk.Treeview(
+        parent,
+        columns=("pfad", "vorhanden", "schreibbar"),
+        show="headings",
+        height=4,
+    )
+    path_tree.heading("pfad", text="Pfad")
+    path_tree.heading("vorhanden", text="Vorhanden")
+    path_tree.heading("schreibbar", text="Schreibbar")
+    path_tree.column("pfad", width=200, anchor="w")
+    path_tree.column("vorhanden", width=80, anchor="center")
+    path_tree.column("schreibbar", width=80, anchor="center")
+    if colors:
+        path_tree.configure(
+            background=colors.get("surface", "white"),
+            foreground=colors.get("on_surface", "black"),
+            fieldbackground=colors.get("surface", "white"),
+        )
+    path_tree.configure(font=body_font)
+    path_tree.pack(fill="both", expand=True, pady=(0, 6))
+    for entry in diagnostics.get("paths", []):
+        exists = "Ja" if entry.get("exists") else "Nein"
+        writable = "Ja" if entry.get("writable") else "Nein"
+        tag = "warn" if not entry.get("writable") else "ok"
+        path_tree.insert(
+            "",
+            "end",
+            values=(entry.get("path", ""), exists, writable),
+            tags=(tag,),
+        )
+    path_tree.tag_configure("warn", foreground="#c43c00")
+    path_tree.tag_configure("ok", foreground="#2e8540")
+
+    package_tree = ttk.Treeview(
+        parent,
+        columns=("paket", "status", "info"),
+        show="headings",
+        height=4,
+    )
+    package_tree.heading("paket", text="Paket")
+    package_tree.heading("status", text="Status")
+    package_tree.heading("info", text="Info")
+    package_tree.column("paket", width=120, anchor="w")
+    package_tree.column("status", width=90, anchor="center")
+    package_tree.column("info", width=180, anchor="w")
+    if colors:
+        package_tree.configure(
+            background=colors.get("surface", "white"),
+            foreground=colors.get("on_surface", "black"),
+            fieldbackground=colors.get("surface", "white"),
+        )
+    package_tree.configure(font=body_font)
+    package_tree.pack(fill="both", expand=True, pady=(0, 6))
+    for pkg in diagnostics.get("packages", []):
+        installed = "Installiert" if pkg.get("installed") else "Fehlt"
+        info_text = pkg.get("version") or pkg.get("message", "")
+        tag = "ok" if pkg.get("installed") else "warn"
+        package_tree.insert(
+            "",
+            "end",
+            values=(pkg.get("name", ""), installed, info_text),
+            tags=(tag,),
+        )
+    package_tree.tag_configure("warn", foreground="#c43c00")
+    package_tree.tag_configure("ok", foreground="#2e8540")
+
+    if issues:
+        ttk.Label(parent, text="Hinweise", font=heading_font).pack(anchor="w", pady=(4, 0))
+        issue_list = tk.Listbox(parent, height=min(len(issues), 5))
+        if colors:
+            issue_list.configure(
+                background=colors.get("surface", "white"),
+                foreground=colors.get("on_surface", "black"),
+                highlightbackground=colors.get("background", "#000000"),
+                highlightcolor=colors.get("accent", "#0000ff"),
+            )
+        issue_list.configure(font=body_font)
+        for issue in issues:
+            issue_list.insert(tk.END, issue)
+        issue_list.pack(fill="both", expand=True, pady=(0, 6))
+
+    if recommendations:
+        ttk.Label(parent, text="Empfehlungen", font=heading_font).pack(anchor="w", pady=(4, 0))
+        recommendations_text = "\n".join(f"• {item}" for item in recommendations)
+        ttk.Label(
+            parent,
+            text=recommendations_text,
+            wraplength=320,
+            justify="left",
+            font=body_font,
+        ).pack(anchor="w", pady=(0, 6))
+
+    ttk.Label(
+        parent,
+        text=(
+            "Tipp: Der vollständige Bericht liegt unter data/diagnostics_report.json."
+            " Dort stehen alle Details für Support (Unterstützung) und Fehlersuche."
+        ),
+        wraplength=320,
+        justify="left",
+        font=body_font,
+    ).pack(anchor="w", pady=(4, 0))
+
+
 def build_release_panel(
     parent: ttk.LabelFrame,
     items: Sequence[Dict[str, object]],
@@ -625,4 +778,5 @@ __all__ = [
     "build_quicklinks_panel",
     "build_release_panel",
     "build_security_panel",
+    "build_diagnostics_panel",
 ]

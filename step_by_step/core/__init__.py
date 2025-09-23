@@ -2,6 +2,7 @@
 
 from .color_audit import ColorAuditReport, ColorAuditor
 from .config_manager import ConfigManager, UserPreferences
+from .diagnostics import DiagnosticsManager, DiagnosticsReport, PackageStatus, PathStatus
 from .log_reader import LogEntry, LogReader
 from .logging_manager import get_logger, setup_logging
 from .security import SecurityManager, SecuritySummary
@@ -20,6 +21,10 @@ __all__ = [
     "StartupReport",
     "SecurityManager",
     "SecuritySummary",
+    "DiagnosticsManager",
+    "DiagnosticsReport",
+    "PackageStatus",
+    "PathStatus",
     "ColorAuditor",
     "ColorAuditReport",
     "COLOR_THEMES",

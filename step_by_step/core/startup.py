@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .color_audit import ColorAuditor
+from .diagnostics import DiagnosticsManager
 from .logging_manager import get_logger
 from .security import SecurityManager, SecuritySummary
 
@@ -68,6 +69,17 @@ REQUIRED_FILES: Dict[Path, str] = {
                 "themes": [],
                 "issues": [],
             },
+            "diagnostics": {
+                "generated_at": "",
+                "python": {},
+                "virtualenv": {},
+                "paths": [],
+                "packages": [],
+                "summary": {"status": "unknown", "issues": [], "recommendations": []},
+                "startup": {},
+            },
+            "diagnostics_messages": [],
+            "diagnostics_report_path": "",
         },
         indent=2,
         ensure_ascii=False,
@@ -117,6 +129,19 @@ REQUIRED_FILES: Dict[Path, str] = {
         indent=2,
         ensure_ascii=False,
     ),
+    Path("data/diagnostics_report.json"): json.dumps(
+        {
+            "generated_at": "",
+            "python": {},
+            "virtualenv": {},
+            "paths": [],
+            "packages": [],
+            "summary": {"status": "unknown", "issues": [], "recommendations": []},
+            "startup": {},
+        },
+        indent=2,
+        ensure_ascii=False,
+    ),
 }
 
 
@@ -157,6 +182,9 @@ class StartupReport:
     messages: List[str] = field(default_factory=list)
     security_summary: Optional[SecuritySummary] = None
     color_audit: Optional[Dict[str, object]] = None
+    diagnostics: Optional[Dict[str, object]] = None
+    diagnostics_messages: List[str] = field(default_factory=list)
+    diagnostics_path: Optional[Path] = None
 
     def add_message(self, message: str) -> None:
         self.messages.append(message)
@@ -191,6 +219,7 @@ class StartupManager:
         self.verify_data_security()
         self.audit_color_contrast()
         self.run_self_tests()
+        self.capture_diagnostics()
         self._persist_report()
 
         self.logger.info("Startroutine beendet")
@@ -342,6 +371,18 @@ class StartupManager:
                 )
 
     # ------------------------------------------------------------------
+    def capture_diagnostics(self) -> None:
+        manager = DiagnosticsManager()
+        diagnostics = manager.collect(self.report)
+        diagnostics_path = manager.save(diagnostics)
+        self.report.diagnostics = diagnostics.to_dict()
+        self.report.diagnostics_path = diagnostics_path
+        summary_lines = manager.summary_lines(diagnostics)
+        self.report.diagnostics_messages = summary_lines
+        for line in summary_lines:
+            self._log_progress(line)
+
+    # ------------------------------------------------------------------
     def _persist_report(self) -> None:
         """Store the latest startup report for display in the dashboard."""
 
@@ -362,6 +403,12 @@ class StartupManager:
             payload["security_summary"] = self.report.security_summary.to_dict()
         if self.report.color_audit:
             payload["color_audit"] = self.report.color_audit
+        if self.report.diagnostics:
+            payload["diagnostics"] = self.report.diagnostics
+        if self.report.diagnostics_messages:
+            payload["diagnostics_messages"] = self.report.diagnostics_messages
+        if self.report.diagnostics_path:
+            payload["diagnostics_report_path"] = str(self.report.diagnostics_path)
         target = Path("data/selftest_report.json")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")

@@ -24,5 +24,20 @@
     "themes": [],
     "issues": [],
     "recommendations": []
-  }
+  },
+  "diagnostics": {
+    "generated_at": "",
+    "python": {},
+    "virtualenv": {},
+    "paths": [],
+    "packages": [],
+    "summary": {
+      "status": "unknown",
+      "issues": [],
+      "recommendations": []
+    },
+    "startup": {}
+  },
+  "diagnostics_messages": [],
+  "diagnostics_report_path": ""
 }

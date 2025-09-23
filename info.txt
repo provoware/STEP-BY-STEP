@@ -13,8 +13,9 @@ Beschreibung:
 - Aufgabenliste direkt im Dashboard abhaken (Enter/Leertaste oder Button),
   inklusive Live-Status im Kopfbereich und Synchronisation mit `todo.txt`.
 - Info-Center mit Legende, Mockup, Strukturbaum, Release-Checkliste,
-  Schriftgrößen-Kompass, Kontrast-Checker, Farbpaletten-Tabelle, Farbaudit-Tab
-  und Datensicherheitsstatus (zeigt Manifest-, Backup- und Restore-Ergebnisse).
+  Schriftgrößen-Kompass, Kontrast-Checker, Farbpaletten-Tabelle, Farbaudit-Tab,
+  Diagnose-Übersicht (Systemprüfung) und Datensicherheitsstatus
+  (zeigt Manifest-, Backup- und Restore-Ergebnisse).
 - Datensicherheits-Manifest überwacht zentrale Dateien (Checksummen), merkt
   sich Dateigrößen und legt Sicherungskopien mit Zeitstempel unter
   `data/backups/` an (ältere Generationen werden aufgeräumt). Zusätzlich wird
@@ -50,6 +51,8 @@ Wichtige Dateien:
 - `data/security_manifest.json` enthält die Checksummen aller Kern-Dateien.
 - `data/backups/` speichert automatisch erzeugte Sicherungskopien.
 - `data/color_audit.json` enthält die Auswertung der Farbkontraste je Theme.
+- `data/diagnostics_report.json` enthält die Systemdiagnose (Python-Version,
+  Paketstatus, Pfadprüfung) für Support und Fehlersuche.
 
 Abhängigkeiten:
 - Python-Standardbibliothek
@@ -67,6 +70,7 @@ Problembehebung (Kettenbefehle):
 - Sicherheitsmanifest ansehen: `less data/security_manifest.json`
 - Letzte Sicherungen prüfen: `ls data/backups`
 - Farbaudit-Bericht ansehen: `less data/color_audit.json`
+- Diagnosebericht ansehen: `less data/diagnostics_report.json`
 - Restore-Test ausführen (Backup zurückspielen):
   `cp data/backups/<DATEI>.<ZEITSTEMPEL>.bak data/<DATEI>`
 - Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`

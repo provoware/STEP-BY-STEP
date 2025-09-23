@@ -11,8 +11,10 @@ Abschluss-Highlights:
 - End-to-End-Review dokumentiert – Selbsttests, Bedienhandbuch und Supporthinweise freigegeben.
 - Restore-Checks laufen automatisch: Backups werden beim Start mit den Manifest-Prüfsummen abgeglichen.
 - Farbaudit liefert konkrete Optimierungstipps für Farbpaare mit zu niedrigem Kontrast.
+- Systemdiagnose erstellt bei jedem Start einen Profi-Bericht mit Paket- und Pfadstatus.
 
 Aktuelle Highlights:
 - Checksummen-Manifest mit automatischen Sicherungen, Größenkontrolle und Backup-Aufräumung.
 - Automatischer Farbaudit für alle Themes mit Bericht unter data/color_audit.json.
 - Sicherheits-, Audit- und Release-Informationen direkt im Header sowie im Info-Center.
+- Diagnose-Tab zeigt Python-Version, Paketstatus und Schreibrechte direkt im Dashboard.

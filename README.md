@@ -17,7 +17,8 @@ Der Befehl erstellt bei Bedarf die virtuelle Umgebung `.venv`, installiert alle
 Pakete aus `requirements.txt`, prüft den Code per Selbsttest (Syntax-Check
 und Einstellungs-Validierung), protokolliert jeden Schritt unter `logs/` und
 startet anschließend die barrierearme Oberfläche. Die Konsole zeigt danach
-eine zusammengefasste Auswertung (Security-Status, Farbaudit, Selbsttests).
+eine zusammengefasste Auswertung (Security-Status, Farbaudit, Selbsttests,
+Systemdiagnose).
 Für einen Diagnoselauf ohne Fenster:
 
 ```bash
@@ -34,6 +35,10 @@ python start_tool.py --headless
 - **Automatische Selbsttests:** Beim Start wird der komplette Codebaum mit
   `compileall` (Syntaxprüfung) getestet und die `data/settings.json` wird auf
   Vollständigkeit und barrierefreie Standardeinstellungen geprüft.
+- **Systemdiagnose (Pro-Report):** Der Startlauf prüft Python-Version,
+  virtuelle Umgebung, Pfad-Rechte und benötigte Pakete. Alle Details landen in
+  `data/diagnostics_report.json`, während das Dashboard eine kurze,
+  leicht verständliche Zusammenfassung anzeigt.
 - **Hoher Kontrast & Accessible Palette:** Die Oberfläche startet mit einer
   farbenblindenfreundlichen Accessible-Palette (dunkelblau + orange) und bietet
   zusätzlich High-Contrast-, Hell- und Dunkel-Modi. Buttons, Listen und
@@ -66,8 +71,9 @@ python start_tool.py --headless
   ein textuelles Mockup, den Ordner-/Dateibaum, Release-Checkliste, Schnelllinks
   sowie Register für Schriftgrößen-Empfehlungen, einen Kontrast-Checker, eine
   Farbpaletten-Übersicht (inkl. berechnetem WCAG-Kontrast), einen Tab mit den
-  Ergebnissen der Datensicherheitsprüfung samt Restore-Status und einen
-  Farbaudit-Tab mit Optimierungstipps.
+  Ergebnissen der Datensicherheitsprüfung samt Restore-Status, einen
+  Diagnose-Tab für Systeminformationen und einen Farbaudit-Tab mit
+  Optimierungstipps.
 - **Datensicherheits-Manifest:** Beim Start wird ein Checksummen-Manifest für
   zentrale JSON/TXT-Dateien verifiziert. Abweichungen erzeugen automatische
   Backups unter `data/backups/`, Größenabweichungen werden hervorgehoben und
@@ -91,6 +97,8 @@ python start_tool.py --headless
   aller wichtigen Dateien und speichert Restore-Checks für jede Sicherung.
 - `data/color_audit.json` hält die Ergebnisse der automatischen
   Farbkontrast-Prüfung inklusive Empfehlungen fest.
+- `data/diagnostics_report.json` speichert die Systemdiagnose (Python,
+  Pakete, Pfade) für Support und Fehlersuche.
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
 
 ## Audio & Playlist
@@ -144,6 +152,8 @@ python start_tool.py --headless
   automatischen Restore-Abgleich.
 - `data/color_audit.json` listet die geprüften Farbschemata mit niedrigsten
   Kontrasten, Hinweisen und ergänzenden Empfehlungen.
+- `data/diagnostics_report.json` dokumentiert die zuletzt gesammelten
+  Diagnosewerte und wird automatisch beim Start aktualisiert.
 - `Fortschritt.txt` dokumentiert den Ausbauzustand (aktuell 100 %) und zeigt die
   letzten Meilensteine inklusive finaler Abschlussprüfung.
 - `todo.txt` wird direkt aus der Oberfläche gepflegt – erledigte Punkte werden

@@ -39,11 +39,13 @@ from .info_panels import (
     build_structure_panel,
     build_palette_panel,
     build_security_panel,
+    build_diagnostics_panel,
 )
 
 NOTE_FILE = Path("data/persistent_notes.txt")
 STATS_FILE = Path("data/usage_stats.json")
 SELFTEST_FILE = Path("data/selftest_report.json")
+DIAGNOSTICS_FILE = Path("data/diagnostics_report.json")
 
 STRUCTURE_SCHEMA: Dict[str, Dict[str, Dict[str, Dict]]] = {
     "STEP-BY-STEP": {
@@ -55,6 +57,7 @@ STRUCTURE_SCHEMA: Dict[str, Dict[str, Dict[str, Dict]]] = {
             "todo_items.json": {},
             "usage_stats.json": {},
             "selftest_report.json": {},
+            "diagnostics_report.json": {},
             "release_checklist.json": {},
             "security_manifest.json": {},
             "color_audit.json": {},
@@ -143,6 +146,8 @@ class MainWindow(tk.Tk):
         self.security_summary_data: Dict[str, object] = {}
         self.color_audit_var = tk.StringVar(value="Farbaudit: lädt...")
         self.color_audit_data: Dict[str, object] = {}
+        self.diagnostics_var = tk.StringVar(value="Diagnose: lädt...")
+        self.diagnostics_data: Dict[str, object] = self._load_json(DIAGNOSTICS_FILE)
         self.preferences.color_mode = self.color_mode_var.get()
         self.preferences.contrast_theme = (
             "high_contrast" if self.color_mode_var.get() == "high_contrast" else self.color_mode_var.get()
@@ -269,13 +274,21 @@ class MainWindow(tk.Tk):
         )
         self.color_audit_label.grid(row=4, column=0, columnspan=3, sticky="w", pady=(2, 0))
 
+        self.diagnostics_label = ttk.Label(
+            header,
+            textvariable=self.diagnostics_var,
+            font=self.fonts["body"],
+            style="HighContrast.TLabel",
+        )
+        self.diagnostics_label.grid(row=5, column=0, columnspan=3, sticky="w", pady=(2, 0))
+
         self.font_scale_label = ttk.Label(
             header,
             text="Schriftgröße (Zoom):",
             style="HighContrast.TLabel",
             font=self.fonts["body"],
         )
-        self.font_scale_label.grid(row=5, column=0, sticky="w", pady=(8, 0))
+        self.font_scale_label.grid(row=6, column=0, sticky="w", pady=(8, 0))
 
         self.font_scale_slider = ttk.Scale(
             header,
@@ -286,7 +299,7 @@ class MainWindow(tk.Tk):
             command=self._on_font_scale_slider,
             style="HighContrast.Horizontal.TScale",
         )
-        self.font_scale_slider.grid(row=5, column=1, sticky="ew", padx=(0, 10), pady=(8, 0))
+        self.font_scale_slider.grid(row=6, column=1, sticky="ew", padx=(0, 10), pady=(8, 0))
         self.font_scale_slider.configure(takefocus=True)
         self._bind_focus_highlight(
             self.font_scale_slider,
@@ -299,7 +312,7 @@ class MainWindow(tk.Tk):
             style="HighContrast.TLabel",
             font=self.fonts["body"],
         )
-        self.font_scale_value_label.grid(row=5, column=2, sticky="e", pady=(8, 0))
+        self.font_scale_value_label.grid(row=6, column=2, sticky="e", pady=(8, 0))
 
         self.font_scale_reset_button = ttk.Button(
             header,
@@ -307,7 +320,7 @@ class MainWindow(tk.Tk):
             command=self._reset_font_scale,
             style="HighContrast.TButton",
         )
-        self.font_scale_reset_button.grid(row=6, column=2, sticky="e", pady=(4, 0))
+        self.font_scale_reset_button.grid(row=7, column=2, sticky="e", pady=(4, 0))
         self._bind_focus_highlight(
             self.font_scale_reset_button,
             "Standardgröße wiederherstellen. Enter setzt 100 % Schriftgröße.",
@@ -731,6 +744,11 @@ class MainWindow(tk.Tk):
                 "Auswertung der Farbkontraste ansehen",
                 lambda: self._open_path(Path("data/color_audit.json")),
             ),
+            (
+                "Diagnosebericht",
+                "Systemdiagnose als JSON (Datenformat) öffnen",
+                lambda: self._open_path(Path("data/diagnostics_report.json")),
+            ),
         ]
         build_quicklinks_panel(quicklinks_frame, quick_links, self.colors)
 
@@ -757,6 +775,10 @@ class MainWindow(tk.Tk):
         security_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
         notebook.add(security_frame, text="Sicherheit")
         build_security_panel(security_frame, self.security_summary_data or None, self.colors)
+
+        diagnostics_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
+        notebook.add(diagnostics_frame, text="Diagnose")
+        build_diagnostics_panel(diagnostics_frame, self.diagnostics_data or None, self.colors)
 
     def _build_log_viewer(self, parent: ttk.LabelFrame) -> None:
         ttk.Label(
@@ -1130,6 +1152,17 @@ class MainWindow(tk.Tk):
         self.selftest_label.configure(foreground=self.colors.get(color_key, self.colors["on_surface"]))
         self._apply_security_summary(data.get("security_summary"))
         self._apply_color_audit(data.get("color_audit"))
+        diagnostics_snapshot = data.get("diagnostics")
+        if isinstance(diagnostics_snapshot, dict) and diagnostics_snapshot:
+            new_data = diagnostics_snapshot
+        else:
+            new_data = self.diagnostics_data or {}
+        previous = getattr(self, "diagnostics_data", {})
+        self._apply_diagnostics_summary(new_data)
+        if new_data and new_data != previous and hasattr(self, "grid_cells") and len(self.grid_cells) > 3:
+            for child in self.grid_cells[3].winfo_children():
+                child.destroy()
+            self._build_info_center(self.grid_cells[3])
 
     def _apply_security_summary(self, summary: Optional[Dict[str, object]]) -> None:
         if not hasattr(self, "security_label"):
@@ -1207,6 +1240,33 @@ class MainWindow(tk.Tk):
 
         self.color_audit_var.set(message)
         self.color_audit_label.configure(
+            foreground=self.colors.get(color_key, self.colors["accent"])
+        )
+
+    def _apply_diagnostics_summary(self, diagnostics: Optional[Dict[str, object]]) -> None:
+        if not hasattr(self, "diagnostics_label"):
+            return
+        if not isinstance(diagnostics, dict) or not diagnostics:
+            self.diagnostics_data = {}
+            self.diagnostics_var.set("Diagnose: keine Daten gespeichert")
+            self.diagnostics_label.configure(
+                foreground=self.colors.get("warning", self.colors["accent"])
+            )
+            return
+
+        self.diagnostics_data = dict(diagnostics)
+        summary = diagnostics.get("summary", {}) or {}
+        issues = summary.get("issues", []) or []
+        generated = self._format_timestamp(diagnostics.get("generated_at"))
+        status = str(summary.get("status", "unknown"))
+        if status == "ok" and not issues:
+            message = f"Diagnose: System geprüft – keine Auffälligkeiten ({generated})"
+            color_key = "success"
+        else:
+            message = f"Diagnose: {len(issues)} Hinweis(e) – Bericht {generated}"
+            color_key = "danger" if issues else "warning"
+        self.diagnostics_var.set(message)
+        self.diagnostics_label.configure(
             foreground=self.colors.get(color_key, self.colors["accent"])
         )
 
@@ -1425,6 +1485,8 @@ class MainWindow(tk.Tk):
             self.mode_selector.configure(font=self.fonts["body"])
         if hasattr(self, "color_audit_label"):
             self.color_audit_label.configure(font=self.fonts["body"])
+        if hasattr(self, "diagnostics_label"):
+            self.diagnostics_label.configure(font=self.fonts["body"])
         if hasattr(self, "screenreader_hint_label"):
             self.screenreader_hint_label.configure(font=self.fonts["small"])
         if hasattr(self, "font_scale_label"):

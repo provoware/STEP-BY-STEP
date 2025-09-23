@@ -30,3 +30,7 @@
 - [x] Abschlussprüfung dokumentieren (End-to-End-Test + Handbuch-Freigabe)
 - [x] Backup-Wiederherstellung testen und dokumentieren
 - [x] Nach-Release-Ideen sammeln (z.B. Audio-Preview, erweiterte Screenreader-Hinweise)
+- [x] Systemdiagnose-Bericht mit Paket- und Pfadstatus erzeugen und im Dashboard anzeigen
+- [x] Info-Center um Diagnose-Tab mit Profi-Details erweitern
+- [ ] Live-Vergleich der Paketversionen gegen requirements.txt ergänzen
+- [ ] Optionalen Export des Diagnoseberichts als HTML vorbereiten
