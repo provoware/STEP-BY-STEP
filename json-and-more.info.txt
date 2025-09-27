@@ -1,0 +1,70 @@
+JSON-UND-MEHR SAMMLUNG
+======================
+
+Dieser Ordner ersetzt die frühere ZIP-Datei und fasst alle Basisdateien
+als sofort lesbare Textübersicht zusammen. Das Git-Repository liefert nur
+Platzhalterordner – die aufgelisteten Dateien werden beim Start automatisch
+erstellt, geprüft und bei Bedarf repariert.
+
+Enthaltene Kernressourcen
+------------------------
+- data/settings.json: Nutzer-Voreinstellungen (z.B. Schriftgröße 120 %,
+  Farbmodus, Audiolautstärke) – entsteht beim ersten Start automatisch.
+- data/todo_items.json: Aufgabenlisten mit Datum und Status.
+- data/playlists.json: Audioplaylist mit Titeln und Quellen.
+- data/archive.db: Hauptarchiv als SQLite-Datei (leichte Datenbank).
+- data/archive.json: Lesbares Backup der Archivstruktur für manuelle Einblicke.
+- data/persistent_notes.txt: Notizblock mit Autospeicher.
+- data/usage_stats.json: Nutzungsstatistiken, Sitzungszähler.
+- data/selftest_report.json: Ergebnisse der automatischen Startroutine
+  (Selbsttests, Reparaturen, Paket-Installationen, Datensicherheit) für die
+  UI-Anzeige.
+- data/release_checklist.json: Fortschritt der Release-Checkliste (alle
+  Pflichtschritte erledigt, dient als Nachweis).
+- data/security_manifest.json: Checksummen, Prüfzeitpunkt und Restore-Abgleich
+  aller wichtigen JSON/TXT-Dateien.
+- data/color_audit.json: Ergebnisse des automatischen Farbaudits mit
+  Mindestkontrasten und konkreten Optimierungstipps je Theme.
+- data/diagnostics_report.json: Systemdiagnose (Python-Version, Pakete,
+  Pfadprüfungen) als JSON für Support und Fehlersuche.
+- data/backups/: Sicherungskopien mit Zeitstempel, wenn das Manifest Abweichungen
+  feststellt (Ordner ist leer, bis der erste Lauf eine Datei schützt).
+- data/converted_audio/: automatisch erzeugte WAV-Kopien (16-Bit).
+- data/exports/: Archiv-Exporte im CSV- und JSON-Format.
+- docs/post_release_ideas.md: Ideensammlung für spätere Ausbauten mit einfachen
+  Erklärungen zu Fachbegriffen.
+
+So wird alles repariert
+-----------------------
+1. Starte das Klick-und-Start-Tool: ``python start_tool.py``.
+2. Das Tool legt automatisch eine virtuelle Umgebung ``.venv`` an.
+3. Danach installiert es alle Pakete aus ``requirements.txt``.
+4. Anschließend laufen automatische Selbsttests (Syntax-Check und
+   Einstellungen). Ergebnisse stehen in ``logs/startup.log``.
+5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
+6. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
+   120 %-Basisschrift, ein ToDo-Kontrollfeld zum direkten Abhaken, ein
+   Kontrast-Checker samt Farbpaletten- und Farbaudit-Tab, ein Diagnose-Tab
+   (Systemprüfung) sowie ein Sicherheits-Tab bereit, damit alles sichtbar und
+   nachvollziehbar bleibt.
+
+Zusatzbefehle für die Wartung
+------------------------------
+- Hinweis: Alle Befehle, die auf `data/...` zugreifen, funktionieren nachdem der
+  erste Startlauf die Dateien erzeugt hat.
+- Virtuelle Umgebung manuell aktivieren (Linux/macOS): ``source .venv/bin/activate``.
+- Virtuelle Umgebung manuell aktivieren (Windows): ``.venv\\Scripts\\activate``.
+- Abhängigkeiten nachinstallieren: ``python -m pip install -r requirements.txt``.
+- Audiowiedergabe prüfen: ``python -m pip install simpleaudio``.
+- Tool im Diagnosemodus starten: ``python start_tool.py --headless``.
+- Selbsttest-Report ansehen: ``less data/selftest_report.json``.
+- Sicherheitsmanifest kontrollieren: ``less data/security_manifest.json``.
+- Farbaudit-Bericht prüfen: ``less data/color_audit.json``.
+- Diagnosebericht prüfen: ``less data/diagnostics_report.json``.
+- Backups listen: ``ls data/backups``.
+- Backup-Wiederherstellung testen: ``cp data/backups/<DATEI>.<ZEIT>.bak data/<DATEI>``.
+- Release-Checkliste ansehen: ``less data/release_checklist.json``.
+- Archiv-Exporte listen: ``ls data/exports``.
+- Konvertierte WAV-Dateien anzeigen: ``ls data/converted_audio``.
+
+Alle Schritte werden mit aussagekräftigen Logs unter ``logs/`` dokumentiert.
