@@ -43,8 +43,11 @@ python start_tool.py --headless
   `compileall` (Syntaxprüfung) getestet und die `data/settings.json` wird auf
   Vollständigkeit und barrierefreie Standardeinstellungen geprüft.
 - **Systemdiagnose (Pro-Report):** Der Startlauf prüft Python-Version,
-  virtuelle Umgebung, Pfad-Rechte und benötigte Pakete. Alle Details landen in
-  `data/diagnostics_report.json`, während das Dashboard eine kurze,
+  virtuelle Umgebung, Pfad-Rechte und benötigte Pakete. Zusätzlich gleicht er
+  installierte Paketversionen mit den Mindestanforderungen aus
+  `requirements.txt` ab. Alle Details landen in `data/diagnostics_report.json`
+  sowie in einer barrierefreundlichen HTML-Ansicht
+  (`data/diagnostics_report.html`), während das Dashboard eine kurze,
   leicht verständliche Zusammenfassung anzeigt.
 - **Hoher Kontrast & Accessible Palette:** Die Oberfläche startet mit einer
   farbenblindenfreundlichen Accessible-Palette (dunkelblau + orange) und bietet
@@ -112,6 +115,8 @@ python start_tool.py --headless
   Farbkontrast-Prüfung inklusive Empfehlungen fest.
 - `data/diagnostics_report.json` speichert die Systemdiagnose (Python,
   Pakete, Pfade) für Support und Fehlersuche.
+- `data/diagnostics_report.html` stellt dieselben Informationen als
+  kontraststarke HTML-Ansicht bereit (ideal für Support-Weitergabe).
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
 
 ## Audio & Playlist

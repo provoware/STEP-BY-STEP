@@ -27,6 +27,9 @@ Beschreibung:
   Optimierungstipps bei zu niedrigem Kontrast.
 - Accessible-Standardpalette (dunkelblau/orange) mit WCAG-konformen Kontrasten
   plus umschaltbare High-Contrast-, Hell- und Dunkel-Profile.
+- Systemdiagnose gleicht installierte Pakete gegen `requirements.txt` ab und
+  erzeugt neben dem JSON-Bericht auch eine kontrastreiche HTML-Zusammenfassung
+  für Supportzwecke (`data/diagnostics_report.html`).
 - Selbsttest-Anzeige im Header (letzter Lauf, Ergebnis) auf Basis von
   `data/selftest_report.json`.
 - Startprotokoll-Bereich im Dashboard mit Suchfeld, Kopierfunktion und direktem
@@ -58,6 +61,8 @@ Wichtige Dateien (werden beim ersten Start automatisch angelegt):
 - `data/color_audit.json` enthält die Auswertung der Farbkontraste je Theme.
 - `data/diagnostics_report.json` enthält die Systemdiagnose (Python-Version,
   Paketstatus, Pfadprüfung) für Support und Fehlersuche.
+- `data/diagnostics_report.html` bietet dieselben Informationen als
+  sofort teilbare HTML-Ansicht.
 
 Abhängigkeiten:
 - Python-Standardbibliothek
@@ -78,6 +83,7 @@ Problembehebung (Kettenbefehle):
 - Letzte Sicherungen prüfen: `ls data/backups`
 - Farbaudit-Bericht ansehen: `less data/color_audit.json`
 - Diagnosebericht ansehen: `less data/diagnostics_report.json`
+- HTML-Diagnosebericht im Browser öffnen: `xdg-open data/diagnostics_report.html`
 - Restore-Test ausführen (Backup zurückspielen):
   `cp data/backups/<DATEI>.<ZEITSTEMPEL>.bak data/<DATEI>`
 - Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`

@@ -83,6 +83,7 @@ REQUIRED_FILES: Dict[Path, str] = {
             },
             "diagnostics_messages": [],
             "diagnostics_report_path": "",
+            "diagnostics_report_html_path": "",
         },
         indent=2,
         ensure_ascii=False,
@@ -188,6 +189,7 @@ class StartupReport:
     diagnostics: Optional[Dict[str, object]] = None
     diagnostics_messages: List[str] = field(default_factory=list)
     diagnostics_path: Optional[Path] = None
+    diagnostics_html_path: Optional[Path] = None
 
     def add_message(self, message: str) -> None:
         self.messages.append(message)
@@ -400,13 +402,17 @@ class StartupManager:
     def capture_diagnostics(self) -> None:
         manager = DiagnosticsManager()
         diagnostics = manager.collect(self.report)
+        html_path = manager.export_html(diagnostics)
+        diagnostics.html_report_path = str(html_path)
         diagnostics_path = manager.save(diagnostics)
         self.report.diagnostics = diagnostics.to_dict()
         self.report.diagnostics_path = diagnostics_path
+        self.report.diagnostics_html_path = html_path
         summary_lines = manager.summary_lines(diagnostics)
         self.report.diagnostics_messages = summary_lines
         for line in summary_lines:
             self._log_progress(line)
+        self._log_progress(f"Diagnose als HTML gespeichert: {html_path}")
 
     # ------------------------------------------------------------------
     def _persist_report(self) -> None:
@@ -435,6 +441,8 @@ class StartupManager:
             payload["diagnostics_messages"] = self.report.diagnostics_messages
         if self.report.diagnostics_path:
             payload["diagnostics_report_path"] = str(self.report.diagnostics_path)
+        if self.report.diagnostics_html_path:
+            payload["diagnostics_report_html_path"] = str(self.report.diagnostics_html_path)
         target = Path("data/selftest_report.json")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")

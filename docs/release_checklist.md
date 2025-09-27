@@ -23,6 +23,8 @@ Release-Register).
   Paletten-Übersicht im Info-Center.
 - Automatischer Farbaudit, der alle Themes beim Start prüft und einen Bericht in
   `data/color_audit.json` sowie im Info-Center bereitstellt.
+- Live-Vergleich der Paketversionen gegen `requirements.txt` inklusive
+  HTML-Diagnosebericht (`data/diagnostics_report.html`) für Supportfälle.
 - Abschlussprüfung dokumentiert: End-to-End-Testlauf, Freigabe des Bedienhandbuchs
   und aktualisierte Hinweise zu Wiederherstellung und Support.
 - Wiederherstellungs-Check automatisiert – jeder Lauf prüft, ob die jüngsten

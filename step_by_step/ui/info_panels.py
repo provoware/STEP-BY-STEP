@@ -655,16 +655,18 @@ def build_diagnostics_panel(
 
     package_tree = ttk.Treeview(
         parent,
-        columns=("paket", "status", "info"),
+        columns=("paket", "status", "vorgabe", "info"),
         show="headings",
         height=4,
     )
     package_tree.heading("paket", text="Paket")
     package_tree.heading("status", text="Status")
+    package_tree.heading("vorgabe", text="Vorgabe")
     package_tree.heading("info", text="Info")
-    package_tree.column("paket", width=120, anchor="w")
-    package_tree.column("status", width=90, anchor="center")
-    package_tree.column("info", width=180, anchor="w")
+    package_tree.column("paket", width=140, anchor="w")
+    package_tree.column("status", width=100, anchor="center")
+    package_tree.column("vorgabe", width=120, anchor="w")
+    package_tree.column("info", width=200, anchor="w")
     if colors:
         package_tree.configure(
             background=colors.get("surface", "white"),
@@ -674,13 +676,20 @@ def build_diagnostics_panel(
     package_tree.configure(font=body_font)
     package_tree.pack(fill="both", expand=True, pady=(0, 6))
     for pkg in diagnostics.get("packages", []):
-        installed = "Installiert" if pkg.get("installed") else "Fehlt"
-        info_text = pkg.get("version") or pkg.get("message", "")
-        tag = "ok" if pkg.get("installed") else "warn"
+        installed_flag = bool(pkg.get("installed"))
+        meets_flag = bool(pkg.get("meets_requirement", True))
+        installed = "Installiert" if installed_flag else "Fehlt"
+        required = pkg.get("required") or "–"
+        version = pkg.get("version") or ""
+        info_text = version
+        message = pkg.get("message") or ""
+        if message:
+            info_text = f"{info_text} – {message}" if info_text else message
+        tag = "ok" if installed_flag and meets_flag else "warn"
         package_tree.insert(
             "",
             "end",
-            values=(pkg.get("name", ""), installed, info_text),
+            values=(pkg.get("name", ""), installed, required, info_text),
             tags=(tag,),
         )
     package_tree.tag_configure("warn", foreground="#c43c00")
@@ -722,6 +731,18 @@ def build_diagnostics_panel(
         justify="left",
         font=body_font,
     ).pack(anchor="w", pady=(4, 0))
+    html_path = diagnostics.get("html_report_path") if isinstance(diagnostics, dict) else None
+    if html_path:
+        ttk.Label(
+            parent,
+            text=(
+                "Neu: Eine barrierefreundliche HTML-Ansicht liegt zusätzlich unter "
+                f"{html_path}."
+            ),
+            wraplength=320,
+            justify="left",
+            font=body_font,
+        ).pack(anchor="w", pady=(0, 0))
 
 
 def build_release_panel(

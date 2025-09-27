@@ -107,6 +107,11 @@ def display_startup_report(report: StartupReport) -> None:
             "[Diagnose] Vollständiger Bericht: "
             f"{report.diagnostics_path}"
         )
+    if report.diagnostics_html_path:
+        print(
+            "[Diagnose] HTML-Überblick: "
+            f"{report.diagnostics_html_path}"
+        )
 
 
 def relaunch_if_needed(report: StartupReport, logger) -> Optional[int]:

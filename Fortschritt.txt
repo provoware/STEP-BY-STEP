@@ -12,6 +12,7 @@ Abschluss-Highlights:
 - Restore-Checks laufen automatisch: Backups werden beim Start mit den Manifest-Prüfsummen abgeglichen.
 - Farbaudit liefert konkrete Optimierungstipps für Farbpaare mit zu niedrigem Kontrast.
 - Systemdiagnose erstellt bei jedem Start einen Profi-Bericht mit Paket- und Pfadstatus.
+- Versionsabgleich der Abhängigkeiten prüft `requirements.txt` live und erzeugt zusätzlich einen HTML-Diagnosebericht.
 - Primärdatenfreie Auslieferung: Datenverzeichnis startet leer und wird beim ersten Lauf automatisch aufgebaut.
 
 Aktuelle Highlights:

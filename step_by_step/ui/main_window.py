@@ -1260,12 +1260,15 @@ class MainWindow(tk.Tk):
         issues = summary.get("issues", []) or []
         generated = self._format_timestamp(diagnostics.get("generated_at"))
         status = str(summary.get("status", "unknown"))
+        html_path = diagnostics.get("html_report_path")
         if status == "ok" and not issues:
             message = f"Diagnose: System geprüft – keine Auffälligkeiten ({generated})"
             color_key = "success"
         else:
             message = f"Diagnose: {len(issues)} Hinweis(e) – Bericht {generated}"
             color_key = "danger" if issues else "warning"
+        if html_path:
+            message = f"{message} – HTML-Ansicht gespeichert"
         self.diagnostics_var.set(message)
         self.diagnostics_label.configure(
             foreground=self.colors.get(color_key, self.colors["accent"])

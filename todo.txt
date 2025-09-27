@@ -34,6 +34,6 @@
 - [x] Systemdiagnose-Bericht mit Paket- und Pfadstatus erzeugen und im Dashboard anzeigen
 - [x] Info-Center um Diagnose-Tab mit Profi-Details erweitern
 - [x] Primärdaten erst beim Toolstart erzeugen (Repository ohne Nutzdaten)
-- [ ] Live-Vergleich der Paketversionen gegen requirements.txt ergänzen
-- [ ] Optionalen Export des Diagnoseberichts als HTML vorbereiten
+- [x] Live-Vergleich der Paketversionen gegen requirements.txt ergänzen
+- [x] Optionalen Export des Diagnoseberichts als HTML vorbereiten
 - [ ] SQLite-Auswertung (z.B. Favoritenlisten) als Zusatzansicht planen

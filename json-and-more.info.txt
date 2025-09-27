@@ -27,6 +27,8 @@ Enthaltene Kernressourcen
   Mindestkontrasten und konkreten Optimierungstipps je Theme.
 - data/diagnostics_report.json: Systemdiagnose (Python-Version, Pakete,
   Pfadprüfungen) als JSON für Support und Fehlersuche.
+- data/diagnostics_report.html: HTML-Ansicht derselben Diagnose mit hohem
+  Kontrast – ideal zum Weitergeben an Support oder Dokumentation.
 - data/backups/: Sicherungskopien mit Zeitstempel, wenn das Manifest Abweichungen
   feststellt (Ordner ist leer, bis der erste Lauf eine Datei schützt).
 - data/converted_audio/: automatisch erzeugte WAV-Kopien (16-Bit).
@@ -61,6 +63,7 @@ Zusatzbefehle für die Wartung
 - Sicherheitsmanifest kontrollieren: ``less data/security_manifest.json``.
 - Farbaudit-Bericht prüfen: ``less data/color_audit.json``.
 - Diagnosebericht prüfen: ``less data/diagnostics_report.json``.
+- Diagnosebericht als HTML öffnen: ``xdg-open data/diagnostics_report.html``.
 - Backups listen: ``ls data/backups``.
 - Backup-Wiederherstellung testen: ``cp data/backups/<DATEI>.<ZEIT>.bak data/<DATEI>``.
 - Release-Checkliste ansehen: ``less data/release_checklist.json``.
