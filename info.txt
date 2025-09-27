@@ -30,6 +30,9 @@ Beschreibung:
 - Systemdiagnose gleicht installierte Pakete gegen `requirements.txt` ab und
   erzeugt neben dem JSON-Bericht auch eine kontrastreiche HTML-Zusammenfassung
   für Supportzwecke (`data/diagnostics_report.html`).
+- Einstellungen werden vor jedem Start durch einen Validator geprüft: ungültige
+  Schriftgrößen, Lautstärkeeinstellungen oder fehlende Felder werden automatisch
+  korrigiert, protokolliert und wieder abgespeichert.
 - Selbsttest-Anzeige im Header (letzter Lauf, Ergebnis) auf Basis von
   `data/selftest_report.json`.
 - Startprotokoll-Bereich im Dashboard mit Suchfeld, Kopierfunktion und direktem

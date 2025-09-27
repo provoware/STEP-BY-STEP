@@ -41,9 +41,11 @@ So wird alles repariert
 1. Starte das Klick-und-Start-Tool: ``python start_tool.py``.
 2. Das Tool legt automatisch eine virtuelle Umgebung ``.venv`` an.
 3. Danach installiert es alle Pakete aus ``requirements.txt``.
-4. Anschließend laufen automatische Selbsttests (Syntax-Check und
-   Einstellungen). Ergebnisse stehen in ``logs/startup.log``.
-5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
+4. Anschließend laufen automatische Selbsttests (Syntax-Check) plus ein
+   Einstellungs-Validator, der Schriftgröße, Lautstärke und fehlende Felder
+   korrigiert. Ergebnisse stehen in ``logs/startup.log``.
+5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an und
+   protokolliert jede automatische Reparatur.
 6. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
    120 %-Basisschrift, ein ToDo-Kontrollfeld zum direkten Abhaken, ein
    Kontrast-Checker samt Farbpaletten- und Farbaudit-Tab, ein Diagnose-Tab

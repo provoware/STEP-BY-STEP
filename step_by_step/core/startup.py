@@ -10,12 +10,14 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from .color_audit import ColorAuditor
+from .defaults import DEFAULT_SETTINGS
 from .diagnostics import DiagnosticsManager
 from .logging_manager import get_logger
 from .security import SecurityManager, SecuritySummary
+from .validators import SettingsValidator
 
 REQUIRED_FOLDERS: Sequence[Path] = (
     Path("data"),
@@ -30,17 +32,9 @@ ARCHIVE_DB_PATH = Path("data/archive.db")
 
 REQUIRED_FILES: Dict[Path, str] = {
     Path("data/settings.json"): json.dumps(
-        {
-            "font_scale": 1.2,
-            "theme": "light",
-            "autosave_interval_minutes": 10,
-            "accessibility_mode": True,
-            "shortcuts_enabled": True,
-            "contrast_theme": "accessible",
-            "color_mode": "accessible",
-            "audio_volume": 0.8,
-        },
+        DEFAULT_SETTINGS,
         indent=2,
+        ensure_ascii=False,
     ),
     Path("data/todo_items.json"): json.dumps({"items": []}, indent=2),
     Path("data/playlists.json"): json.dumps({"tracks": []}, indent=2),
@@ -152,7 +146,7 @@ REQUIRED_FILES: Dict[Path, str] = {
 def _default_settings() -> Dict[str, object]:
     """Return a fresh copy of the default settings payload."""
 
-    return json.loads(REQUIRED_FILES[Path("data/settings.json")])
+    return dict(DEFAULT_SETTINGS)
 
 DEPENDENCY_COMMANDS: Dict[str, List[str]] = {
     "ttkbootstrap": ["-m", "pip", "install", "ttkbootstrap"],
@@ -209,6 +203,7 @@ class StartupManager:
         self.diagnostics_file = Path("logs/startup.log")
         self.diagnostics_file.parent.mkdir(parents=True, exist_ok=True)
         self._argv: List[str] = list(sys.argv)
+        self.settings_validator = SettingsValidator()
 
     # ------------------------------------------------------------------
     def run_startup_checks(self, argv: Optional[List[str]] = None) -> StartupReport:
@@ -218,13 +213,19 @@ class StartupManager:
             self._argv = list(argv)
         self._write_diagnostic("Startroutine wird ausgeführt...")
 
-        self.ensure_structure()
-        self.ensure_virtual_environment()
-        self.ensure_dependencies()
-        self.verify_data_security()
-        self.audit_color_contrast()
-        self.run_self_tests()
-        self.capture_diagnostics()
+        steps: Sequence[Tuple[str, Callable[[], None]]] = (
+            ("Strukturprüfung", self.ensure_structure),
+            ("Virtuelle Umgebung prüfen", self.ensure_virtual_environment),
+            ("Abhängigkeiten prüfen", self.ensure_dependencies),
+            ("Datensicherheit prüfen", self.verify_data_security),
+            ("Farbaudit ausführen", self.audit_color_contrast),
+            ("Selbsttests ausführen", self.run_self_tests),
+            ("Diagnose erfassen", self.capture_diagnostics),
+        )
+
+        for label, step in steps:
+            self._run_step(label, step)
+
         self._persist_report()
 
         self.logger.info("Startroutine beendet")
@@ -354,7 +355,27 @@ class StartupManager:
     # ------------------------------------------------------------------
     def audit_color_contrast(self) -> None:
         auditor = ColorAuditor()
-        report = auditor.generate_report()
+        try:
+            report = auditor.generate_report()
+        except Exception as error:  # pragma: no cover - defensive guard
+            payload = {
+                "generated_at": dt.datetime.now().isoformat(),
+                "overall_status": "error",
+                "worst_ratio": 0.0,
+                "themes": [],
+                "issues": [f"Farbaudit fehlgeschlagen: {error}"],
+                "recommendations": [],
+            }
+            target = Path("data/color_audit.json")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            self.report.color_audit = payload
+            self._log_progress(f"Farbaudit fehlgeschlagen: {error}", level="error")
+            return
+
         payload = report.to_dict()
         self.report.color_audit = payload
         target = Path("data/color_audit.json")
@@ -401,18 +422,73 @@ class StartupManager:
     # ------------------------------------------------------------------
     def capture_diagnostics(self) -> None:
         manager = DiagnosticsManager()
-        diagnostics = manager.collect(self.report)
-        html_path = manager.export_html(diagnostics)
-        diagnostics.html_report_path = str(html_path)
-        diagnostics_path = manager.save(diagnostics)
-        self.report.diagnostics = diagnostics.to_dict()
+        try:
+            diagnostics = manager.collect(self.report)
+        except Exception as error:  # pragma: no cover - defensive guard
+            payload = {
+                "generated_at": dt.datetime.now().isoformat(),
+                "python": {},
+                "virtualenv": {},
+                "paths": [],
+                "packages": [],
+                "summary": {
+                    "status": "error",
+                    "issues": [f"Diagnose konnte nicht erstellt werden: {error}"],
+                    "recommendations": [],
+                },
+                "startup": {},
+                "html_report_path": "",
+            }
+            target = Path("data/diagnostics_report.json")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            self.report.diagnostics = payload
+            self.report.diagnostics_path = target
+            self.report.diagnostics_html_path = None
+            message = f"Diagnose fehlgeschlagen: {error}"
+            self.report.diagnostics_messages.append(message)
+            self._log_progress(message, level="error")
+            return
+
+        html_path: Optional[Path] = None
+        try:
+            html_path = manager.export_html(diagnostics)
+        except Exception as error:  # pragma: no cover - defensive guard
+            self._log_progress(
+                f"Diagnose-HTML konnte nicht erstellt werden: {error}",
+                level="error",
+            )
+
+        diagnostics_path: Optional[Path] = None
+        try:
+            diagnostics_path = manager.save(diagnostics)
+        except Exception as error:  # pragma: no cover - defensive guard
+            self._log_progress(
+                f"Diagnosebericht konnte nicht gespeichert werden: {error}",
+                level="error",
+            )
+
+        diagnostics_dict = diagnostics.to_dict()
+        if html_path:
+            diagnostics.html_report_path = str(html_path)
+            diagnostics_dict["html_report_path"] = str(html_path)
+        self.report.diagnostics = diagnostics_dict
         self.report.diagnostics_path = diagnostics_path
         self.report.diagnostics_html_path = html_path
-        summary_lines = manager.summary_lines(diagnostics)
+        try:
+            summary_lines = manager.summary_lines(diagnostics)
+        except Exception as error:  # pragma: no cover - defensive guard
+            summary_lines = [f"Diagnose-Zusammenfassung nicht verfügbar: {error}"]
+            self._log_progress(summary_lines[0], level="error")
+        else:
+            for line in summary_lines:
+                self._log_progress(line)
         self.report.diagnostics_messages = summary_lines
-        for line in summary_lines:
-            self._log_progress(line)
-        self._log_progress(f"Diagnose als HTML gespeichert: {html_path}")
+        if html_path:
+            self._log_progress(f"Diagnose als HTML gespeichert: {html_path}")
 
     # ------------------------------------------------------------------
     def _persist_report(self) -> None:
@@ -447,6 +523,15 @@ class StartupManager:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
         self._log_progress("Selbsttest-Ergebnisse gespeichert.")
+
+    # ------------------------------------------------------------------
+    def _run_step(self, label: str, callback: Callable[[], None]) -> None:
+        try:
+            callback()
+        except Exception as error:  # pragma: no cover - defensive umbrella
+            message = f"{label} fehlgeschlagen: {error}"
+            self._log_progress(message, level="error")
+            self.logger.exception("%s", message, exc_info=error)
 
     # ------------------------------------------------------------------
     def _create_virtualenv(self, python_in_venv: Path) -> None:
@@ -484,7 +569,6 @@ class StartupManager:
         """Validate settings and ensure recommended accessibility defaults."""
 
         settings_path = Path("data/settings.json")
-        desired_scale = 1.2
         try:
             raw = json.loads(settings_path.read_text(encoding="utf-8"))
         except FileNotFoundError:
@@ -498,49 +582,49 @@ class StartupManager:
                 self.report.repaired_paths.append(settings_path)
             return False, "Einstellungsdatei war defekt und wurde erneuert."
 
-        changed = False
-        default_settings = _default_settings()
-        for key, value in default_settings.items():
-            if key not in raw:
-                raw[key] = value
-                changed = True
-        try:
-            scale_value = float(raw.get("font_scale", desired_scale))
-        except (TypeError, ValueError):
-            scale_value = desired_scale
-        if scale_value < desired_scale:
-            raw["font_scale"] = desired_scale
-            changed = True
-        if changed:
-            settings_path.write_text(json.dumps(raw, indent=2), encoding="utf-8")
+        sanitised, adjustments = self.settings_validator.normalise(raw)
+        if sanitised != raw:
+            settings_path.write_text(
+                json.dumps(sanitised, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
-            return True, "Einstellungen wurden automatisch aktualisiert."
+            detail = "Einstellungen wurden automatisch aktualisiert."
+            if adjustments:
+                detail = f"{detail} {' '.join(adjustments)}"
+            return True, detail
         return True, "Einstellungen sind vollständig."
 
     def _ensure_settings_defaults(self, settings_path: Path) -> None:
         """Keep persisted settings aligned with recommended defaults."""
 
-        desired_scale = 1.2
         try:
             content = json.loads(settings_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
-            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
+            sanitised, adjustments = self.settings_validator.normalise({})
+            settings_path.write_text(
+                json.dumps(sanitised, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             self._log_progress("Einstellungen zurückgesetzt (ungültiges Format).", level="error")
+            for note in adjustments:
+                self._log_progress(f"Einstellungs-Hinweis: {note}")
             return
 
-        try:
-            current_scale = float(content.get("font_scale", desired_scale))
-        except (TypeError, ValueError):
-            current_scale = desired_scale
-        if current_scale < desired_scale:
-            content["font_scale"] = desired_scale
-            settings_path.write_text(json.dumps(content, indent=2), encoding="utf-8")
+        sanitised, adjustments = self.settings_validator.normalise(content)
+        if sanitised != content:
+            settings_path.write_text(
+                json.dumps(sanitised, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
-            self._log_progress("Schriftgröße dauerhaft auf 1.2 angehoben.")
+            self._log_progress("Einstellungen automatisch aktualisiert.")
+            for note in adjustments:
+                self._log_progress(f"Einstellungs-Hinweis: {note}")
 
     def _python_in_venv(self) -> Path:
         if sys.platform == "win32":

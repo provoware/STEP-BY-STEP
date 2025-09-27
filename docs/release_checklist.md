@@ -25,6 +25,11 @@ Release-Register).
   `data/color_audit.json` sowie im Info-Center bereitstellt.
 - Live-Vergleich der Paketversionen gegen `requirements.txt` inklusive
   HTML-Diagnosebericht (`data/diagnostics_report.html`) für Supportfälle.
+- Gemeinsamer Einstellungs-Validator korrigiert Schriftgröße, Autosave und
+  Lautstärke automatisch und speichert nachvollziehbare Hinweise im Log.
+- Diagnose- und Farbaudit-Erstellung sind fehlertolerant: Bei Problemen werden
+  Ersatzberichte mit Warnhinweis gespeichert, damit das Dashboard trotzdem
+  verwertbare Informationen erhält.
 - Abschlussprüfung dokumentiert: End-to-End-Testlauf, Freigabe des Bedienhandbuchs
   und aktualisierte Hinweise zu Wiederherstellung und Support.
 - Wiederherstellungs-Check automatisiert – jeder Lauf prüft, ob die jüngsten

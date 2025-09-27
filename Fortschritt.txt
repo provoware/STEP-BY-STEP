@@ -9,6 +9,7 @@ Nächste Schritte:
 
 Abschluss-Highlights:
 - End-to-End-Review dokumentiert – Selbsttests, Bedienhandbuch und Supporthinweise freigegeben.
+- Einheitlicher Einstellungs-Validator korrigiert Schriftgröße, Lautstärke und fehlende Felder automatisch und protokolliert jede Änderung.
 - Restore-Checks laufen automatisch: Backups werden beim Start mit den Manifest-Prüfsummen abgeglichen.
 - Farbaudit liefert konkrete Optimierungstipps für Farbpaare mit zu niedrigem Kontrast.
 - Systemdiagnose erstellt bei jedem Start einen Profi-Bericht mit Paket- und Pfadstatus.

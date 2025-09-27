@@ -14,6 +14,10 @@ from typing import Any, Dict
 
 import json
 
+from .defaults import DEFAULT_SETTINGS
+from .logging_manager import get_logger
+from .validators import SettingsValidator
+
 
 CONFIG_FILE = Path("data/settings.json")
 
@@ -57,24 +61,52 @@ class ConfigManager:
     def __init__(self, file_path: Path = CONFIG_FILE) -> None:
         self.file_path = file_path
         self.file_path.parent.mkdir(parents=True, exist_ok=True)
+        self.logger = get_logger("core.config")
+        self.validator = SettingsValidator()
 
     def load_preferences(self) -> UserPreferences:
         """Return stored user preferences or sensible defaults."""
 
         if not self.file_path.exists():
-            return UserPreferences()
+            self.logger.warning(
+                "Einstellungsdatei fehlte – Standardwerte werden erzeugt."
+            )
+            defaults = dict(DEFAULT_SETTINGS)
+            self._write_payload(defaults)
+            return UserPreferences.from_dict(defaults)
         try:
             with self.file_path.open("r", encoding="utf-8") as handle:
                 content = json.load(handle)
         except json.JSONDecodeError:
+            self.logger.error(
+                "Einstellungsdatei beschädigt – Standardwerte wiederhergestellt."
+            )
+            defaults = dict(DEFAULT_SETTINGS)
+            self._write_payload(defaults)
+            return UserPreferences.from_dict(defaults)
+        except OSError as error:
+            self.logger.error("Einstellungen konnten nicht gelesen werden: %s", error)
             return UserPreferences()
-        return UserPreferences.from_dict(content)
+
+        sanitised, adjustments = self.validator.normalise(content)
+        if sanitised != content:
+            self._write_payload(sanitised)
+            if adjustments:
+                self.logger.info(
+                    "Einstellungen korrigiert: %s", "; ".join(adjustments)
+                )
+            else:
+                self.logger.info("Einstellungen auf Standardwerte aktualisiert.")
+        return UserPreferences.from_dict(sanitised)
 
     def save_preferences(self, preferences: UserPreferences) -> None:
         """Persist the given preferences in JSON format."""
 
+        self._write_payload(preferences.to_dict())
+
+    def _write_payload(self, payload: Dict[str, Any]) -> None:
         with self.file_path.open("w", encoding="utf-8") as handle:
-            json.dump(preferences.to_dict(), handle, indent=2, ensure_ascii=False)
+            json.dump(payload, handle, indent=2, ensure_ascii=False)
 
 
 __all__ = ["ConfigManager", "UserPreferences"]

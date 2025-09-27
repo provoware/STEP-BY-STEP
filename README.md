@@ -42,6 +42,10 @@ python start_tool.py --headless
 - **Automatische Selbsttests:** Beim Start wird der komplette Codebaum mit
   `compileall` (Syntaxprüfung) getestet und die `data/settings.json` wird auf
   Vollständigkeit und barrierefreie Standardeinstellungen geprüft.
+- **Robuste Einstellungs-Validierung:** Ein gemeinsamer Validator gleicht
+  `data/settings.json` mit empfohlenen Grenzwerten ab, korrigiert ungültige
+  Werte (z.B. Schriftgröße, Lautstärke, Autospeicher-Intervall) und protokolliert
+  jede automatische Anpassung verständlich.
 - **Systemdiagnose (Pro-Report):** Der Startlauf prüft Python-Version,
   virtuelle Umgebung, Pfad-Rechte und benötigte Pakete. Zusätzlich gleicht er
   installierte Paketversionen mit den Mindestanforderungen aus
