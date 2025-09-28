@@ -19,6 +19,9 @@ und Einstellungs-Validierung), protokolliert jeden Schritt unter `logs/` und
 startet anschließend die barrierearme Oberfläche. Die Konsole zeigt danach
 eine zusammengefasste Auswertung (Security-Status, Farbaudit, Selbsttests,
 Systemdiagnose).
+Beim allerersten Start legt die Routine sämtliche Primärdaten-Dateien neu an
+(`data/settings.json`, `data/todo_items.json`, `data/archive.db` usw.), damit
+das Git-Repository keine echten Nutzerdaten enthält.
 Für einen Diagnoselauf ohne Fenster:
 
 ```bash
@@ -30,6 +33,26 @@ python start_tool.py --headless
 - **Autonome Startroutine:** Erstellt fehlende Dateien, prüft Pakete, führt
   Selbsttests aus und startet sich bei Bedarf innerhalb der virtuellen
   Umgebung neu.
+- **Primärdatenfreie Auslieferung:** Das Repository enthält nur leere
+  Platzhalterordner (`data/`, `data/backups/`, `data/converted_audio/`,
+  `data/exports/`). Alle JSON-/Datenbankdateien erzeugt die Startroutine beim
+  ersten Start automatisch mit sauberen Standardeinträgen.
+- **Detailiertes Logging:** Zentraler Logger mit drehenden Dateien (`logs/tool.log`)
+  sowie einer separaten Startprotokollierung (`logs/startup.log`), die automatisch
+  auf die letzten 2 000 Zeilen gekürzt wird.
+- **Automatische Selbsttests:** Beim Start wird der komplette Codebaum mit
+  `compileall` (Syntaxprüfung) getestet und die `data/settings.json` wird auf
+  Vollständigkeit und barrierefreie Standardeinstellungen geprüft.
+- **Robuste Einstellungs-Validierung:** Ein gemeinsamer Validator gleicht
+  `data/settings.json` mit empfohlenen Grenzwerten ab, korrigiert ungültige
+  Werte (z.B. Schriftgröße, Lautstärke, Autospeicher-Intervall) und protokolliert
+  jede automatische Anpassung verständlich.
+- **Systemdiagnose (Pro-Report):** Der Startlauf prüft Python-Version,
+  virtuelle Umgebung, Pfad-Rechte und benötigte Pakete. Zusätzlich gleicht er
+  installierte Paketversionen mit den Mindestanforderungen aus
+  `requirements.txt` ab. Alle Details landen in `data/diagnostics_report.json`
+  sowie in einer barrierefreundlichen HTML-Ansicht
+  (`data/diagnostics_report.html`), während das Dashboard eine kurze,
 - **Detailiertes Logging:** Zentraler Logger mit drehenden Dateien (`logs/tool.log`)
   sowie einer separaten Startprotokollierung (`logs/startup.log`).
 - **Automatische Selbsttests:** Beim Start wird der komplette Codebaum mit
@@ -72,6 +95,9 @@ python start_tool.py --headless
   sowie Register für Schriftgrößen-Empfehlungen, einen Kontrast-Checker, eine
   Farbpaletten-Übersicht (inkl. berechnetem WCAG-Kontrast), einen Tab mit den
   Ergebnissen der Datensicherheitsprüfung samt Restore-Status, einen
+  Diagnose-Tab für Systeminformationen, einen Farbaudit-Tab mit
+  Optimierungstipps sowie einen Daten-Tab mit SQLite-Überblick (neueste Einträge
+  und häufigste Anfangsbuchstaben).
   Diagnose-Tab für Systeminformationen und einen Farbaudit-Tab mit
   Optimierungstipps.
 - **Datensicherheits-Manifest:** Beim Start wird ein Checksummen-Manifest für
@@ -90,6 +116,17 @@ python start_tool.py --headless
 
 - `json-and-more.info.txt` dokumentiert alle Standarddateien und ersetzt die
   frühere ZIP-Datei.
+- `data/` enthält alle persistenten Informationen (Notizen, Aufgaben,
+  Playlists, Statistiken, Einstellungen). Im Git-Repository liegen hier nur
+  `.gitkeep`-Platzhalter – die tatsächlichen Dateien entstehen beim ersten
+  Programmstart.
+- `data/archive.db` speichert das Archiv als SQLite-Datenbank (leichte
+  Datenbank) und wird beim ersten Start automatisch angelegt oder aus der
+  bisherigen `data/archive.json` befüllt.
+- `logs/` speichert Start- und Laufzeitprotokolle für eine einfache Analyse.
+- `data/security_manifest.json` dokumentiert nach dem ersten Start die letzten
+  Checksummen-Prüfungen aller wichtigen Dateien und speichert
+  Restore-Checks für jede Sicherung.
 - `data/` enthält alle persistenten Informationen (Notizen, Aufgaben, Playlists,
   Statistiken, Einstellungen).
 - `logs/` speichert Start- und Laufzeitprotokolle für eine einfache Analyse.
@@ -99,6 +136,8 @@ python start_tool.py --headless
   Farbkontrast-Prüfung inklusive Empfehlungen fest.
 - `data/diagnostics_report.json` speichert die Systemdiagnose (Python,
   Pakete, Pfade) für Support und Fehlersuche.
+- `data/diagnostics_report.html` stellt dieselben Informationen als
+  kontraststarke HTML-Ansicht bereit (ideal für Support-Weitergabe).
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
 
 ## Audio & Playlist
@@ -115,6 +154,13 @@ python start_tool.py --headless
 
 ## Datenbank & Aufgaben
 
+- Das Archiv-Modul (`step_by_step/modules/database/module.py`) arbeitet mit
+  SQLite (leichte Datenbank) und bietet Such-/Präfixfilter sowie das Entfernen
+  einzelner Einträge ohne Duplikate.
+- Über Schnelllinks können CSV- und JSON-Exporte erstellt werden (`data/exports/`).
+- Der neue Daten-Tab im Info-Center fasst die letzten Einträge, die Gesamtzahl
+  der Datensätze und die häufigsten Anfangsbuchstaben zusammen und erklärt
+  dabei zentrale Begriffe (Eintrag = Datensatz, SQLite = leichte Datenbank).
 - Das Archiv-Modul (`step_by_step/modules/database/module.py`) bietet jetzt
   Such- und Präfixfilter sowie das Entfernen einzelner Einträge.
 - Über Schnelllinks können CSV- und JSON-Exporte erstellt werden (`data/exports/`).

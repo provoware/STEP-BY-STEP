@@ -5,6 +5,7 @@ from __future__ import annotations
 import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 from typing import Callable, Dict, Iterable, Optional, Sequence, Tuple
 
 
@@ -139,6 +140,131 @@ def build_structure_panel(
                 insert_nodes(node_id, children)
 
     insert_nodes("", schema)
+
+
+def build_database_insights_panel(
+    parent: ttk.LabelFrame,
+    stats: Optional[Dict[str, object]] = None,
+    colors: Optional[Dict[str, str]] = None,
+) -> None:
+    """Show SQLite (leichte Datenbank) highlights in an accessible layout."""
+
+    heading_font = tkfont.nametofont("TkHeadingFont")
+    body_font = tkfont.nametofont("TkDefaultFont")
+    mono_font = tkfont.nametofont("TkFixedFont")
+    bold_font = tkfont.Font(font=body_font)
+    bold_font.configure(weight="bold")
+    parent._db_fonts = (bold_font, mono_font)  # type: ignore[attr-defined]
+
+    ttk.Label(parent, text="Datenbank-Überblick", font=heading_font).pack(anchor="w")
+    ttk.Label(
+        parent,
+        text=(
+            "Schnellüberblick über das Archiv. \n"
+            "Erklärung: SQLite = leichte Datenbank, Eintrag = gespeicherter Datensatz."
+        ),
+        wraplength=260,
+        justify="left",
+        font=body_font,
+    ).pack(anchor="w", pady=(2, 8))
+
+    safe_stats: Dict[str, object] = stats or {}
+    total_entries = int(safe_stats.get("total_entries", 0) or 0)
+    last_added: Optional[Dict[str, str]] = None
+    raw_last = safe_stats.get("last_added")
+    if isinstance(raw_last, dict):
+        last_added = {
+            "title": str(raw_last.get("title", "")),
+            "created_at": str(raw_last.get("created_at", "")),
+        }
+
+    summary_lines: List[str] = [f"Gesamt: {total_entries} Einträge (Datensätze)"]
+    if last_added:
+        summary_lines.append(
+            f"Letzter Eintrag: {last_added['title']} – gespeichert am {last_added['created_at']}"
+        )
+    else:
+        summary_lines.append("Noch keine Einträge vorhanden. Über das Datenbank-Modul ergänzen.")
+
+    ttk.Label(
+        parent,
+        text="\n".join(summary_lines),
+        font=body_font,
+        wraplength=260,
+        justify="left",
+    ).pack(anchor="w", pady=(0, 8))
+
+    latest_entries: List[Dict[str, str]] = []
+    raw_latest = safe_stats.get("latest_entries")
+    if isinstance(raw_latest, list):
+        latest_entries = [
+            {
+                "title": str(item.get("title", "")),
+                "created_at": str(item.get("created_at", "")),
+            }
+            for item in raw_latest[:5]
+            if isinstance(item, dict)
+        ]
+
+    initials: List[Dict[str, object]] = []
+    raw_initials = safe_stats.get("top_initials")
+    if isinstance(raw_initials, list):
+        initials = [
+            {
+                "initial": str(item.get("initial", "?")),
+                "count": int(item.get("count", 0) or 0),
+            }
+            for item in raw_initials[:5]
+            if isinstance(item, dict)
+        ]
+
+    if latest_entries:
+        ttk.Label(parent, text="Neueste Einträge", font=bold_font).pack(anchor="w")
+        tree = ttk.Treeview(
+            parent,
+            columns=("title", "created"),
+            show="headings",
+            height=min(5, len(latest_entries)),
+        )
+        if colors:
+            tree.configure(
+                background=colors.get("surface", "white"),
+                foreground=colors.get("on_surface", "black"),
+                fieldbackground=colors.get("surface", "white"),
+            )
+        tree.heading("title", text="Titel")
+        tree.heading("created", text="Gespeichert am")
+        tree.column("title", width=160, anchor="w")
+        tree.column("created", width=120, anchor="w")
+        for entry in latest_entries:
+            tree.insert("", "end", values=(entry["title"], entry["created_at"]))
+        tree.configure(font=body_font)
+        tree.pack(fill="x", pady=(4, 8))
+        parent._db_latest_tree = tree  # type: ignore[attr-defined]
+    else:
+        ttk.Label(
+            parent,
+            text="Noch keine Liste der neuesten Einträge – zuerst Datensätze speichern.",
+            font=body_font,
+            wraplength=260,
+            justify="left",
+        ).pack(anchor="w", pady=(0, 8))
+
+    if initials:
+        ttk.Label(parent, text="Häufigste Anfangsbuchstaben", font=bold_font).pack(anchor="w")
+        info_lines = [f"{item['initial']}: {item['count']}×" for item in initials]
+        ttk.Label(
+            parent,
+            text=", ".join(info_lines),
+            font=mono_font,
+            wraplength=260,
+        ).pack(anchor="w", pady=(4, 0))
+    else:
+        ttk.Label(
+            parent,
+            text="Noch keine Statistik zu Anfangsbuchstaben.",
+            font=body_font,
+        ).pack(anchor="w")
 
 
 def build_quicklinks_panel(
@@ -655,12 +781,19 @@ def build_diagnostics_panel(
 
     package_tree = ttk.Treeview(
         parent,
+        columns=("paket", "status", "vorgabe", "info"),
         columns=("paket", "status", "info"),
         show="headings",
         height=4,
     )
     package_tree.heading("paket", text="Paket")
     package_tree.heading("status", text="Status")
+    package_tree.heading("vorgabe", text="Vorgabe")
+    package_tree.heading("info", text="Info")
+    package_tree.column("paket", width=140, anchor="w")
+    package_tree.column("status", width=100, anchor="center")
+    package_tree.column("vorgabe", width=120, anchor="w")
+    package_tree.column("info", width=200, anchor="w")
     package_tree.heading("info", text="Info")
     package_tree.column("paket", width=120, anchor="w")
     package_tree.column("status", width=90, anchor="center")
@@ -674,6 +807,20 @@ def build_diagnostics_panel(
     package_tree.configure(font=body_font)
     package_tree.pack(fill="both", expand=True, pady=(0, 6))
     for pkg in diagnostics.get("packages", []):
+        installed_flag = bool(pkg.get("installed"))
+        meets_flag = bool(pkg.get("meets_requirement", True))
+        installed = "Installiert" if installed_flag else "Fehlt"
+        required = pkg.get("required") or "–"
+        version = pkg.get("version") or ""
+        info_text = version
+        message = pkg.get("message") or ""
+        if message:
+            info_text = f"{info_text} – {message}" if info_text else message
+        tag = "ok" if installed_flag and meets_flag else "warn"
+        package_tree.insert(
+            "",
+            "end",
+            values=(pkg.get("name", ""), installed, required, info_text),
         installed = "Installiert" if pkg.get("installed") else "Fehlt"
         info_text = pkg.get("version") or pkg.get("message", "")
         tag = "ok" if pkg.get("installed") else "warn"
@@ -722,6 +869,18 @@ def build_diagnostics_panel(
         justify="left",
         font=body_font,
     ).pack(anchor="w", pady=(4, 0))
+    html_path = diagnostics.get("html_report_path") if isinstance(diagnostics, dict) else None
+    if html_path:
+        ttk.Label(
+            parent,
+            text=(
+                "Neu: Eine barrierefreundliche HTML-Ansicht liegt zusätzlich unter "
+                f"{html_path}."
+            ),
+            wraplength=320,
+            justify="left",
+            font=body_font,
+        ).pack(anchor="w", pady=(0, 0))
 
 
 def build_release_panel(

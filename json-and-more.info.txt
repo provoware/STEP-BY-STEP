@@ -2,12 +2,20 @@ JSON-UND-MEHR SAMMLUNG
 ======================
 
 Dieser Ordner ersetzt die frühere ZIP-Datei und fasst alle Basisdateien
+als sofort lesbare Textübersicht zusammen. Das Git-Repository liefert nur
+Platzhalterordner – die aufgelisteten Dateien werden beim Start automatisch
+erstellt, geprüft und bei Bedarf repariert.
 als sofort lesbare Textübersicht zusammen. Die aufgelisteten Dateien werden
 beim Start automatisch geprüft und bei Bedarf repariert oder neu erzeugt.
 
 Enthaltene Kernressourcen
 ------------------------
 - data/settings.json: Nutzer-Voreinstellungen (z.B. Schriftgröße 120 %,
+  Farbmodus, Audiolautstärke) – entsteht beim ersten Start automatisch.
+- data/todo_items.json: Aufgabenlisten mit Datum und Status.
+- data/playlists.json: Audioplaylist mit Titeln und Quellen.
+- data/archive.db: Hauptarchiv als SQLite-Datei (leichte Datenbank).
+- data/archive.json: Lesbares Backup der Archivstruktur für manuelle Einblicke.
   Farbmodus, Audiolautstärke).
 - data/todo_items.json: Aufgabenlisten mit Datum und Status.
 - data/playlists.json: Audioplaylist mit Titeln und Quellen.
@@ -17,6 +25,8 @@ Enthaltene Kernressourcen
 - data/selftest_report.json: Ergebnisse der automatischen Startroutine
   (Selbsttests, Reparaturen, Paket-Installationen, Datensicherheit) für die
   UI-Anzeige.
+- data/release_checklist.json: Fortschritt der Release-Checkliste (alle
+  Pflichtschritte erledigt, dient als Nachweis).
 - data/release_checklist.json: Fortschritt der Release-Checkliste.
 - data/security_manifest.json: Checksummen, Prüfzeitpunkt und Restore-Abgleich
   aller wichtigen JSON/TXT-Dateien.
@@ -24,6 +34,10 @@ Enthaltene Kernressourcen
   Mindestkontrasten und konkreten Optimierungstipps je Theme.
 - data/diagnostics_report.json: Systemdiagnose (Python-Version, Pakete,
   Pfadprüfungen) als JSON für Support und Fehlersuche.
+- data/diagnostics_report.html: HTML-Ansicht derselben Diagnose mit hohem
+  Kontrast – ideal zum Weitergeben an Support oder Dokumentation.
+- data/backups/: Sicherungskopien mit Zeitstempel, wenn das Manifest Abweichungen
+  feststellt (Ordner ist leer, bis der erste Lauf eine Datei schützt).
 - data/backups/: Sicherungskopien mit Zeitstempel, wenn das Manifest Abweichungen
   feststellt.
 - data/converted_audio/: automatisch erzeugte WAV-Kopien (16-Bit).
@@ -36,6 +50,14 @@ So wird alles repariert
 1. Starte das Klick-und-Start-Tool: ``python start_tool.py``.
 2. Das Tool legt automatisch eine virtuelle Umgebung ``.venv`` an.
 3. Danach installiert es alle Pakete aus ``requirements.txt``.
+4. Anschließend laufen automatische Selbsttests (Syntax-Check) plus ein
+   Einstellungs-Validator, der Schriftgröße, Lautstärke und fehlende Felder
+   korrigiert. Ergebnisse stehen in ``logs/startup.log``.
+5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an und
+   protokolliert jede automatische Reparatur.
+6. Das Startprotokoll `logs/startup.log` wird dabei auf die letzten 2 000 Zeilen
+   gekürzt, damit alte Einträge nicht überhandnehmen.
+7. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
 4. Anschließend laufen automatische Selbsttests (Syntax-Check und
    Einstellungen). Ergebnisse stehen in ``logs/startup.log``.
 5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
@@ -47,6 +69,8 @@ So wird alles repariert
 
 Zusatzbefehle für die Wartung
 ------------------------------
+- Hinweis: Alle Befehle, die auf `data/...` zugreifen, funktionieren nachdem der
+  erste Startlauf die Dateien erzeugt hat.
 - Virtuelle Umgebung manuell aktivieren (Linux/macOS): ``source .venv/bin/activate``.
 - Virtuelle Umgebung manuell aktivieren (Windows): ``.venv\\Scripts\\activate``.
 - Abhängigkeiten nachinstallieren: ``python -m pip install -r requirements.txt``.
@@ -56,6 +80,7 @@ Zusatzbefehle für die Wartung
 - Sicherheitsmanifest kontrollieren: ``less data/security_manifest.json``.
 - Farbaudit-Bericht prüfen: ``less data/color_audit.json``.
 - Diagnosebericht prüfen: ``less data/diagnostics_report.json``.
+- Diagnosebericht als HTML öffnen: ``xdg-open data/diagnostics_report.html``.
 - Backups listen: ``ls data/backups``.
 - Backup-Wiederherstellung testen: ``cp data/backups/<DATEI>.<ZEIT>.bak data/<DATEI>``.
 - Release-Checkliste ansehen: ``less data/release_checklist.json``.

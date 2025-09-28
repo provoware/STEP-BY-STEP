@@ -10,11 +10,22 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from .color_audit import ColorAuditor
 from .diagnostics import DiagnosticsManager
 from .logging_manager import get_logger
+from .resources import (
+    ARCHIVE_DB_PATH,
+    REQUIRED_FOLDERS,
+    iter_required_files,
+    required_file_content,
+)
+from .security import SecurityManager, SecuritySummary
+from .validators import SettingsValidator
+
+MAX_STARTUP_LOG_LINES = 2000
 from .security import SecurityManager, SecuritySummary
 
 REQUIRED_FOLDERS: Sequence[Path] = (
@@ -185,6 +196,7 @@ class StartupReport:
     diagnostics: Optional[Dict[str, object]] = None
     diagnostics_messages: List[str] = field(default_factory=list)
     diagnostics_path: Optional[Path] = None
+    diagnostics_html_path: Optional[Path] = None
 
     def add_message(self, message: str) -> None:
         self.messages.append(message)
@@ -204,14 +216,37 @@ class StartupManager:
         self.diagnostics_file = Path("logs/startup.log")
         self.diagnostics_file.parent.mkdir(parents=True, exist_ok=True)
         self._argv: List[str] = list(sys.argv)
+        self.settings_validator = SettingsValidator()
 
     # ------------------------------------------------------------------
     def run_startup_checks(self, argv: Optional[List[str]] = None) -> StartupReport:
         self.logger.info("Startroutine beginnt")
+        trimmed = self._trim_diagnostics_log()
         self.report = StartupReport()
         if argv is not None:
             self._argv = list(argv)
         self._write_diagnostic("Startroutine wird ausgeführt...")
+        if trimmed:
+            self._log_progress(
+                (
+                    "Startprotokoll bereinigt: Ältere Einträge wurden entfernt, "
+                    f"es bleiben die letzten {MAX_STARTUP_LOG_LINES} Zeilen."
+                )
+            )
+
+        steps: Sequence[Tuple[str, Callable[[], None]]] = (
+            ("Strukturprüfung", self.ensure_structure),
+            ("Virtuelle Umgebung prüfen", self.ensure_virtual_environment),
+            ("Abhängigkeiten prüfen", self.ensure_dependencies),
+            ("Datensicherheit prüfen", self.verify_data_security),
+            ("Farbaudit ausführen", self.audit_color_contrast),
+            ("Selbsttests ausführen", self.run_self_tests),
+            ("Diagnose erfassen", self.capture_diagnostics),
+        )
+
+        for label, step in steps:
+            self._run_step(label, step)
+
 
         self.ensure_structure()
         self.ensure_virtual_environment()
@@ -231,6 +266,7 @@ class StartupManager:
         for folder in REQUIRED_FOLDERS:
             folder.mkdir(parents=True, exist_ok=True)
             self._log_progress(f"Ordner geprüft: {folder}")
+        for path, template in iter_required_files():
         for path, template in REQUIRED_FILES.items():
             if not path.exists():
                 path.write_text(template, encoding="utf-8")
@@ -240,6 +276,29 @@ class StartupManager:
                 self._log_progress(f"Datei vorhanden: {path}")
             if path.name == "settings.json":
                 self._ensure_settings_defaults(path)
+        self._ensure_archive_database()
+
+    # ------------------------------------------------------------------
+    def _ensure_archive_database(self) -> None:
+        """Create the SQLite archive database when it is missing."""
+
+        if ARCHIVE_DB_PATH.exists():
+            self._log_progress(f"Archiv-Datenbank vorhanden: {ARCHIVE_DB_PATH}")
+            return
+
+        try:
+            from step_by_step.modules.database import DatabaseModule
+
+            DatabaseModule(database_file=ARCHIVE_DB_PATH, logger=self.logger)
+        except Exception as error:  # pragma: no cover - defensive bootstrap
+            self._log_progress(
+                f"Archiv-Datenbank konnte nicht erstellt werden: {error}",
+                level="error",
+            )
+            return
+
+        self.report.repaired_paths.append(ARCHIVE_DB_PATH)
+        self._log_progress(f"Archiv-Datenbank initialisiert: {ARCHIVE_DB_PATH}")
 
     # ------------------------------------------------------------------
     def ensure_virtual_environment(self) -> None:
@@ -326,6 +385,27 @@ class StartupManager:
     # ------------------------------------------------------------------
     def audit_color_contrast(self) -> None:
         auditor = ColorAuditor()
+        try:
+            report = auditor.generate_report()
+        except Exception as error:  # pragma: no cover - defensive guard
+            payload = {
+                "generated_at": dt.datetime.now().isoformat(),
+                "overall_status": "error",
+                "worst_ratio": 0.0,
+                "themes": [],
+                "issues": [f"Farbaudit fehlgeschlagen: {error}"],
+                "recommendations": [],
+            }
+            target = Path("data/color_audit.json")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            self.report.color_audit = payload
+            self._log_progress(f"Farbaudit fehlgeschlagen: {error}", level="error")
+            return
+
         report = auditor.generate_report()
         payload = report.to_dict()
         self.report.color_audit = payload
@@ -373,6 +453,73 @@ class StartupManager:
     # ------------------------------------------------------------------
     def capture_diagnostics(self) -> None:
         manager = DiagnosticsManager()
+        try:
+            diagnostics = manager.collect(self.report)
+        except Exception as error:  # pragma: no cover - defensive guard
+            payload = {
+                "generated_at": dt.datetime.now().isoformat(),
+                "python": {},
+                "virtualenv": {},
+                "paths": [],
+                "packages": [],
+                "summary": {
+                    "status": "error",
+                    "issues": [f"Diagnose konnte nicht erstellt werden: {error}"],
+                    "recommendations": [],
+                },
+                "startup": {},
+                "html_report_path": "",
+            }
+            target = Path("data/diagnostics_report.json")
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(
+                json.dumps(payload, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            self.report.diagnostics = payload
+            self.report.diagnostics_path = target
+            self.report.diagnostics_html_path = None
+            message = f"Diagnose fehlgeschlagen: {error}"
+            self.report.diagnostics_messages.append(message)
+            self._log_progress(message, level="error")
+            return
+
+        html_path: Optional[Path] = None
+        try:
+            html_path = manager.export_html(diagnostics)
+        except Exception as error:  # pragma: no cover - defensive guard
+            self._log_progress(
+                f"Diagnose-HTML konnte nicht erstellt werden: {error}",
+                level="error",
+            )
+
+        diagnostics_path: Optional[Path] = None
+        try:
+            diagnostics_path = manager.save(diagnostics)
+        except Exception as error:  # pragma: no cover - defensive guard
+            self._log_progress(
+                f"Diagnosebericht konnte nicht gespeichert werden: {error}",
+                level="error",
+            )
+
+        diagnostics_dict = diagnostics.to_dict()
+        if html_path:
+            diagnostics.html_report_path = str(html_path)
+            diagnostics_dict["html_report_path"] = str(html_path)
+        self.report.diagnostics = diagnostics_dict
+        self.report.diagnostics_path = diagnostics_path
+        self.report.diagnostics_html_path = html_path
+        try:
+            summary_lines = manager.summary_lines(diagnostics)
+        except Exception as error:  # pragma: no cover - defensive guard
+            summary_lines = [f"Diagnose-Zusammenfassung nicht verfügbar: {error}"]
+            self._log_progress(summary_lines[0], level="error")
+        else:
+            for line in summary_lines:
+                self._log_progress(line)
+        self.report.diagnostics_messages = summary_lines
+        if html_path:
+            self._log_progress(f"Diagnose als HTML gespeichert: {html_path}")
         diagnostics = manager.collect(self.report)
         diagnostics_path = manager.save(diagnostics)
         self.report.diagnostics = diagnostics.to_dict()
@@ -409,10 +556,21 @@ class StartupManager:
             payload["diagnostics_messages"] = self.report.diagnostics_messages
         if self.report.diagnostics_path:
             payload["diagnostics_report_path"] = str(self.report.diagnostics_path)
+        if self.report.diagnostics_html_path:
+            payload["diagnostics_report_html_path"] = str(self.report.diagnostics_html_path)
         target = Path("data/selftest_report.json")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
         self._log_progress("Selbsttest-Ergebnisse gespeichert.")
+
+    # ------------------------------------------------------------------
+    def _run_step(self, label: str, callback: Callable[[], None]) -> None:
+        try:
+            callback()
+        except Exception as error:  # pragma: no cover - defensive umbrella
+            message = f"{label} fehlgeschlagen: {error}"
+            self._log_progress(message, level="error")
+            self.logger.exception("%s", message, exc_info=error)
 
     # ------------------------------------------------------------------
     def _create_virtualenv(self, python_in_venv: Path) -> None:
@@ -450,6 +608,11 @@ class StartupManager:
         """Validate settings and ensure recommended accessibility defaults."""
 
         settings_path = Path("data/settings.json")
+        try:
+            raw = json.loads(settings_path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            template = required_file_content(settings_path)
+            settings_path.write_text(template, encoding="utf-8")
         desired_scale = 1.2
         try:
             raw = json.loads(settings_path.read_text(encoding="utf-8"))
@@ -459,11 +622,25 @@ class StartupManager:
                 self.report.repaired_paths.append(settings_path)
             return False, "Einstellungsdatei fehlte und wurde ersetzt."
         except json.JSONDecodeError:
+            template = required_file_content(settings_path)
+            settings_path.write_text(template, encoding="utf-8")
             settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             return False, "Einstellungsdatei war defekt und wurde erneuert."
 
+        sanitised, adjustments = self.settings_validator.normalise(raw)
+        if sanitised != raw:
+            settings_path.write_text(
+                json.dumps(sanitised, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            detail = "Einstellungen wurden automatisch aktualisiert."
+            if adjustments:
+                detail = f"{detail} {' '.join(adjustments)}"
+            return True, detail
         changed = False
         default_settings = _default_settings()
         for key, value in default_settings.items():
@@ -487,6 +664,32 @@ class StartupManager:
     def _ensure_settings_defaults(self, settings_path: Path) -> None:
         """Keep persisted settings aligned with recommended defaults."""
 
+        try:
+            content = json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            sanitised, adjustments = self.settings_validator.normalise({})
+            settings_path.write_text(
+                json.dumps(sanitised, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            self._log_progress("Einstellungen zurückgesetzt (ungültiges Format).", level="error")
+            for note in adjustments:
+                self._log_progress(f"Einstellungs-Hinweis: {note}")
+            return
+
+        sanitised, adjustments = self.settings_validator.normalise(content)
+        if sanitised != content:
+            settings_path.write_text(
+                json.dumps(sanitised, indent=2, ensure_ascii=False),
+                encoding="utf-8",
+            )
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            self._log_progress("Einstellungen automatisch aktualisiert.")
+            for note in adjustments:
+                self._log_progress(f"Einstellungs-Hinweis: {note}")
         desired_scale = 1.2
         try:
             content = json.loads(settings_path.read_text(encoding="utf-8"))
@@ -538,6 +741,32 @@ class StartupManager:
     def _write_diagnostic(self, message: str) -> None:
         with self.diagnostics_file.open("a", encoding="utf-8") as handle:
             handle.write(f"{message}\n")
+
+    def _trim_diagnostics_log(self, max_lines: int = MAX_STARTUP_LOG_LINES) -> bool:
+        """Kürzt das Startprotokoll auf eine sinnvolle Länge (Hauskeeping)."""
+
+        if max_lines <= 0 or not self.diagnostics_file.exists():
+            return False
+        try:
+            with self.diagnostics_file.open("r", encoding="utf-8") as handle:
+                lines = handle.readlines()
+        except OSError as error:
+            self.logger.warning("Startprotokoll konnte nicht gelesen werden: %s", error)
+            return False
+        if len(lines) <= max_lines:
+            return False
+        trimmed = lines[-max_lines:]
+        try:
+            with self.diagnostics_file.open("w", encoding="utf-8") as handle:
+                handle.writelines(trimmed)
+        except OSError as error:
+            self.logger.warning("Startprotokoll konnte nicht gekürzt werden: %s", error)
+            return False
+        self.logger.info(
+            "Startprotokoll verkürzt: nur die letzten %s Zeilen bleiben erhalten.",
+            max_lines,
+        )
+        return True
 
     def _launcher_path(self) -> Path:
         return Path(__file__).resolve().parents[2] / "start_tool.py"

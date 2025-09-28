@@ -20,6 +20,7 @@
 - [x] Kontrast-Checker integrieren, der eigene Farbkombinationen bewertet
 - [x] Selbsttest-Ergebnisse direkt im Dashboard anzeigen
 - [x] Datenbank-Modul mit Export (CSV/JSON) vorbereiten
+- [x] Datenbank auf SQLite umstellen und Migration absichern
 - [x] Release-Checkliste finalisieren (Tests + Dokumentation)
 - [x] Startprotokoll in der Oberfläche durchsuchbar machen
 - [x] Datensicherheitsmanifest mit automatischen Backups integrieren
@@ -32,5 +33,12 @@
 - [x] Nach-Release-Ideen sammeln (z.B. Audio-Preview, erweiterte Screenreader-Hinweise)
 - [x] Systemdiagnose-Bericht mit Paket- und Pfadstatus erzeugen und im Dashboard anzeigen
 - [x] Info-Center um Diagnose-Tab mit Profi-Details erweitern
+- [x] Primärdaten erst beim Toolstart erzeugen (Repository ohne Nutzdaten)
+- [x] Live-Vergleich der Paketversionen gegen requirements.txt ergänzen
+- [x] Optionalen Export des Diagnoseberichts als HTML vorbereiten
+- [x] Einstellungs-Validator zentralisieren und automatische Korrekturen protokollieren
+- [x] Diagnose- und Farbaudit-Läufe gegen unerwartete Fehler absichern
+- [x] Startprotokoll automatisch bereinigen und Ressourcentemplates bündeln
+- [x] SQLite-Auswertung (z.B. Favoritenlisten) als Zusatzansicht planen
 - [ ] Live-Vergleich der Paketversionen gegen requirements.txt ergänzen
 - [ ] Optionalen Export des Diagnoseberichts als HTML vorbereiten

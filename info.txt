@@ -6,6 +6,8 @@ Beschreibung:
 - Enthält Module für Datenbank-Archiv, Audioplaylist und Aufgabenverwaltung.
 - Startet über `python start_tool.py`, legt automatisch eine virtuelle Umgebung `.venv` an,
   prüft/instal­liert Abhängigkeiten selbstständig und führt direkte Selbsttests durch.
+- Primärdatenfreie Auslieferung: Im Repository liegen nur leere Platzhalterordner,
+  alle JSON-/Datenbankdateien werden beim ersten Start automatisch erzeugt.
 - Audioplayer (WAV) mit Lautstärkeregler, Suchfunktionen im Archiv,
   Schnelllinks zu wichtigen Dateien und sichtbarem Fokusfeedback.
 - Gut sichtbarer Schriftgrößenregler (Zoom 80–160 %) mit Prozentanzeige,
@@ -14,6 +16,8 @@ Beschreibung:
   inklusive Live-Status im Kopfbereich und Synchronisation mit `todo.txt`.
 - Info-Center mit Legende, Mockup, Strukturbaum, Release-Checkliste,
   Schriftgrößen-Kompass, Kontrast-Checker, Farbpaletten-Tabelle, Farbaudit-Tab,
+  Diagnose-Übersicht (Systemprüfung), Daten-Tab (SQLite-Überblick mit neuesten
+  Einträgen und häufigsten Anfangsbuchstaben) und Datensicherheitsstatus
   Diagnose-Übersicht (Systemprüfung) und Datensicherheitsstatus
   (zeigt Manifest-, Backup- und Restore-Ergebnisse).
 - Datensicherheits-Manifest überwacht zentrale Dateien (Checksummen), merkt
@@ -25,10 +29,21 @@ Beschreibung:
   Optimierungstipps bei zu niedrigem Kontrast.
 - Accessible-Standardpalette (dunkelblau/orange) mit WCAG-konformen Kontrasten
   plus umschaltbare High-Contrast-, Hell- und Dunkel-Profile.
+- Systemdiagnose gleicht installierte Pakete gegen `requirements.txt` ab und
+  erzeugt neben dem JSON-Bericht auch eine kontrastreiche HTML-Zusammenfassung
+  für Supportzwecke (`data/diagnostics_report.html`).
+- Einstellungen werden vor jedem Start durch einen Validator geprüft: ungültige
+  Schriftgrößen, Lautstärkeeinstellungen oder fehlende Felder werden automatisch
+  korrigiert, protokolliert und wieder abgespeichert.
 - Selbsttest-Anzeige im Header (letzter Lauf, Ergebnis) auf Basis von
   `data/selftest_report.json`.
 - Startprotokoll-Bereich im Dashboard mit Suchfeld, Kopierfunktion und direktem
   Öffnen von `logs/startup.log`.
+- Startprotokoll wird beim Start automatisch auf die letzten 2 000 Zeilen
+  gekürzt, damit die Datei schlank bleibt.
+- Playlist mit Formatprüfung und Normalisierung auf 16-Bit-WAV (`data/converted_audio/`).
+- Archiv nutzt eine SQLite-Datenbank (`data/archive.db`) und bietet Export per
+  Schnelllink als CSV und JSON (`data/exports/`).
 - Playlist mit Formatprüfung und Normalisierung auf 16-Bit-WAV (`data/converted_audio/`).
 - Archiv-Export per Schnelllink als CSV und JSON (`data/exports/`).
 
@@ -39,6 +54,8 @@ Anleitung:
    Prüfungen aus und zeigt Einstellungen an).
 4. Die ausführlichen Protokolle finden Sie in `logs/tool.log` sowie `logs/startup.log`.
 
+Wichtige Dateien (werden beim ersten Start automatisch angelegt):
+- `data/` enthält alle gespeicherten Daten (im Repository nur `.gitkeep`).
 Wichtige Dateien:
 - `data/` enthält alle gespeicherten Daten.
 - `data/selftest_report.json` speichert die Ergebnisse der automatischen
@@ -48,11 +65,15 @@ Wichtige Dateien:
 - `json-and-more.info.txt` listet alle Standardressourcen als lesbares Backup auf.
 - `docs/post_release_ideas.md` sammelt Folgeideen in einfacher Sprache (Fachwörter
   werden jeweils in Klammern erklärt).
+- `data/archive.db` enthält das eigentliche Archiv als SQLite-Datenbank
+  (leichtgewichtige Datenbank).
 - `data/security_manifest.json` enthält die Checksummen aller Kern-Dateien.
 - `data/backups/` speichert automatisch erzeugte Sicherungskopien.
 - `data/color_audit.json` enthält die Auswertung der Farbkontraste je Theme.
 - `data/diagnostics_report.json` enthält die Systemdiagnose (Python-Version,
   Paketstatus, Pfadprüfung) für Support und Fehlersuche.
+- `data/diagnostics_report.html` bietet dieselben Informationen als
+  sofort teilbare HTML-Ansicht.
 
 Abhängigkeiten:
 - Python-Standardbibliothek
@@ -61,6 +82,8 @@ Abhängigkeiten:
 - compileall (Teil der Standardbibliothek, prüft den Code bei jedem Start)
 
 Problembehebung (Kettenbefehle):
+- Hinweis: Alle Befehle mit `data/...` funktionieren, nachdem der erste Startlauf
+  die Dateien angelegt hat.
 - Virtuelle Umgebung zurücksetzen und Abhängigkeiten reparieren:
   `rm -rf .venv && python -m venv .venv && .venv/bin/python -m pip install -r requirements.txt`
 - Audiowiedergabe reparieren (falls `simpleaudio` fehlt):
@@ -71,6 +94,7 @@ Problembehebung (Kettenbefehle):
 - Letzte Sicherungen prüfen: `ls data/backups`
 - Farbaudit-Bericht ansehen: `less data/color_audit.json`
 - Diagnosebericht ansehen: `less data/diagnostics_report.json`
+- HTML-Diagnosebericht im Browser öffnen: `xdg-open data/diagnostics_report.html`
 - Restore-Test ausführen (Backup zurückspielen):
   `cp data/backups/<DATEI>.<ZEITSTEMPEL>.bak data/<DATEI>`
 - Dateirechte reparieren (Linux/macOS): `chmod -R u+rw data logs`

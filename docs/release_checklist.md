@@ -23,6 +23,15 @@ Release-Register).
   Paletten-Übersicht im Info-Center.
 - Automatischer Farbaudit, der alle Themes beim Start prüft und einen Bericht in
   `data/color_audit.json` sowie im Info-Center bereitstellt.
+- Daten-Tab im Info-Center fasst neueste SQLite-Einträge, Gesamtzahl und
+  Anfangsbuchstaben zusammen und erklärt zentrale Begriffe verständlich.
+- Live-Vergleich der Paketversionen gegen `requirements.txt` inklusive
+  HTML-Diagnosebericht (`data/diagnostics_report.html`) für Supportfälle.
+- Gemeinsamer Einstellungs-Validator korrigiert Schriftgröße, Autosave und
+  Lautstärke automatisch und speichert nachvollziehbare Hinweise im Log.
+- Diagnose- und Farbaudit-Erstellung sind fehlertolerant: Bei Problemen werden
+  Ersatzberichte mit Warnhinweis gespeichert, damit das Dashboard trotzdem
+  verwertbare Informationen erhält.
 - Abschlussprüfung dokumentiert: End-to-End-Testlauf, Freigabe des Bedienhandbuchs
   und aktualisierte Hinweise zu Wiederherstellung und Support.
 - Wiederherstellungs-Check automatisiert – jeder Lauf prüft, ob die jüngsten
@@ -30,6 +39,8 @@ Release-Register).
   verständliche Tipps bei Abweichungen.
 - Farbaudit ergänzt nun konkrete Handlungsempfehlungen für Farben mit zu niedrigem
   Kontrast, die direkt im Info-Center angezeigt werden.
+- Primärdatenfreie Auslieferung: Das Git-Repository enthält nur leere Datenordner;
+  beim ersten Start erzeugt die Startroutine sämtliche JSON-/Datenbankdateien.
 
 ## Offen ⏳
 
@@ -46,6 +57,9 @@ Release-Register).
    sowie „Als WAV normalisieren“ testen.
 3. Im Info-Center auf „Archiv als CSV/JSON“ klicken und die erzeugten Dateien in
    `data/exports/` kontrollieren.
+4. Im Info-Center die Tabs „Daten“, „Palette“, „Farbaudit“ und „Sicherheit“ prüfen:
+   Der Daten-Tab muss die Anzahl der Einträge und ggf. die letzten Datensätze anzeigen,
+   auch wenn die Liste noch leer ist (Hinweistexte erscheinen).
 4. Im Info-Center die Tabs „Palette“, „Farbaudit“ und „Sicherheit“ prüfen:
    Kontraste müssen mindestens 4,5:1 erreichen, das Manifest darf keine
    Auffälligkeiten melden und der Farbaudit sollte keine Warnungen enthalten.

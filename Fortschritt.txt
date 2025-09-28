@@ -3,12 +3,24 @@ Fortschritt: 100%
 Nächste Schritte:
 - Optionales Audio-Preview (Wellenform/Restlaufzeit) vorbereiten.
 - Erweiterte Screenreader-Ausgabe (z.B. Audio-Feedback) evaluieren.
+- Datenbank-Insights um Favoriten-Kennzeichnung und Datumsfilter ergänzen.
 - Datenbank optional an SQLite anbinden (Langfrist-Ziel).
 - Farbprofile langfristig um zusätzliche Benutzerpaletten erweitern (Farbaudit deckt Prüfung bereits ab).
 - Die vollständige Ideensammlung steht jetzt in docs/post_release_ideas.md.
 
 Abschluss-Highlights:
 - End-to-End-Review dokumentiert – Selbsttests, Bedienhandbuch und Supporthinweise freigegeben.
+- Einheitlicher Einstellungs-Validator korrigiert Schriftgröße, Lautstärke und fehlende Felder automatisch und protokolliert jede Änderung.
+- Restore-Checks laufen automatisch: Backups werden beim Start mit den Manifest-Prüfsummen abgeglichen.
+- Farbaudit liefert konkrete Optimierungstipps für Farbpaare mit zu niedrigem Kontrast.
+- Systemdiagnose erstellt bei jedem Start einen Profi-Bericht mit Paket- und Pfadstatus.
+- Versionsabgleich der Abhängigkeiten prüft `requirements.txt` live und erzeugt zusätzlich einen HTML-Diagnosebericht.
+- Primärdatenfreie Auslieferung: Datenverzeichnis startet leer und wird beim ersten Lauf automatisch aufgebaut.
+
+Aktuelle Highlights:
+- Archiv läuft jetzt über eine SQLite-Datenbank – Migration aus archive.json
+  erfolgt automatisch beim ersten Start.
+- Info-Center zeigt eine Datenbank-Ansicht mit neuesten Einträgen und häufigsten Anfangsbuchstaben.
 - Restore-Checks laufen automatisch: Backups werden beim Start mit den Manifest-Prüfsummen abgeglichen.
 - Farbaudit liefert konkrete Optimierungstipps für Farbpaare mit zu niedrigem Kontrast.
 - Systemdiagnose erstellt bei jedem Start einen Profi-Bericht mit Paket- und Pfadstatus.
@@ -18,3 +30,5 @@ Aktuelle Highlights:
 - Automatischer Farbaudit für alle Themes mit Bericht unter data/color_audit.json.
 - Sicherheits-, Audit- und Release-Informationen direkt im Header sowie im Info-Center.
 - Diagnose-Tab zeigt Python-Version, Paketstatus und Schreibrechte direkt im Dashboard.
+- Startprotokoll wird beim Start bereinigt (nur die letzten 2 000 Zeilen) und
+  alle Standarddateien stammen aus einer zentralen Ressourcen-Vorlage.

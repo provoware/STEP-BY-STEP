@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
 from .logging_manager import get_logger
+from .resources import ARCHIVE_DB_PATH
 
 
 DEFAULT_MANIFEST_PATH = Path("data/security_manifest.json")
@@ -22,6 +23,7 @@ SENSITIVE_FILES: Iterable[Path] = (
     Path("data/todo_items.json"),
     Path("data/playlists.json"),
     Path("data/archive.json"),
+    ARCHIVE_DB_PATH,
     Path("data/release_checklist.json"),
     Path("data/selftest_report.json"),
     Path("data/color_audit.json"),
