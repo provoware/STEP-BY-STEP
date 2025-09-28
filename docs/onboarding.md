@@ -61,6 +61,9 @@ Das Dashboard zeigt oben Statusmeldungen:
 - **Notizen:** Links oben, speichert automatisch bei Fokuswechsel und über `Strg+S`.
 - **ToDo-Liste:** Rechts oben, Status per Enter/Leertaste toggeln (umschalten).
 - **Playlist:** Spielt WAV-Dateien ab, Lautstärke-Regler nutzt `audioop.mul` (Sample-Skalierung).
+  - Unter Linux fehlt oft das Zusatzpaket `simpleaudio` (Audiotreiber für Python). Die Diagnose meldet das als Hinweis.
+  - Lösung: `python -m pip install --user simpleaudio` ausführen oder in der Paketverwaltung das gleichnamige Paket installieren.
+  - Alternativ über den Systemplayer abspielen: Rechtsklick auf den Titel → "Datei im Ordner öffnen" → doppelklicken.
 - **Info-Center:** Mittlere Spalte, jetzt mit Scroll-Container (überall scrollen möglich) und Tabs für Legende, Struktur, Schnelllinks, Schrift, Kontrast, Palette, Farbaudit, Release, Sicherheit, Diagnose.
 - **Startprotokoll:** Zeigt `logs/startup.log`, Suche per Tastatur möglich.
 

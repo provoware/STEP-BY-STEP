@@ -50,5 +50,6 @@
 - [ ] mypy-Fehler in UI- und Diagnose-Modulen bereinigen (klare Typen oder Ignorieren begründen)
 - [x] Startskript `python start_tool.py --headless` einmal testweise durchlaufen lassen und Ergebnis protokollieren
 - [ ] Release-Hinweise/Changelog für Anwender*innen finalisieren
-- [ ] Basissicherungen für Kern-Dateien erstellen, damit die Startroutine ohne Backup-Warnungen durchläuft
-- [ ] Headless-Bericht zu fehlendem `simpleaudio` unter Linux aufklären (Fallback dokumentieren oder Abhängigkeit anpassen)
+- [x] Basissicherungen für Kern-Dateien erstellen, damit die Startroutine ohne Backup-Warnungen durchläuft
+- [x] Headless-Bericht zu fehlendem `simpleaudio` unter Linux aufklären (Fallback dokumentieren oder Abhängigkeit anpassen)
+- [ ] Regelmäßige Sicherungstests (wöchentlich `python start_tool.py --headless`) einplanen

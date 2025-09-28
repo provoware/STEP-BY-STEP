@@ -146,6 +146,10 @@ class SecurityManager:
 
             entry["last_checked"] = summary.timestamp
 
+            baseline = self._ensure_baseline_backup(path, checksum)
+            if baseline is not None:
+                summary.backups.append(str(baseline))
+
         if summary.updated_manifest:
             self._write_manifest(manifest)
             self.logger.info("Sicherheitsmanifest aktualisiert.")
@@ -165,6 +169,21 @@ class SecurityManager:
             summary.status = "ok"
 
         return summary
+
+    # ------------------------------------------------------------------
+    def _ensure_baseline_backup(self, path: Path, checksum: str) -> Optional[Path]:
+        """Create a first backup when none exists yet."""
+
+        if checksum in ("missing", None):
+            return None
+        if self._latest_backup(path.name) is not None:
+            return None
+        if not path.exists():
+            return None
+
+        backup = self._create_backup(path)
+        self.logger.info("Initiales Backup angelegt: %s", backup)
+        return backup
 
     # ------------------------------------------------------------------
     def _initial_manifest(self) -> Dict[str, object]:
