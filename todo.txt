@@ -52,4 +52,5 @@
 - [ ] Release-Hinweise/Changelog für Anwender*innen finalisieren
 - [x] Basissicherungen für Kern-Dateien erstellen, damit die Startroutine ohne Backup-Warnungen durchläuft
 - [x] Headless-Bericht zu fehlendem `simpleaudio` unter Linux aufklären (Fallback dokumentieren oder Abhängigkeit anpassen)
+- [x] Produktions- und Entwickler-Abhängigkeiten trennen und Bootstrap/Start-Routine anpassen
 - [ ] Regelmäßige Sicherungstests (wöchentlich `python start_tool.py --headless`) einplanen

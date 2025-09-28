@@ -34,6 +34,8 @@ if sys.platform.startswith("win") or sys.platform == "darwin":
 
 VENV_PATH = Path(".venv")
 REQUIREMENTS_FILE = Path("requirements.txt")
+DEV_REQUIREMENTS_FILE = Path("requirements-dev.txt")
+INSTALL_DEV_ENV_FLAG = "STEP_BY_STEP_INSTALL_DEV"
 RELAUNCH_ENV_FLAG = "STEP_BY_STEP_VENV_ACTIVE"
 
 
@@ -180,12 +182,43 @@ class StartupManager:
         if REQUIREMENTS_FILE.exists():
             command = [python_exec, "-m", "pip", "install", "-r", str(REQUIREMENTS_FILE)]
             self._run_dependency_command(command, description="requirements.txt installieren")
+        else:
+            self._log_progress("Keine requirements.txt gefunden – überspringe Installation.")
+
+        if self._should_install_dev_dependencies():
+            if DEV_REQUIREMENTS_FILE.exists():
+                description = "requirements-dev.txt installieren"
+                command = [
+                    python_exec,
+                    "-m",
+                    "pip",
+                    "install",
+                    "-r",
+                    str(DEV_REQUIREMENTS_FILE),
+                ]
+                self._log_progress(
+                    "Entwicklungswerkzeuge werden installiert, da "
+                    f"{INSTALL_DEV_ENV_FLAG} gesetzt ist."
+                )
+                self._run_dependency_command(command, description=description)
+            else:
+                self._log_progress(
+                    "Umgebungsvariable STEP_BY_STEP_INSTALL_DEV ist gesetzt, "
+                    "aber requirements-dev.txt fehlt."
+                )
         for package, command_args in DEPENDENCY_COMMANDS.items():
             if not self._is_package_installed(package):
                 command = [python_exec, *command_args]
                 self._run_dependency_command(command, description=f"{package} installieren")
             else:
                 self._log_progress(f"Paket bereits verfügbar: {package}")
+
+    # ------------------------------------------------------------------
+    def _should_install_dev_dependencies(self) -> bool:
+        value = os.getenv(INSTALL_DEV_ENV_FLAG, "").strip().lower()
+        if value in {"", "0", "false", "no"}:
+            return False
+        return True
 
     # ------------------------------------------------------------------
     def run_self_tests(self) -> None:

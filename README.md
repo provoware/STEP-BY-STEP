@@ -14,13 +14,25 @@ Logging.
 ```
 
 Der Befehl erstellt bei Bedarf die virtuelle Umgebung `.venv`, aktualisiert
-`pip`, installiert alle Pakete aus `requirements.txt`, prüft den Code per
-Selbsttest (Syntax-Check und Einstellungs-Validierung), protokolliert jeden
-Schritt unter `logs/` und startet anschließend die barrierearme Oberfläche. Die
-Konsole zeigt danach eine zusammengefasste Auswertung (Security-Status,
+`pip`, installiert alle Pakete aus `requirements.txt` (Produktionsabhängigkeiten
+für den täglichen Einsatz) und startet anschließend die barrierearme Oberfläche.
+Die Konsole zeigt danach eine zusammengefasste Auswertung (Security-Status,
 Farbaudit, Selbsttests, Systemdiagnose). Alternativ lässt sich der Start wie
 bisher mit `python start_tool.py` durchführen (zuvor manuell `.venv`
 aktivieren).
+
+**Entwicklungs-Werkzeuge nach Bedarf aktivieren:** Wer zusätzlich Prüf- und
+Entwicklungs-Tools (Tests, Linter, Typchecker) benötigt, setzt vor dem Aufruf
+eine Umgebungsvariable (Schalter für den Startprozess) und wiederholt den
+Bootstrap-Befehl:
+
+```bash
+STEP_BY_STEP_INSTALL_DEV=1 ./bootstrap.sh
+```
+
+Dadurch installiert das Skript automatisch auch alle Pakete aus
+`requirements-dev.txt`. Ohne den Schalter bleiben diese Werkzeuge außen vor,
+sodass Endanwender*innen nur die wirklich benötigten Bibliotheken erhalten.
 Beim allerersten Start legt die Routine sämtliche Primärdaten-Dateien neu an
 (`data/settings.json`, `data/todo_items.json`, `data/archive.db` usw.), damit
 das Git-Repository keine echten Nutzerdaten enthält.
@@ -29,6 +41,25 @@ Für einen Diagnoselauf ohne Fenster:
 ```bash
 python start_tool.py --headless
 ```
+
+## Zusätzliche Installationshinweise für Neulinge
+
+- **Nur Produktionspakete installieren:**
+
+  ```bash
+  python -m pip install -r requirements.txt
+  ```
+
+- **Entwicklungswerkzeuge (Tests, Linting, Typprüfung) nachrüsten:**
+
+  ```bash
+  python -m pip install -r requirements-dev.txt
+  ```
+
+- **Variable deaktivieren:** Um die Developer-Pakete wieder abzuschalten,
+  genügt es, den Bootstrap-Befehl ohne gesetzte Umgebungsvariable aufzurufen.
+  Die Programme bleiben installiert, können aber bei Bedarf mit `pip uninstall`
+  entfernt werden (Entfernen von Paketen aus dem Python-Paketmanager).
 
 Eine ausführliche Schritt-für-Schritt-Anleitung (Onboarding & Troubleshooting)
 findet sich in `docs/onboarding.md`. Für Desktop-Umgebungen liegt eine
