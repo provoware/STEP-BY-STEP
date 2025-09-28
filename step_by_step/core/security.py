@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
+from .file_utils import atomic_write_json
 from .logging_manager import get_logger
 from .resources import ARCHIVE_DB_PATH
 
@@ -145,6 +146,10 @@ class SecurityManager:
 
             entry["last_checked"] = summary.timestamp
 
+            baseline = self._ensure_baseline_backup(path, checksum)
+            if baseline is not None:
+                summary.backups.append(str(baseline))
+
         if summary.updated_manifest:
             self._write_manifest(manifest)
             self.logger.info("Sicherheitsmanifest aktualisiert.")
@@ -164,6 +169,21 @@ class SecurityManager:
             summary.status = "ok"
 
         return summary
+
+    # ------------------------------------------------------------------
+    def _ensure_baseline_backup(self, path: Path, checksum: str) -> Optional[Path]:
+        """Create a first backup when none exists yet."""
+
+        if checksum in ("missing", None):
+            return None
+        if self._latest_backup(path.name) is not None:
+            return None
+        if not path.exists():
+            return None
+
+        backup = self._create_backup(path)
+        self.logger.info("Initiales Backup angelegt: %s", backup)
+        return backup
 
     # ------------------------------------------------------------------
     def _initial_manifest(self) -> Dict[str, object]:
@@ -190,8 +210,8 @@ class SecurityManager:
 
     def _write_manifest(self, manifest: Dict[str, object]) -> None:
         manifest["updated_at"] = dt.datetime.now().isoformat()
-        self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        self.manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+        if not atomic_write_json(self.manifest_path, manifest, logger=self.logger):
+            self.logger.error("Sicherheitsmanifest konnte nicht gespeichert werden: %s", self.manifest_path)
 
     def _hash_file(self, path: Path) -> str:
         sha256 = hashlib.sha256()

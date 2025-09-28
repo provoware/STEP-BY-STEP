@@ -1,11 +1,4 @@
-"""Standardressourcen und Vorlagen für die Startroutine (Startup).
-
-Dieses Modul bündelt alle benötigten Ordnerpfade sowie die Inhalte,
-die beim ersten Programmstart automatisch erzeugt werden.  Die
-Funktionen liefern Textvorlagen (z.B. JSON = JavaScript Object
-Notation, ein strukturiertes Textformat), damit die Startroutine
-sämtliche Dateien konsistent anlegen oder reparieren kann.
-"""
+"""Static resource declarations used during startup."""
 
 from __future__ import annotations
 
@@ -209,3 +202,4 @@ __all__ = [
     "iter_required_files",
     "required_file_content",
 ]
+

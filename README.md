@@ -10,15 +10,17 @@ Logging.
 ## Schnellstart (Klick & Start)
 
 ```bash
-python start_tool.py
+./bootstrap.sh
 ```
 
-Der Befehl erstellt bei Bedarf die virtuelle Umgebung `.venv`, installiert alle
-Pakete aus `requirements.txt`, prüft den Code per Selbsttest (Syntax-Check
-und Einstellungs-Validierung), protokolliert jeden Schritt unter `logs/` und
-startet anschließend die barrierearme Oberfläche. Die Konsole zeigt danach
-eine zusammengefasste Auswertung (Security-Status, Farbaudit, Selbsttests,
-Systemdiagnose).
+Der Befehl erstellt bei Bedarf die virtuelle Umgebung `.venv`, aktualisiert
+`pip`, installiert alle Pakete aus `requirements.txt`, prüft den Code per
+Selbsttest (Syntax-Check und Einstellungs-Validierung), protokolliert jeden
+Schritt unter `logs/` und startet anschließend die barrierearme Oberfläche. Die
+Konsole zeigt danach eine zusammengefasste Auswertung (Security-Status,
+Farbaudit, Selbsttests, Systemdiagnose). Alternativ lässt sich der Start wie
+bisher mit `python start_tool.py` durchführen (zuvor manuell `.venv`
+aktivieren).
 Beim allerersten Start legt die Routine sämtliche Primärdaten-Dateien neu an
 (`data/settings.json`, `data/todo_items.json`, `data/archive.db` usw.), damit
 das Git-Repository keine echten Nutzerdaten enthält.
@@ -27,6 +29,11 @@ Für einen Diagnoselauf ohne Fenster:
 ```bash
 python start_tool.py --headless
 ```
+
+Eine ausführliche Schritt-für-Schritt-Anleitung (Onboarding & Troubleshooting)
+findet sich in `docs/onboarding.md`. Für Desktop-Umgebungen liegt eine
+Starter-Verknüpfung unter `packaging/step-by-step.desktop` und das Icon in
+`assets/step-by-step-icon.svg` bereit.
 
 ## Wesentliche Merkmale
 
@@ -53,53 +60,11 @@ python start_tool.py --headless
   `requirements.txt` ab. Alle Details landen in `data/diagnostics_report.json`
   sowie in einer barrierefreundlichen HTML-Ansicht
   (`data/diagnostics_report.html`), während das Dashboard eine kurze,
-- **Detailiertes Logging:** Zentraler Logger mit drehenden Dateien (`logs/tool.log`)
-  sowie einer separaten Startprotokollierung (`logs/startup.log`).
-- **Automatische Selbsttests:** Beim Start wird der komplette Codebaum mit
-  `compileall` (Syntaxprüfung) getestet und die `data/settings.json` wird auf
-  Vollständigkeit und barrierefreie Standardeinstellungen geprüft.
-- **Systemdiagnose (Pro-Report):** Der Startlauf prüft Python-Version,
-  virtuelle Umgebung, Pfad-Rechte und benötigte Pakete. Alle Details landen in
-  `data/diagnostics_report.json`, während das Dashboard eine kurze,
   leicht verständliche Zusammenfassung anzeigt.
-- **Hoher Kontrast & Accessible Palette:** Die Oberfläche startet mit einer
-  farbenblindenfreundlichen Accessible-Palette (dunkelblau + orange) und bietet
-  zusätzlich High-Contrast-, Hell- und Dunkel-Modi. Buttons, Listen und
-  Notizfelder passen sich automatisch an.
-- **Zoom-Regler:** Ein gut sichtbarer Schriftgrößenregler mit Prozentanzeige
-  erlaubt stufenloses Vergrößern (Zoom) zwischen 80 % und 160 % inklusive
-  Reset-Knopf.
-- **Standard-Schriftgröße 120 %:** Die Einstellungen setzen ab sofort dauerhaft
-  eine 1,2er Skalierung, damit Texte auf Anhieb besser lesbar sind.
-- **Audioplayer:** Playlistbereich mit Abspiel- und Stopp-Taste, Lautstärkeregler
-  und Hinweisen für Screenreader. Unterstützt aktuell WAV-Dateien über
-  `simpleaudio`.
-- **Status-Feedback:** Fokussierte Elemente (z.B. Notizfeld, Listen, Regler)
-  melden sich im Statusfeld und erhalten sichtbare Fokusrahmen für bessere
-  Orientierung mit Tastatur oder Screenreader.
-- **Farbprofile:** Umschaltbarer Modus im Header (High Contrast, Hell, Dunkel)
-  inklusive direktem Feedback und automatischer Aktualisierung aller Bereiche.
-- **Aufgabenverwaltung im Dashboard:** Aufgaben lassen sich per Enter, Leertaste
-  oder Button direkt abhaken; die Liste zeigt offene und erledigte Punkte mit
-  klaren Symbolen und aktualisiert den Statuszähler im Kopfbereich.
-- **Selbsttest-Monitoring:** Ein Live-Hinweis im Header zeigt den letzten
-  Selbsttest mit Datum und Ergebnis (Bestandene/Nicht bestandene Tests) an –
-  die Startroutine schreibt die Daten in `data/selftest_report.json`.
-- **Schnelllinks:** Info-Center mit Buttons zum Öffnen von `todo.txt`,
-  `data/settings.json`, für den Headless-Selbsttest sowie Archiv-Exporte als
-  CSV/JSON.
-- **Autosave:** Notizen werden beim Fokusverlust und zusätzlich in Intervallen
-  (Standard 10 Minuten) gespeichert.
-- **Info-Center:** Innerhalb des 3×3-Rasters liefert ein Notebook eine Legende,
-  ein textuelles Mockup, den Ordner-/Dateibaum, Release-Checkliste, Schnelllinks
-  sowie Register für Schriftgrößen-Empfehlungen, einen Kontrast-Checker, eine
-  Farbpaletten-Übersicht (inkl. berechnetem WCAG-Kontrast), einen Tab mit den
-  Ergebnissen der Datensicherheitsprüfung samt Restore-Status, einen
-  Diagnose-Tab für Systeminformationen, einen Farbaudit-Tab mit
-  Optimierungstipps sowie einen Daten-Tab mit SQLite-Überblick (neueste Einträge
-  und häufigste Anfangsbuchstaben).
-  Diagnose-Tab für Systeminformationen und einen Farbaudit-Tab mit
-  Optimierungstipps.
+- **Barrierearme Oberfläche:** Umschaltbare High-Contrast-, helle und dunkle
+  Themes, ein gut sichtbarer Zoom-Regler (80–160 %) samt Statusfeedback sowie
+  tastaturfreundliche Aufgaben-, Notiz- und Playlist-Bereiche sorgen für
+  sofort nutzbare Bedienung.
 - **Datensicherheits-Manifest:** Beim Start wird ein Checksummen-Manifest für
   zentrale JSON/TXT-Dateien verifiziert. Abweichungen erzeugen automatische
   Backups unter `data/backups/`, Größenabweichungen werden hervorgehoben und
@@ -127,11 +92,6 @@ python start_tool.py --headless
 - `data/security_manifest.json` dokumentiert nach dem ersten Start die letzten
   Checksummen-Prüfungen aller wichtigen Dateien und speichert
   Restore-Checks für jede Sicherung.
-- `data/` enthält alle persistenten Informationen (Notizen, Aufgaben, Playlists,
-  Statistiken, Einstellungen).
-- `logs/` speichert Start- und Laufzeitprotokolle für eine einfache Analyse.
-- `data/security_manifest.json` dokumentiert die letzten Checksummen-Prüfungen
-  aller wichtigen Dateien und speichert Restore-Checks für jede Sicherung.
 - `data/color_audit.json` hält die Ergebnisse der automatischen
   Farbkontrast-Prüfung inklusive Empfehlungen fest.
 - `data/diagnostics_report.json` speichert die Systemdiagnose (Python,
@@ -151,6 +111,9 @@ python start_tool.py --headless
 - Zusätzlich stehen Buttons zum Format-Check und zur Normalisierung bereit: das
   Tool liest Kanäle/Bitbreite und erzeugt bei Bedarf eine kompatible 16-Bit-WAV-
   Kopie unter `data/converted_audio/`.
+- Hinweis: Auf Linux-Systemen wird `simpleaudio` nicht automatisch installiert,
+  da systemweite ALSA-Header benötigt werden (`libasound2-dev`). Bei Bedarf
+  manuell per `python -m pip install simpleaudio` nachinstallieren.
 
 ## Datenbank & Aufgaben
 
@@ -161,9 +124,6 @@ python start_tool.py --headless
 - Der neue Daten-Tab im Info-Center fasst die letzten Einträge, die Gesamtzahl
   der Datensätze und die häufigsten Anfangsbuchstaben zusammen und erklärt
   dabei zentrale Begriffe (Eintrag = Datensatz, SQLite = leichte Datenbank).
-- Das Archiv-Modul (`step_by_step/modules/database/module.py`) bietet jetzt
-  Such- und Präfixfilter sowie das Entfernen einzelner Einträge.
-- Über Schnelllinks können CSV- und JSON-Exporte erstellt werden (`data/exports/`).
 - Die Aufgabenliste zeigt Fälligkeitsdaten im Format `⏳/✔ Titel (bis DD.MM.YYYY)`
   und erlaubt das Umschalten per Tastatur (Enter/Leertaste) oder Button. Der
   aktuelle Status wird im Dashboard zusammen mit dem Sitzungszähler angezeigt.

@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List
+
+from ...core.file_utils import atomic_write_json
 
 
 CHECKLIST_FILE = Path("data/release_checklist.json")
@@ -38,6 +41,7 @@ class ReleaseChecklist:
     def __init__(self, storage_file: Path = CHECKLIST_FILE) -> None:
         self.storage_file = storage_file
         self.storage_file.parent.mkdir(parents=True, exist_ok=True)
+        self.logger = logging.getLogger("modules.release")
 
     def load_items(self) -> List[ReleaseChecklistItem]:
         if not self.storage_file.exists():
@@ -57,10 +61,8 @@ class ReleaseChecklist:
             "items": [item.to_dict() for item in items],
             "updated_at": datetime.now().isoformat(),
         }
-        self.storage_file.write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        if not atomic_write_json(self.storage_file, payload, logger=self.logger):
+            self.logger.error("Release-Checkliste konnte nicht gespeichert werden: %s", self.storage_file)
 
     def mark_done(self, title: str) -> bool:
         items = self.load_items()

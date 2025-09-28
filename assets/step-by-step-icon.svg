@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="24" fill="#1B2B3C"/>
+  <path d="M32 32h64v16H32z" fill="#FF9500"/>
+  <path d="M32 56h40v16H32z" fill="#F5F5F5" opacity="0.9"/>
+  <path d="M32 80h24v16H32z" fill="#1F9D6F"/>
+  <circle cx="92" cy="88" r="16" fill="#FF9500"/>
+  <path d="M92 76a12 12 0 1 1-0.01 0z" fill="#1B2B3C"/>
+  <text x="40" y="50" font-family="Arial, sans-serif" font-size="12" fill="#1B2B3C" font-weight="bold">STEP</text>
+  <text x="36" y="74" font-family="Arial, sans-serif" font-size="12" fill="#1B2B3C" font-weight="bold">BY</text>
+  <text x="36" y="98" font-family="Arial, sans-serif" font-size="12" fill="#1B2B3C" font-weight="bold">STEP</text>
+</svg>

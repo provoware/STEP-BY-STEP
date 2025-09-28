@@ -11,9 +11,9 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
-from typing import Dict, List, Optional, Sequence, Tuple
 
 from .color_audit import ColorAuditor
+from .file_utils import atomic_write_json, atomic_write_text
 from .diagnostics import DiagnosticsManager
 from .logging_manager import get_logger
 from .resources import (
@@ -25,146 +25,12 @@ from .resources import (
 from .security import SecurityManager, SecuritySummary
 from .validators import SettingsValidator
 
+
 MAX_STARTUP_LOG_LINES = 2000
-from .security import SecurityManager, SecuritySummary
 
-REQUIRED_FOLDERS: Sequence[Path] = (
-    Path("data"),
-    Path("logs"),
-    Path("data/exports"),
-    Path("data/converted_audio"),
-    Path("data/backups"),
-)
-
-REQUIRED_FILES: Dict[Path, str] = {
-    Path("data/settings.json"): json.dumps(
-        {
-            "font_scale": 1.2,
-            "theme": "light",
-            "autosave_interval_minutes": 10,
-            "accessibility_mode": True,
-            "shortcuts_enabled": True,
-            "contrast_theme": "accessible",
-            "color_mode": "accessible",
-            "audio_volume": 0.8,
-        },
-        indent=2,
-    ),
-    Path("data/todo_items.json"): json.dumps({"items": []}, indent=2),
-    Path("data/playlists.json"): json.dumps({"tracks": []}, indent=2),
-    Path("data/archive.json"): json.dumps({"entries": []}, indent=2),
-    Path("data/persistent_notes.txt"): "",
-    Path("data/usage_stats.json"): json.dumps({}, indent=2),
-    Path("data/selftest_report.json"): json.dumps(
-        {
-            "last_run": "",
-            "all_passed": False,
-            "self_tests": [],
-            "messages": [],
-            "repaired_paths": [],
-            "dependency_messages": [],
-            "security_summary": {
-                "status": "unknown",
-                "verified": 0,
-                "issues": [],
-                "backups": [],
-                "size_alerts": [],
-                "pruned_backups": [],
-                "updated_manifest": False,
-                "timestamp": "",
-            },
-            "color_audit": {
-                "generated_at": "",
-                "overall_status": "unknown",
-                "worst_ratio": 0.0,
-                "themes": [],
-                "issues": [],
-            },
-            "diagnostics": {
-                "generated_at": "",
-                "python": {},
-                "virtualenv": {},
-                "paths": [],
-                "packages": [],
-                "summary": {"status": "unknown", "issues": [], "recommendations": []},
-                "startup": {},
-            },
-            "diagnostics_messages": [],
-            "diagnostics_report_path": "",
-        },
-        indent=2,
-        ensure_ascii=False,
-    ),
-    Path("data/release_checklist.json"): json.dumps(
-        {
-            "items": [
-                {
-                    "title": "Automatischer Start inklusive Selbsttests",
-                    "done": True,
-                    "details": "Launcher führt Abhängigkeitsprüfung und Reparaturen durch.",
-                },
-                {
-                    "title": "Audioformat-Prüfung und Normalisierung",
-                    "done": True,
-                    "details": "Playlist-Bereich bietet Prüfen und Konvertieren auf WAV-Basis.",
-                },
-                {
-                    "title": "Archiv-Export als CSV und JSON",
-                    "done": True,
-                    "details": "Schnelllinks exportieren Datenbankeinträge in data/exports/.",
-                },
-                {
-                    "title": "Startprotokoll durchsuchbar in der Oberfläche",
-                    "done": True,
-                    "details": "Eigenes Panel filtert logs/startup.log nach Begriffen.",
-                },
-                {
-                    "title": "Abschließender Release-Review",
-                    "done": False,
-                    "details": "Letzte End-to-End-Prüfung und Handbuch-Freigabe.",
-                },
-            ],
-            "updated_at": "",
-        },
-        indent=2,
-        ensure_ascii=False,
-    ),
-    Path("data/color_audit.json"): json.dumps(
-        {
-            "generated_at": "",
-            "overall_status": "unknown",
-            "worst_ratio": 0.0,
-            "themes": [],
-            "issues": [],
-        },
-        indent=2,
-        ensure_ascii=False,
-    ),
-    Path("data/diagnostics_report.json"): json.dumps(
-        {
-            "generated_at": "",
-            "python": {},
-            "virtualenv": {},
-            "paths": [],
-            "packages": [],
-            "summary": {"status": "unknown", "issues": [], "recommendations": []},
-            "startup": {},
-        },
-        indent=2,
-        ensure_ascii=False,
-    ),
-}
-
-
-def _default_settings() -> Dict[str, object]:
-    """Return a fresh copy of the default settings payload."""
-
-    return json.loads(REQUIRED_FILES[Path("data/settings.json")])
-
-DEPENDENCY_COMMANDS: Dict[str, List[str]] = {
-    "ttkbootstrap": ["-m", "pip", "install", "ttkbootstrap"],
-    "simpleaudio": ["-m", "pip", "install", "simpleaudio"],
-}
+DEPENDENCY_COMMANDS: Dict[str, List[str]] = {}
+if sys.platform.startswith("win") or sys.platform == "darwin":
+    DEPENDENCY_COMMANDS["simpleaudio"] = ["-m", "pip", "install", "simpleaudio"]
 
 VENV_PATH = Path(".venv")
 REQUIREMENTS_FILE = Path("requirements.txt")
@@ -247,14 +113,6 @@ class StartupManager:
         for label, step in steps:
             self._run_step(label, step)
 
-
-        self.ensure_structure()
-        self.ensure_virtual_environment()
-        self.ensure_dependencies()
-        self.verify_data_security()
-        self.audit_color_contrast()
-        self.run_self_tests()
-        self.capture_diagnostics()
         self._persist_report()
 
         self.logger.info("Startroutine beendet")
@@ -266,16 +124,17 @@ class StartupManager:
         for folder in REQUIRED_FOLDERS:
             folder.mkdir(parents=True, exist_ok=True)
             self._log_progress(f"Ordner geprüft: {folder}")
+
         for path, template in iter_required_files():
-        for path, template in REQUIRED_FILES.items():
             if not path.exists():
-                path.write_text(template, encoding="utf-8")
+                atomic_write_text(path, template, logger=self.logger)
                 self.report.repaired_paths.append(path)
                 self._log_progress(f"Datei ergänzt: {path}")
             else:
                 self._log_progress(f"Datei vorhanden: {path}")
             if path.name == "settings.json":
                 self._ensure_settings_defaults(path)
+
         self._ensure_archive_database()
 
     # ------------------------------------------------------------------
@@ -397,21 +256,15 @@ class StartupManager:
                 "recommendations": [],
             }
             target = Path("data/color_audit.json")
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(
-                json.dumps(payload, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
+            atomic_write_json(target, payload, logger=self.logger)
             self.report.color_audit = payload
             self._log_progress(f"Farbaudit fehlgeschlagen: {error}", level="error")
             return
 
-        report = auditor.generate_report()
         payload = report.to_dict()
         self.report.color_audit = payload
         target = Path("data/color_audit.json")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        atomic_write_json(target, payload, logger=self.logger)
         status = report.overall_status
         self._log_progress(
             (
@@ -424,6 +277,7 @@ class StartupManager:
             self._log_progress(f"Farbaudit-Hinweis: {issue}", level="error")
         for recommendation in getattr(report, "recommendations", []):
             self._log_progress(f"Farbaudit-Tipp: {recommendation}")
+
         refreshed_summary = SecurityManager().verify_files()
         self.report.security_summary = refreshed_summary
         self._log_progress(
@@ -471,11 +325,7 @@ class StartupManager:
                 "html_report_path": "",
             }
             target = Path("data/diagnostics_report.json")
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(
-                json.dumps(payload, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
+            atomic_write_json(target, payload, logger=self.logger)
             self.report.diagnostics = payload
             self.report.diagnostics_path = target
             self.report.diagnostics_html_path = None
@@ -520,209 +370,159 @@ class StartupManager:
         self.report.diagnostics_messages = summary_lines
         if html_path:
             self._log_progress(f"Diagnose als HTML gespeichert: {html_path}")
-        diagnostics = manager.collect(self.report)
-        diagnostics_path = manager.save(diagnostics)
-        self.report.diagnostics = diagnostics.to_dict()
-        self.report.diagnostics_path = diagnostics_path
-        summary_lines = manager.summary_lines(diagnostics)
-        self.report.diagnostics_messages = summary_lines
-        for line in summary_lines:
-            self._log_progress(line)
 
     # ------------------------------------------------------------------
-    def _persist_report(self) -> None:
-        """Store the latest startup report for display in the dashboard."""
-
-        payload = {
-            "last_run": dt.datetime.now().isoformat(),
-            "all_passed": self.report.all_self_tests_passed(),
-            "created_virtualenv": self.report.created_virtualenv,
-            "installed_dependencies": self.report.installed_dependencies,
-            "repaired_paths": [str(path) for path in self.report.repaired_paths],
-            "dependency_messages": self.report.dependency_messages,
-            "messages": self.report.messages,
-            "self_tests": [
-                {"name": result.name, "passed": result.passed, "details": result.details}
-                for result in self.report.self_tests
-            ],
-        }
-        if self.report.security_summary:
-            payload["security_summary"] = self.report.security_summary.to_dict()
-        if self.report.color_audit:
-            payload["color_audit"] = self.report.color_audit
-        if self.report.diagnostics:
-            payload["diagnostics"] = self.report.diagnostics
-        if self.report.diagnostics_messages:
-            payload["diagnostics_messages"] = self.report.diagnostics_messages
-        if self.report.diagnostics_path:
-            payload["diagnostics_report_path"] = str(self.report.diagnostics_path)
-        if self.report.diagnostics_html_path:
-            payload["diagnostics_report_html_path"] = str(self.report.diagnostics_html_path)
-        target = Path("data/selftest_report.json")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-        self._log_progress("Selbsttest-Ergebnisse gespeichert.")
-
-    # ------------------------------------------------------------------
-    def _run_step(self, label: str, callback: Callable[[], None]) -> None:
+    def _run_step(self, label: str, step: Callable[[], None]) -> None:
+        self._log_progress(f"Starte Schritt: {label}")
         try:
-            callback()
-        except Exception as error:  # pragma: no cover - defensive umbrella
-            message = f"{label} fehlgeschlagen: {error}"
+            step()
+        except Exception as error:  # pragma: no cover - defensive guard
+            self._log_progress(f"Schritt '{label}' fehlgeschlagen: {error}", level="error")
+            raise
+        else:
+            self._log_progress(f"Schritt abgeschlossen: {label}")
+
+    # ------------------------------------------------------------------
+    def _run_dependency_command(self, command: List[str], *, description: str) -> None:
+        self._log_progress(f"Installationsbefehl gestartet: {description}")
+        try:
+            result = subprocess.run(command, capture_output=True, text=True, check=True)
+        except subprocess.CalledProcessError as error:
+            message = f"Installation fehlgeschlagen ({description}): {error.stderr.strip()}"
+            self.report.dependency_messages.append(message)
             self._log_progress(message, level="error")
-            self.logger.exception("%s", message, exc_info=error)
+            return
+
+        self.report.installed_dependencies = True
+        stdout = (result.stdout or "").strip()
+        if stdout:
+            self.report.dependency_messages.append(f"{description}: {stdout}")
+        else:
+            self.report.dependency_messages.append(f"{description}: abgeschlossen")
+        self._log_progress(f"Installation erfolgreich: {description}")
 
     # ------------------------------------------------------------------
-    def _create_virtualenv(self, python_in_venv: Path) -> None:
-        self._log_progress("Virtuelle Umgebung wird erstellt...")
-        result = subprocess.run([sys.executable, "-m", "venv", str(VENV_PATH)], check=False)
-        if result.returncode == 0 and python_in_venv.exists():
-            self.report.created_virtualenv = True
-            self._log_progress(f"Virtuelle Umgebung erstellt: {python_in_venv}")
-        else:
-            self._log_progress("Fehler beim Erstellen der virtuellen Umgebung", level="error")
-
-    def _run_dependency_command(self, command: List[str], description: str) -> None:
-        self._log_progress(f"{description} wird ausgeführt: {' '.join(command)}")
-        result = subprocess.run(command, check=False)
-        if result.returncode == 0:
-            self.report.installed_dependencies = True
-            self.report.dependency_messages.append(description)
-            self._log_progress(f"{description} erfolgreich.")
-        else:
-            self._log_progress(f"{description} fehlgeschlagen (Code {result.returncode}).", level="error")
-
     def _self_test_compileall(self) -> Tuple[bool, str]:
-        """Compile the code base to bytecode to spot syntax errors."""
-
-        target = Path("step_by_step")
         try:
-            success = compileall.compile_dir(
-                str(target), quiet=1, legacy=False, workers=1
-            )
-        except Exception as exc:  # pragma: no cover - defensive guard
-            return False, f"Fehler beim Kompilieren: {exc}"
-        return success, "Alle Module wurden geprüft." if success else "Bitte Protokoll prüfen."
+            success = compileall.compile_dir("step_by_step", quiet=1)
+        except Exception as error:  # pragma: no cover - defensive guard
+            return False, f"Compilerlauf nicht möglich: {error}"
+        return bool(success), "Python-Dateien konnten erfolgreich geprüft werden." if success else ""
 
+    # ------------------------------------------------------------------
     def _self_test_settings(self) -> Tuple[bool, str]:
-        """Validate settings and ensure recommended accessibility defaults."""
-
         settings_path = Path("data/settings.json")
-        try:
-            raw = json.loads(settings_path.read_text(encoding="utf-8"))
-        except FileNotFoundError:
-            template = required_file_content(settings_path)
-            settings_path.write_text(template, encoding="utf-8")
-        desired_scale = 1.2
-        try:
-            raw = json.loads(settings_path.read_text(encoding="utf-8"))
-        except FileNotFoundError:
-            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
-            if settings_path not in self.report.repaired_paths:
-                self.report.repaired_paths.append(settings_path)
-            return False, "Einstellungsdatei fehlte und wurde ersetzt."
-        except json.JSONDecodeError:
-            template = required_file_content(settings_path)
-            settings_path.write_text(template, encoding="utf-8")
-            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
-            if settings_path not in self.report.repaired_paths:
-                self.report.repaired_paths.append(settings_path)
-            return False, "Einstellungsdatei war defekt und wurde erneuert."
-
-        sanitised, adjustments = self.settings_validator.normalise(raw)
-        if sanitised != raw:
-            settings_path.write_text(
-                json.dumps(sanitised, indent=2, ensure_ascii=False),
-                encoding="utf-8",
+        if not settings_path.exists():
+            atomic_write_text(
+                settings_path,
+                required_file_content(settings_path),
+                logger=self.logger,
             )
-            if settings_path not in self.report.repaired_paths:
-                self.report.repaired_paths.append(settings_path)
-            detail = "Einstellungen wurden automatisch aktualisiert."
-            if adjustments:
-                detail = f"{detail} {' '.join(adjustments)}"
-            return True, detail
-        changed = False
-        default_settings = _default_settings()
-        for key, value in default_settings.items():
-            if key not in raw:
-                raw[key] = value
-                changed = True
-        try:
-            scale_value = float(raw.get("font_scale", desired_scale))
-        except (TypeError, ValueError):
-            scale_value = desired_scale
-        if scale_value < desired_scale:
-            raw["font_scale"] = desired_scale
-            changed = True
-        if changed:
-            settings_path.write_text(json.dumps(raw, indent=2), encoding="utf-8")
-            if settings_path not in self.report.repaired_paths:
-                self.report.repaired_paths.append(settings_path)
-            return True, "Einstellungen wurden automatisch aktualisiert."
-        return True, "Einstellungen sind vollständig."
-
-    def _ensure_settings_defaults(self, settings_path: Path) -> None:
-        """Keep persisted settings aligned with recommended defaults."""
+            self.report.repaired_paths.append(settings_path)
+            return True, "Einstellungen wurden neu angelegt."
 
         try:
             content = json.loads(settings_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
-            sanitised, adjustments = self.settings_validator.normalise({})
-            settings_path.write_text(
-                json.dumps(sanitised, indent=2, ensure_ascii=False),
-                encoding="utf-8",
+            atomic_write_text(
+                settings_path,
+                required_file_content(settings_path),
+                logger=self.logger,
             )
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
+            return False, "Einstellungen waren beschädigt und wurden zurückgesetzt."
+
+        sanitised, adjustments = self.settings_validator.normalise(content)
+        if sanitised != content:
+            atomic_write_json(settings_path, sanitised, logger=self.logger)
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            detail = "; ".join(adjustments) if adjustments else "automatisch korrigiert"
+            return True, f"Einstellungen aktualisiert ({detail})."
+        return True, "Einstellungen sind vollständig."
+
+    # ------------------------------------------------------------------
+    def _ensure_settings_defaults(self, settings_path: Path) -> None:
+        try:
+            content = json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            content = json.loads(required_file_content(settings_path))
+            atomic_write_json(settings_path, content, logger=self.logger)
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
             self._log_progress("Einstellungen zurückgesetzt (ungültiges Format).", level="error")
-            for note in adjustments:
-                self._log_progress(f"Einstellungs-Hinweis: {note}")
             return
 
         sanitised, adjustments = self.settings_validator.normalise(content)
         if sanitised != content:
-            settings_path.write_text(
-                json.dumps(sanitised, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
+            atomic_write_json(settings_path, sanitised, logger=self.logger)
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             self._log_progress("Einstellungen automatisch aktualisiert.")
             for note in adjustments:
                 self._log_progress(f"Einstellungs-Hinweis: {note}")
-        desired_scale = 1.2
+
+    # ------------------------------------------------------------------
+    def _persist_report(self) -> None:
+        payload = {
+            "last_run": dt.datetime.now().isoformat(),
+            "all_passed": self.report.all_self_tests_passed(),
+            "self_tests": [
+                {"name": result.name, "passed": result.passed, "details": result.details}
+                for result in self.report.self_tests
+            ],
+            "messages": list(self.report.messages),
+            "repaired_paths": [str(path) for path in self.report.repaired_paths],
+            "dependency_messages": list(self.report.dependency_messages),
+            "created_virtualenv": self.report.created_virtualenv,
+            "installed_dependencies": self.report.installed_dependencies,
+            "security_summary": self.report.security_summary.to_dict()
+            if self.report.security_summary
+            else None,
+            "color_audit": self.report.color_audit,
+            "diagnostics": self.report.diagnostics,
+            "diagnostics_messages": list(self.report.diagnostics_messages),
+            "diagnostics_report_path": str(self.report.diagnostics_path)
+            if self.report.diagnostics_path
+            else "",
+            "diagnostics_report_html_path": str(self.report.diagnostics_html_path)
+            if self.report.diagnostics_html_path
+            else "",
+        }
+
+        target = Path("data/selftest_report.json")
+        atomic_write_json(target, payload, logger=self.logger)
+        self._log_progress(f"Selbsttestbericht gespeichert: {target}")
+
+    # ------------------------------------------------------------------
+    def _create_virtualenv(self, python_in_venv: Path) -> None:
+        command = [sys.executable, "-m", "venv", str(VENV_PATH)]
+        self._log_progress("Virtuelle Umgebung wird erstellt...")
         try:
-            content = json.loads(settings_path.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
-            if settings_path not in self.report.repaired_paths:
-                self.report.repaired_paths.append(settings_path)
-            self._log_progress("Einstellungen zurückgesetzt (ungültiges Format).", level="error")
+            subprocess.check_call(command)
+        except (subprocess.SubprocessError, OSError) as error:
+            self._log_progress(f"Virtuelle Umgebung konnte nicht erstellt werden: {error}", level="error")
             return
+        self.report.created_virtualenv = True
+        self._log_progress(f"Virtuelle Umgebung erstellt: {python_in_venv}")
 
-        try:
-            current_scale = float(content.get("font_scale", desired_scale))
-        except (TypeError, ValueError):
-            current_scale = desired_scale
-        if current_scale < desired_scale:
-            content["font_scale"] = desired_scale
-            settings_path.write_text(json.dumps(content, indent=2), encoding="utf-8")
-            if settings_path not in self.report.repaired_paths:
-                self.report.repaired_paths.append(settings_path)
-            self._log_progress("Schriftgröße dauerhaft auf 1.2 angehoben.")
-
+    # ------------------------------------------------------------------
     def _python_in_venv(self) -> Path:
         if sys.platform == "win32":
             return VENV_PATH / "Scripts" / "python.exe"
         return VENV_PATH / "bin" / "python"
 
+    # ------------------------------------------------------------------
     def _python_for_dependencies(self) -> str:
         python_in_venv = self._python_in_venv()
         return str(python_in_venv if python_in_venv.exists() else sys.executable)
 
+    # ------------------------------------------------------------------
     def _running_inside_venv(self) -> bool:
         return sys.prefix != getattr(sys, "base_prefix", sys.prefix)
 
+    # ------------------------------------------------------------------
     def _is_package_installed(self, package: str) -> bool:
         try:
             __import__(package)
@@ -730,6 +530,7 @@ class StartupManager:
             return False
         return True
 
+    # ------------------------------------------------------------------
     def _log_progress(self, message: str, level: str = "info") -> None:
         self.report.add_message(message)
         if level == "error":
@@ -738,10 +539,12 @@ class StartupManager:
             self.logger.info(message)
         self._write_diagnostic(message)
 
+    # ------------------------------------------------------------------
     def _write_diagnostic(self, message: str) -> None:
         with self.diagnostics_file.open("a", encoding="utf-8") as handle:
             handle.write(f"{message}\n")
 
+    # ------------------------------------------------------------------
     def _trim_diagnostics_log(self, max_lines: int = MAX_STARTUP_LOG_LINES) -> bool:
         """Kürzt das Startprotokoll auf eine sinnvolle Länge (Hauskeeping)."""
 
@@ -768,8 +571,10 @@ class StartupManager:
         )
         return True
 
+    # ------------------------------------------------------------------
     def _launcher_path(self) -> Path:
         return Path(__file__).resolve().parents[2] / "start_tool.py"
 
 
 __all__ = ["StartupManager", "StartupReport", "SelfTestResult", "RELAUNCH_ENV_FLAG"]
+

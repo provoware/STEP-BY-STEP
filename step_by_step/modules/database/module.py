@@ -1,4 +1,3 @@
-"""Database helper module for managing archive entries via SQLite."""
 """Database helper module for managing archive entries."""
 
 from __future__ import annotations
@@ -11,17 +10,13 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Optional
 
+from ...core.file_utils import atomic_write_json
 from ...core.logging_manager import get_logger
 from ...core.resources import ARCHIVE_DB_PATH
+from ...core.validators import ensure_unique
 
 ARCHIVE_DB = ARCHIVE_DB_PATH
 LEGACY_ARCHIVE_JSON = Path("data/archive.json")
-from pathlib import Path
-from typing import Dict, List, Optional
-
-from ...core.validators import ensure_unique
-
-ARCHIVE_FILE = Path("data/archive.json")
 EXPORT_DIR = Path("data/exports")
 
 
@@ -104,6 +99,9 @@ class DatabaseModule:
     def add_entry(self, title: str, description: str) -> bool:
         """Insert a new entry; return False if the title already exists."""
 
+        if not ensure_unique([entry.get("title", "") for entry in self.list_entries()] + [title]):
+            return False
+
         statement = "INSERT INTO archive_entries (title, description) VALUES (?, ?)"
         try:
             with self._connect() as connection:
@@ -128,7 +126,7 @@ class DatabaseModule:
 
     # ------------------------------------------------------------------
     def filter_by_prefix(self, prefix: str) -> List[Dict[str, str]]:
-        """Return entries whose title starts with the prefix (Anfang)."""
+        """Filter entries by the first letter (Anfangsbuchstabe)."""
 
         like_prefix = f"{prefix.casefold()}%"
         query = (
@@ -164,72 +162,6 @@ class DatabaseModule:
     def export_entries_to_csv(self, target: Optional[Path] = None) -> Path:
         """Export the archive to CSV."""
 
-    """Simple record store with duplicate checking."""
-
-    def __init__(self, storage_file: Path = ARCHIVE_FILE) -> None:
-        self.storage_file = storage_file
-        self.storage_file.parent.mkdir(parents=True, exist_ok=True)
-
-    def list_entries(self) -> List[Dict[str, str]]:
-        if not self.storage_file.exists():
-            return []
-        try:
-            data = json.loads(self.storage_file.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
-            return []
-        return sorted(
-            data.get("entries", []),
-            key=lambda entry: entry.get("title", "").casefold(),
-        )
-
-    def add_entry(self, title: str, description: str) -> bool:
-        entries = self.list_entries()
-        titles = [entry.get("title", "") for entry in entries] + [title]
-        if not ensure_unique(titles):
-            return False
-        entries.append({"title": title, "description": description})
-        self._write(entries)
-        return True
-
-    def search(self, term: str) -> List[Dict[str, str]]:
-        term_cf = term.casefold()
-        return [
-            entry
-            for entry in self.list_entries()
-            if term_cf in entry.get("title", "").casefold()
-            or term_cf in entry.get("description", "").casefold()
-        ]
-
-    def filter_by_prefix(self, prefix: str) -> List[Dict[str, str]]:
-        prefix_cf = prefix.casefold()
-        return [
-            entry
-            for entry in self.list_entries()
-            if entry.get("title", "").casefold().startswith(prefix_cf)
-        ]
-
-    def remove(self, title: str) -> bool:
-        entries = self.list_entries()
-        filtered = [entry for entry in entries if entry.get("title") != title]
-        if len(filtered) == len(entries):
-            return False
-        self._write(filtered)
-        return True
-
-    def get_entry(self, title: str) -> Optional[Dict[str, str]]:
-        for entry in self.list_entries():
-            if entry.get("title") == title:
-                return entry
-        return None
-
-    def _write(self, entries: List[Dict[str, str]]) -> None:
-        payload = {"entries": sorted(entries, key=lambda entry: entry.get("title", "").casefold())}
-        self.storage_file.write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
-
-    def export_entries_to_csv(self, target: Optional[Path] = None) -> Path:
         entries = self.list_entries()
         EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         target_path = target or EXPORT_DIR / "archive_export.csv"
@@ -244,87 +176,56 @@ class DatabaseModule:
     def export_entries_to_json(self, target: Optional[Path] = None) -> Path:
         """Export the archive to JSON."""
 
-            writer = csv.DictWriter(handle, fieldnames=["title", "description"])
-            writer.writeheader()
-            for entry in entries:
-                writer.writerow({
-                    "title": entry.get("title", ""),
-                    "description": entry.get("description", ""),
-                })
-        return target_path
-
-    def export_entries_to_json(self, target: Optional[Path] = None) -> Path:
         entries = self.list_entries()
         EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         target_path = target or EXPORT_DIR / "archive_export.json"
         payload = {"entries": entries}
-        target_path.write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        if not atomic_write_json(target_path, payload, logger=self.logger):
+            self.logger.error("Archiv-Export (JSON) fehlgeschlagen: %s", target_path)
         return target_path
 
     # ------------------------------------------------------------------
     def _initialise_database(self) -> None:
-        """Create the SQLite file and tables if required."""
-
         with self._connect() as connection:
             connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS archive_entries (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    title TEXT UNIQUE COLLATE NOCASE,
-                    description TEXT NOT NULL DEFAULT '',
-                    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                (
+                    "CREATE TABLE IF NOT EXISTS archive_entries ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    "title TEXT UNIQUE NOT NULL,"
+                    "description TEXT NOT NULL,"
+                    "created_at TEXT NOT NULL DEFAULT (datetime('now'))"
+                    ")"
                 )
-                """
             )
             connection.commit()
-        self._migrate_legacy_json()
+
+        if LEGACY_ARCHIVE_JSON.exists():
+            self._migrate_legacy_json()
 
     # ------------------------------------------------------------------
     def _migrate_legacy_json(self) -> None:
-        """Import entries from the previous JSON file if present."""
-
-        if not LEGACY_ARCHIVE_JSON.exists():
-            return
         try:
-            legacy_payload = json.loads(LEGACY_ARCHIVE_JSON.read_text(encoding="utf-8"))
+            payload = json.loads(LEGACY_ARCHIVE_JSON.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
-            self.logger.warning("Alte Archivdatei konnte nicht gelesen werden: %s", LEGACY_ARCHIVE_JSON)
+            self.logger.warning("Legacy-Archiv konnte nicht gelesen werden: %s", LEGACY_ARCHIVE_JSON)
             return
 
-        entries = legacy_payload.get("entries", [])
+        entries = payload.get("entries", [])
         if not entries:
             return
 
-        existing = self._count_entries()
-        if existing:
-            return
+        imported = 0
+        for entry in entries:
+            title = str(entry.get("title", "")).strip()
+            description = str(entry.get("description", "")).strip()
+            if not title:
+                continue
+            if not self.add_entry(title, description):
+                continue
+            imported += 1
 
-        self.logger.info("Migriere %s Einträge aus data/archive.json in die SQLite-Datenbank", len(entries))
-        with self._connect() as connection:
-            for entry in entries:
-                title = str(entry.get("title", "")).strip()
-                description = str(entry.get("description", "")).strip()
-                if not title:
-                    continue
-                try:
-                    connection.execute(
-                        "INSERT OR IGNORE INTO archive_entries (title, description) VALUES (?, ?)",
-                        (title, description),
-                    )
-                except sqlite3.DatabaseError as exc:
-                    self.logger.error("Fehler beim Migrieren des Eintrags '%s': %s", title, exc)
-            connection.commit()
-
-    # ------------------------------------------------------------------
-    def _count_entries(self) -> int:
-        query = "SELECT COUNT(*) AS total FROM archive_entries"
-        rows = self._fetch_all(query)
-        if rows:
-            return int(rows[0][0])
-        return 0
+        if imported:
+            self.logger.info("%s Einträge aus dem Legacy-Archiv übernommen.", imported)
 
     # ------------------------------------------------------------------
     @contextmanager
@@ -338,31 +239,31 @@ class DatabaseModule:
 
     # ------------------------------------------------------------------
     def _fetch_all(
-        self,
-        query: str,
-        parameters: Optional[Iterable[object]] = None,
-        *,
-        limit: Optional[int] = None,
+        self, query: str, params: Iterable[object] = (), limit: Optional[int] = None
     ) -> List[sqlite3.Row]:
-        params_tuple: tuple = tuple(parameters or ())
-        sql = query + (" LIMIT ?" if limit is not None else "")
-        full_params = params_tuple + ((limit,) if limit is not None else ())
         with self._connect() as connection:
-            cursor = connection.execute(sql, full_params)
-            rows = cursor.fetchall()
-        return rows
+            cursor = connection.execute(query, tuple(params))
+            if limit is not None:
+                rows = cursor.fetchmany(limit)
+            else:
+                rows = cursor.fetchall()
+        return list(rows)
 
     # ------------------------------------------------------------------
-    @staticmethod
-    def _row_to_dict(row: sqlite3.Row) -> Dict[str, str]:
+    def _row_to_dict(self, row: sqlite3.Row) -> Dict[str, str]:
         return {
             "title": str(row["title"]),
             "description": str(row["description"]),
             "created_at": str(row["created_at"]),
         }
 
-        target_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-        return target_path
+    # ------------------------------------------------------------------
+    def _count_entries(self) -> int:
+        with self._connect() as connection:
+            cursor = connection.execute("SELECT COUNT(*) FROM archive_entries")
+            value = cursor.fetchone()
+            return int(value[0]) if value else 0
 
 
 __all__ = ["DatabaseModule"]
+

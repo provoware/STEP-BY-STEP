@@ -6,7 +6,6 @@ import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
-from typing import Callable, Dict, Iterable, Optional, Sequence, Tuple
 
 
 def _hex_to_rgb(color: str) -> Tuple[float, float, float]:
@@ -782,7 +781,6 @@ def build_diagnostics_panel(
     package_tree = ttk.Treeview(
         parent,
         columns=("paket", "status", "vorgabe", "info"),
-        columns=("paket", "status", "info"),
         show="headings",
         height=4,
     )
@@ -791,13 +789,9 @@ def build_diagnostics_panel(
     package_tree.heading("vorgabe", text="Vorgabe")
     package_tree.heading("info", text="Info")
     package_tree.column("paket", width=140, anchor="w")
-    package_tree.column("status", width=100, anchor="center")
-    package_tree.column("vorgabe", width=120, anchor="w")
-    package_tree.column("info", width=200, anchor="w")
-    package_tree.heading("info", text="Info")
-    package_tree.column("paket", width=120, anchor="w")
-    package_tree.column("status", width=90, anchor="center")
-    package_tree.column("info", width=180, anchor="w")
+    package_tree.column("status", width=110, anchor="center")
+    package_tree.column("vorgabe", width=140, anchor="w")
+    package_tree.column("info", width=220, anchor="w")
     if colors:
         package_tree.configure(
             background=colors.get("surface", "white"),
@@ -812,22 +806,16 @@ def build_diagnostics_panel(
         installed = "Installiert" if installed_flag else "Fehlt"
         required = pkg.get("required") or "–"
         version = pkg.get("version") or ""
-        info_text = version
         message = pkg.get("message") or ""
-        if message:
-            info_text = f"{info_text} – {message}" if info_text else message
+        if message and version:
+            info_text = f"{version} – {message}"
+        else:
+            info_text = message or version or ""
         tag = "ok" if installed_flag and meets_flag else "warn"
         package_tree.insert(
             "",
             "end",
             values=(pkg.get("name", ""), installed, required, info_text),
-        installed = "Installiert" if pkg.get("installed") else "Fehlt"
-        info_text = pkg.get("version") or pkg.get("message", "")
-        tag = "ok" if pkg.get("installed") else "warn"
-        package_tree.insert(
-            "",
-            "end",
-            values=(pkg.get("name", ""), installed, info_text),
             tags=(tag,),
         )
     package_tree.tag_configure("warn", foreground="#c43c00")
