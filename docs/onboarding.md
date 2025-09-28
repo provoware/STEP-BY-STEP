@@ -18,7 +18,7 @@ Die Datei `bootstrap.sh` richtet alles ein und startet das Tool:
 
 - Erstellt die virtuelle Umgebung (`.venv` = isolierte Python-Umgebung).
 - Aktualisiert `pip` (Paketverwaltung) und installiert alle Pakete aus `requirements.txt`.
-- Startet `start_tool.py`, das wiederum die Startroutine (Selbsttest + Diagnose) ausführt.
+- Startet `python -m step_by_step`, das wiederum die Startroutine (Selbsttest + Diagnose) ausführt.
 
 > Tipp: Unter Windows in Git Bash oder WSL ausführen. Alternativ:
 >
@@ -26,17 +26,23 @@ Die Datei `bootstrap.sh` richtet alles ein und startet das Tool:
 > python -m venv .venv
 > source .venv/bin/activate  # Windows: .venv\Scripts\activate
 > python -m pip install -r requirements.txt
-> python start_tool.py
+> python -m step_by_step
 > ```
 
 ## 3. Desktop-Verknüpfung (Klick & Start)
 
-1. Kopiere `packaging/step-by-step.desktop` nach `~/.local/share/applications/` (Linux).
-2. Passe bei Bedarf den Pfad im Eintrag `Exec=` an.
-3. Lege das Icon ab (`assets/step-by-step-icon.svg`) unter `~/.local/share/icons/hicolor/scalable/apps/` und benenne es `step-by-step-icon.svg`.
-4. Führe `update-desktop-database ~/.local/share/applications/` aus.
+Das Skript `packaging/install_desktop.sh` richtet Starter, Icon und Launcher automatisch ein:
 
-Jetzt erscheint "STEP-BY-STEP" im App-Menü.
+```bash
+bash packaging/install_desktop.sh
+```
+
+- Kopiert das Icon (`assets/step-by-step-icon.svg`) nach `~/.local/share/icons/hicolor/scalable/apps/`.
+- Erstellt ein Starter-Skript unter `~/.local/bin/step-by-step-launcher`, das `bootstrap.sh` im Projekt aufruft (inkl. Abhängigkeitsprüfung).
+- Schreibt einen personalisierten Desktop-Eintrag nach `~/.local/share/applications/step-by-step.desktop`.
+- Aktualisiert nach Möglichkeit den Desktop- und Icon-Cache (`update-desktop-database`, `gtk-update-icon-cache`).
+
+Danach erscheint "STEP-BY-STEP" im App-Menü und löst alle Abhängigkeiten beim Klick automatisch auf.
 
 ## 4. Erstes UI-Wochenende
 
@@ -62,7 +68,7 @@ Das Dashboard zeigt oben Statusmeldungen:
 - **ToDo-Liste:** Rechts oben, Status per Enter/Leertaste toggeln (umschalten).
 - **Playlist:** Spielt WAV-Dateien ab, Lautstärke-Regler nutzt `audioop.mul` (Sample-Skalierung).
   - Unter Linux fehlt oft das Zusatzpaket `simpleaudio` (Audiotreiber für Python). Die Diagnose meldet das als Hinweis.
-  - Lösung: `python -m pip install --user simpleaudio` ausführen oder in der Paketverwaltung das gleichnamige Paket installieren.
+  - Lösung: `python -m pip install --user simpleaudio==1.0.4` ausführen oder in der Paketverwaltung das gleichnamige Paket installieren.
   - Alternativ über den Systemplayer abspielen: Rechtsklick auf den Titel → "Datei im Ordner öffnen" → doppelklicken.
 - **Info-Center:** Mittlere Spalte, jetzt mit Scroll-Container (überall scrollen möglich) und Tabs für Legende, Struktur, Schnelllinks, Schrift, Kontrast, Palette, Farbaudit, Release, Sicherheit, Diagnose.
 - **Startprotokoll:** Zeigt `logs/startup.log`, Suche per Tastatur möglich.
@@ -73,9 +79,9 @@ Das Dashboard zeigt oben Statusmeldungen:
 | --- | --- |
 | Virtuelle Umgebung defekt | `rm -rf .venv && ./bootstrap.sh` |
 | Pakete fehlen | `.venv/bin/python -m pip install -r requirements.txt` |
-| Audio ohne Ton | `python -m pip install --upgrade simpleaudio` |
-| Beschädigte Einstellungen | `rm data/settings.json && python start_tool.py --headless` |
-| Diagnose frisch erzeugen | `python start_tool.py --headless` |
+| Audio ohne Ton | `python -m pip install --upgrade simpleaudio==1.0.4` |
+| Beschädigte Einstellungen | `rm data/settings.json && python -m step_by_step --headless` |
+| Diagnose frisch erzeugen | `python -m step_by_step --headless` |
 | CI lokal prüfen | `ruff check . && pytest && mypy step_by_step --ignore-missing-imports` |
 
 Weitere Details siehe `README.md` und `info.txt`.

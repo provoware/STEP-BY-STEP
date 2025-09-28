@@ -17,6 +17,11 @@ else
 fi
 
 python -m pip install --upgrade pip
-python -m pip install --upgrade -r requirements.txt
+python -m pip install -r requirements.txt
 
-python start_tool.py "$@"
+if [ "${STEP_BY_STEP_INSTALL_DEV:-0}" != "0" ] && [ -f "requirements-dev.txt" ]; then
+  echo "[Bootstrap] Installiere zusätzliche Entwickler-Werkzeuge" >&2
+  python -m pip install -r requirements-dev.txt
+fi
+
+python -m step_by_step "$@"

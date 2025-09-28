@@ -48,8 +48,14 @@
 - [x] Startprotokoll automatisch bereinigen und Ressourcentemplates bündeln
 - [x] SQLite-Auswertung (z.B. Favoritenlisten) als Zusatzansicht planen
 - [ ] mypy-Fehler in UI- und Diagnose-Modulen bereinigen (klare Typen oder Ignorieren begründen)
-- [x] Startskript `python start_tool.py --headless` einmal testweise durchlaufen lassen und Ergebnis protokollieren
+- [ ] Startbericht aus der Konsole zusätzlich im Info-Center anzeigen (Textpanel vorbereiten)
+- [ ] Ausgabeformatierer für weitere Sprachen vorbereiten (z. B. Englisch als Option)
+- [x] Startskript `python -m step_by_step --headless` einmal testweise durchlaufen lassen und Ergebnis protokollieren
 - [ ] Release-Hinweise/Changelog für Anwender*innen finalisieren
 - [x] Basissicherungen für Kern-Dateien erstellen, damit die Startroutine ohne Backup-Warnungen durchläuft
 - [x] Headless-Bericht zu fehlendem `simpleaudio` unter Linux aufklären (Fallback dokumentieren oder Abhängigkeit anpassen)
-- [ ] Regelmäßige Sicherungstests (wöchentlich `python start_tool.py --headless`) einplanen
+- [x] Produktions- und Entwickler-Abhängigkeiten trennen und Bootstrap/Start-Routine anpassen
+- [x] PEP-517-Package bereitstellen (`pyproject.toml`, Konsolen-Einstiegspunkt)
+- [x] Offline-Modus für Paketinstallationen inkl. Anwender-Hinweisen ergänzen
+- [x] Icon-Installationsskript automatisieren und testen
+- [ ] Regelmäßige Sicherungstests (wöchentlich `python -m step_by_step --headless`) einplanen

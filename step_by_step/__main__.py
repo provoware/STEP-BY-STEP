@@ -1,10 +1,10 @@
-"""Kompatibler Schnellstarter für manuelle Aufrufe."""
+"""Erlaubt den Aufruf per ``python -m step_by_step``."""
 
 from __future__ import annotations
 
 import sys
 
-from step_by_step.cli import main
+from .cli import main
 
 
 if __name__ == "__main__":

@@ -499,8 +499,8 @@ def build_color_audit_panel(
         ttk.Label(
             parent,
             text=(
-                "Noch keine Auswertung vorhanden – Startroutine (start_tool.py) ausführen,"
-                " um den Farbaudit zu erstellen."
+                "Noch keine Auswertung vorhanden – Startroutine (python -m step_by_step) "
+                "ausführen, um den Farbaudit zu erstellen."
             ),
             wraplength=320,
             font=body_font,
@@ -624,7 +624,7 @@ def build_security_panel(
     if not summary:
         ttk.Label(
             parent,
-            text="Noch keine Sicherheitsprüfung vorhanden – Startroutine ausführen (start_tool.py).",
+            text="Noch keine Sicherheitsprüfung vorhanden – Startroutine ausführen (python -m step_by_step).",
             wraplength=320,
             font=body_font,
             justify="left",
@@ -710,7 +710,7 @@ def build_diagnostics_panel(
     if not diagnostics:
         ttk.Label(
             parent,
-            text="Noch keine Diagnose gespeichert – Startskript ausführen (start_tool.py).",
+            text="Noch keine Diagnose gespeichert – Startskript ausführen (python -m step_by_step).",
             wraplength=320,
             justify="left",
             font=body_font,

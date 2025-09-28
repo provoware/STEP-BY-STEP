@@ -51,7 +51,7 @@ Release-Register).
 
 ## Testempfehlungen
 
-1. `python start_tool.py --headless` ausführen und prüfen, dass alle Tests
+1. `python -m step_by_step --headless` ausführen und prüfen, dass alle Tests
    „OK“ melden.
 2. GUI starten und im Playlist-Bereich eine Datei markieren → „Format prüfen“
    sowie „Als WAV normalisieren“ testen.

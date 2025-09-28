@@ -47,6 +47,7 @@ DIAGNOSTICS_FILE = Path("data/diagnostics_report.json")
 
 STRUCTURE_SCHEMA: Dict[str, Dict[str, Dict[str, Dict]]] = {
     "STEP-BY-STEP": {
+        "pyproject.toml": {},
         "start_tool.py": {},
         "requirements.txt": {},
         "data/": {
@@ -1339,7 +1340,7 @@ class MainWindow(tk.Tk):
             messagebox.showerror("Öffnen fehlgeschlagen", f"{target}: {exc}")
 
     def _run_headless_selftest(self) -> None:
-        command = [sys.executable, "start_tool.py", "--headless"]
+        command = [sys.executable, "-m", "step_by_step", "--headless"]
         try:
             subprocess.Popen(command)
             self.stats_var.set("Selbsttest gestartet (läuft im Hintergrund)")

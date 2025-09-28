@@ -4,5 +4,5 @@ Comment=Barrierefreies Schritt-für-Schritt-Tool mit Selbsttests und Diagnose
 Type=Application
 Terminal=false
 Categories=Education;Utility;Accessibility;
-Exec=/bin/bash -lc 'cd "$(dirname "%k")/.." && ./bootstrap.sh'
-Icon=step-by-step-icon
+Exec={{LAUNCHER}}
+Icon=step-by-step.svg

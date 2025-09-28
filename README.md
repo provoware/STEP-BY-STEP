@@ -14,26 +14,108 @@ Logging.
 ```
 
 Der Befehl erstellt bei Bedarf die virtuelle Umgebung `.venv`, aktualisiert
-`pip`, installiert alle Pakete aus `requirements.txt`, prüft den Code per
-Selbsttest (Syntax-Check und Einstellungs-Validierung), protokolliert jeden
-Schritt unter `logs/` und startet anschließend die barrierearme Oberfläche. Die
-Konsole zeigt danach eine zusammengefasste Auswertung (Security-Status,
-Farbaudit, Selbsttests, Systemdiagnose). Alternativ lässt sich der Start wie
-bisher mit `python start_tool.py` durchführen (zuvor manuell `.venv`
-aktivieren).
+`pip`, installiert alle Pakete aus `requirements.txt` (Produktionsabhängigkeiten
+für den täglichen Einsatz) und startet anschließend die barrierearme Oberfläche
+über den neuen Konsolen-Einstiegspunkt `python -m step_by_step`. Die Konsole
+zeigt danach eine zusammengefasste Auswertung (Security-Status, Farbaudit,
+Selbsttests, Systemdiagnose) inklusive Offline-Hinweisen. Alternativ lässt sich
+der Start jederzeit mit `python -m step_by_step` durchführen (zuvor manuell
+`.venv` aktivieren).
+
+**Entwicklungs-Werkzeuge nach Bedarf aktivieren:** Wer zusätzlich Prüf- und
+Entwicklungs-Tools (Tests, Linter, Typchecker) benötigt, setzt vor dem Aufruf
+eine Umgebungsvariable (Schalter für den Startprozess) und wiederholt den
+Bootstrap-Befehl:
+
+```bash
+STEP_BY_STEP_INSTALL_DEV=1 ./bootstrap.sh
+```
+
+Dadurch installiert das Skript automatisch auch alle Pakete aus
+`requirements-dev.txt`. Ohne den Schalter bleiben diese Werkzeuge außen vor,
+sodass Endanwender*innen nur die wirklich benötigten Bibliotheken erhalten.
 Beim allerersten Start legt die Routine sämtliche Primärdaten-Dateien neu an
 (`data/settings.json`, `data/todo_items.json`, `data/archive.db` usw.), damit
 das Git-Repository keine echten Nutzerdaten enthält.
 Für einen Diagnoselauf ohne Fenster:
 
 ```bash
-python start_tool.py --headless
+python -m step_by_step --headless
 ```
+
+## Zusätzliche Installationshinweise für Neulinge
+
+- **Nur Produktionspakete installieren:**
+
+  ```bash
+  python -m pip install -r requirements.txt
+  ```
+
+- **Entwicklungswerkzeuge (Tests, Linting, Typprüfung) nachrüsten:**
+
+  ```bash
+  python -m pip install -r requirements-dev.txt
+  ```
+
+- **Variable deaktivieren:** Um die Developer-Pakete wieder abzuschalten,
+  genügt es, den Bootstrap-Befehl ohne gesetzte Umgebungsvariable aufzurufen.
+  Die Programme bleiben installiert, können aber bei Bedarf mit `python -m pip`
+  wieder entfernt werden (`python -m pip uninstall paketname`).
+
+- **Offline starten:** Wenn kein Internet verfügbar ist, startet das Tool im
+  Offline-Modus weiter. Eine spätere Nachinstallation gelingt mit:
+
+  ```bash
+  python -m pip install -r requirements.txt
+  ```
+
+  Optional kann für die Audiowiedergabe (simpleaudio) dieser Befehl ergänzt
+  werden, sobald wieder Internet vorhanden ist:
+
+  ```bash
+  python -m pip install simpleaudio==1.0.4
+  ```
 
 Eine ausführliche Schritt-für-Schritt-Anleitung (Onboarding & Troubleshooting)
 findet sich in `docs/onboarding.md`. Für Desktop-Umgebungen liegt eine
 Starter-Verknüpfung unter `packaging/step-by-step.desktop` und das Icon in
-`assets/step-by-step-icon.svg` bereit.
+`assets/step-by-step-icon.svg` bereit. Die Installation erfolgt mit:
+
+```bash
+bash packaging/install_desktop.sh
+```
+
+Das Skript kopiert Icon und Starter automatisch in die
+Benutzerverzeichnisse (`~/.local/share/applications/` und
+`~/.local/share/icons/`) und erzeugt ein lauffähiges Launcher-Skript
+(`~/.local/bin/step-by-step-launcher`) für den Klick-&-Start-Einsatz.
+
+## Standardkonformes Packaging (PEP-517)
+
+Mit der neuen `pyproject.toml` lässt sich das Tool wie ein reguläres Paket
+bauen und installieren. Alle Befehle sind vollständig aufgeführt:
+
+```bash
+python -m pip install --upgrade build
+python -m build
+```
+
+Der Befehl erzeugt unter `dist/` ein Wheel-Paket. Dieses lässt sich lokal
+installieren:
+
+```bash
+python -m pip install dist/step_by_step-0.2.0-py3-none-any.whl
+```
+
+Ein anschließender Start funktioniert über:
+
+```bash
+python -m step_by_step
+```
+
+Für Entwickler*innen steht zusätzlich die optionale Abhängigkeit
+`step-by-step[dev]` bereit, welche dieselben Pakete wie `requirements-dev.txt`
+enthält.
 
 ## Wesentliche Merkmale
 
@@ -99,6 +181,51 @@ Starter-Verknüpfung unter `packaging/step-by-step.desktop` und das Icon in
 - `data/diagnostics_report.html` stellt dieselben Informationen als
   kontraststarke HTML-Ansicht bereit (ideal für Support-Weitergabe).
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
+
+## Weitere Laienfreundliche Tipps
+
+- **Virtuelle Umgebung aufräumen:** (Entfernt den isolierten Python-Ordner)
+
+  ```bash
+  rm -rf .venv
+  ```
+
+  Danach kann mit `./bootstrap.sh` eine frische Umgebung erstellt werden.
+
+- **Konfigurationsdateien sichern:** (Kopie der wichtigsten JSON-Dateien)
+
+  ```bash
+  mkdir -p backups-manual
+  cp data/settings.json backups-manual/settings.json
+  cp data/todo_items.json backups-manual/todo_items.json
+  ```
+
+- **Startbericht speichern:** (Startbericht = Textausgabe des Selbsttests)
+
+  ```bash
+  python -m step_by_step --headless > startup-bericht.txt
+  ```
+
+  Der Pfeil `>` (Umleitung = Weiterleitung der Konsolenausgabe in eine Datei)
+  legt eine Kopie der Meldungen an. Die Datei `startup-bericht.txt` enthält
+  alle Schritte und lässt sich bei Support-Anfragen direkt mitschicken.
+
+- **Audiomodul testen:** (Kurzer Check ohne Oberfläche)
+
+  ```bash
+  python -m step_by_step --headless
+  python - <<'PY'
+from step_by_step.modules.audio import PlaylistManager
+print("Playlist enthält", len(PlaylistManager().load_tracks()), "Einträge")
+PY
+  ```
+
+- **Diagnose teilen:** (HTML-Bericht für Support speichern)
+
+  ```bash
+  python -m step_by_step --headless
+  xdg-open data/diagnostics_report.html
+  ```
 
 ## Audio & Playlist
 
