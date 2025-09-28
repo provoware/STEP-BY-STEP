@@ -39,6 +39,61 @@ class DatabaseModule:
         return [self._row_to_dict(row) for row in rows]
 
     # ------------------------------------------------------------------
+    def get_statistics(self, limit: int = 5) -> Dict[str, object]:
+        """Return summary information for dashboard insights."""
+
+        stats: Dict[str, object] = {
+            "total_entries": 0,
+            "latest_entries": [],
+            "top_initials": [],
+            "last_added": None,
+        }
+
+        try:
+            total = self._count_entries()
+            stats["total_entries"] = total
+            if total == 0:
+                return stats
+
+            latest_rows = self._fetch_all(
+                (
+                    "SELECT title, created_at FROM archive_entries "
+                    "ORDER BY datetime(created_at) DESC"
+                ),
+                limit=limit,
+            )
+            latest_entries = [
+                {
+                    "title": str(row["title"]),
+                    "created_at": str(row["created_at"]),
+                }
+                for row in latest_rows
+            ]
+            stats["latest_entries"] = latest_entries
+            if latest_entries:
+                stats["last_added"] = latest_entries[0]
+
+            initials_rows = self._fetch_all(
+                (
+                    "SELECT UPPER(SUBSTR(title, 1, 1)) AS initial, COUNT(*) AS total "
+                    "FROM archive_entries "
+                    "GROUP BY initial ORDER BY total DESC, initial ASC"
+                ),
+                limit=limit,
+            )
+            stats["top_initials"] = [
+                {
+                    "initial": str(row["initial"] or "?"),
+                    "count": int(row["total"]),
+                }
+                for row in initials_rows
+            ]
+        except sqlite3.DatabaseError as exc:
+            self.logger.error("Fehler bei der Statistikabfrage: %s", exc)
+
+        return stats
+
+    # ------------------------------------------------------------------
     def add_entry(self, title: str, description: str) -> bool:
         """Insert a new entry; return False if the title already exists."""
 

@@ -16,7 +16,8 @@ Beschreibung:
   inklusive Live-Status im Kopfbereich und Synchronisation mit `todo.txt`.
 - Info-Center mit Legende, Mockup, Strukturbaum, Release-Checkliste,
   Schriftgrößen-Kompass, Kontrast-Checker, Farbpaletten-Tabelle, Farbaudit-Tab,
-  Diagnose-Übersicht (Systemprüfung) und Datensicherheitsstatus
+  Diagnose-Übersicht (Systemprüfung), Daten-Tab (SQLite-Überblick mit neuesten
+  Einträgen und häufigsten Anfangsbuchstaben) und Datensicherheitsstatus
   (zeigt Manifest-, Backup- und Restore-Ergebnisse).
 - Datensicherheits-Manifest überwacht zentrale Dateien (Checksummen), merkt
   sich Dateigrößen und legt Sicherungskopien mit Zeitstempel unter

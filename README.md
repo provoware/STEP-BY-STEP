@@ -87,8 +87,9 @@ python start_tool.py --headless
   sowie Register für Schriftgrößen-Empfehlungen, einen Kontrast-Checker, eine
   Farbpaletten-Übersicht (inkl. berechnetem WCAG-Kontrast), einen Tab mit den
   Ergebnissen der Datensicherheitsprüfung samt Restore-Status, einen
-  Diagnose-Tab für Systeminformationen und einen Farbaudit-Tab mit
-  Optimierungstipps.
+  Diagnose-Tab für Systeminformationen, einen Farbaudit-Tab mit
+  Optimierungstipps sowie einen Daten-Tab mit SQLite-Überblick (neueste Einträge
+  und häufigste Anfangsbuchstaben).
 - **Datensicherheits-Manifest:** Beim Start wird ein Checksummen-Manifest für
   zentrale JSON/TXT-Dateien verifiziert. Abweichungen erzeugen automatische
   Backups unter `data/backups/`, Größenabweichungen werden hervorgehoben und
@@ -142,6 +143,9 @@ python start_tool.py --headless
   SQLite (leichte Datenbank) und bietet Such-/Präfixfilter sowie das Entfernen
   einzelner Einträge ohne Duplikate.
 - Über Schnelllinks können CSV- und JSON-Exporte erstellt werden (`data/exports/`).
+- Der neue Daten-Tab im Info-Center fasst die letzten Einträge, die Gesamtzahl
+  der Datensätze und die häufigsten Anfangsbuchstaben zusammen und erklärt
+  dabei zentrale Begriffe (Eintrag = Datensatz, SQLite = leichte Datenbank).
 - Die Aufgabenliste zeigt Fälligkeitsdaten im Format `⏳/✔ Titel (bis DD.MM.YYYY)`
   und erlaubt das Umschalten per Tastatur (Enter/Leertaste) oder Button. Der
   aktuelle Status wird im Dashboard zusammen mit dem Sitzungszähler angezeigt.

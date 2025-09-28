@@ -3,7 +3,7 @@ Fortschritt: 100%
 Nächste Schritte:
 - Optionales Audio-Preview (Wellenform/Restlaufzeit) vorbereiten.
 - Erweiterte Screenreader-Ausgabe (z.B. Audio-Feedback) evaluieren.
-- SQLite-Auswertung weiterdenken (z.B. Favoriten-Ansicht oder Filter nach Datum).
+- Datenbank-Insights um Favoriten-Kennzeichnung und Datumsfilter ergänzen.
 - Farbprofile langfristig um zusätzliche Benutzerpaletten erweitern (Farbaudit deckt Prüfung bereits ab).
 - Die vollständige Ideensammlung steht jetzt in docs/post_release_ideas.md.
 
@@ -19,6 +19,7 @@ Abschluss-Highlights:
 Aktuelle Highlights:
 - Archiv läuft jetzt über eine SQLite-Datenbank – Migration aus archive.json
   erfolgt automatisch beim ersten Start.
+- Info-Center zeigt eine Datenbank-Ansicht mit neuesten Einträgen und häufigsten Anfangsbuchstaben.
 - Checksummen-Manifest mit automatischen Sicherungen, Größenkontrolle und Backup-Aufräumung.
 - Automatischer Farbaudit für alle Themes mit Bericht unter data/color_audit.json.
 - Sicherheits-, Audit- und Release-Informationen direkt im Header sowie im Info-Center.

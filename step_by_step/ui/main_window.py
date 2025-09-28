@@ -32,6 +32,7 @@ from .info_panels import (
     build_legend_panel,
     build_font_tips_panel,
     build_contrast_panel,
+    build_database_insights_panel,
     build_color_audit_panel,
     build_mockup_panel,
     build_release_panel,
@@ -118,6 +119,7 @@ class MainWindow(tk.Tk):
         self.todo_module = TodoModule()
         self.todo_entries: List[TodoItem] = []
         self.database_module = DatabaseModule()
+        self.database_insights_data: Dict[str, object] = self.database_module.get_statistics()
         self.release_checklist = ReleaseChecklist()
         self.release_items = [item.to_dict() for item in self.release_checklist.load_items()]
         progress = self.release_checklist.progress()
@@ -693,6 +695,7 @@ class MainWindow(tk.Tk):
         notebook.pack(fill="both", expand=True)
 
         self._refresh_release_data()
+        self._refresh_database_insights()
 
         legend_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
         notebook.add(legend_frame, text="Legende")
@@ -705,6 +708,10 @@ class MainWindow(tk.Tk):
         structure_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
         notebook.add(structure_frame, text="Struktur")
         build_structure_panel(structure_frame, STRUCTURE_SCHEMA, self.colors)
+
+        database_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
+        notebook.add(database_frame, text="Daten")
+        build_database_insights_panel(database_frame, self.database_insights_data, self.colors)
 
         quicklinks_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
         notebook.add(quicklinks_frame, text="Schnelllinks")
@@ -1284,6 +1291,13 @@ class MainWindow(tk.Tk):
             )
         else:
             self.release_progress_text = "Noch keine Checkliste gespeichert."
+
+    def _refresh_database_insights(self) -> None:
+        try:
+            self.database_insights_data = self.database_module.get_statistics()
+        except Exception as exc:  # pragma: no cover - defensive catch
+            self.logger.error("Datenbank-Auswertung fehlgeschlagen", exc_info=exc)
+            self.database_insights_data = {}
 
     def _open_path(self, target: Path) -> None:
         try:
