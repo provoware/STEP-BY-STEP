@@ -74,6 +74,7 @@ class ConfigManager:
             defaults = dict(DEFAULT_SETTINGS)
             self._write_payload(defaults)
             return UserPreferences.from_dict(defaults)
+            return UserPreferences()
         try:
             with self.file_path.open("r", encoding="utf-8") as handle:
                 content = json.load(handle)
@@ -98,6 +99,8 @@ class ConfigManager:
             else:
                 self.logger.info("Einstellungen auf Standardwerte aktualisiert.")
         return UserPreferences.from_dict(sanitised)
+            return UserPreferences()
+        return UserPreferences.from_dict(content)
 
     def save_preferences(self, preferences: UserPreferences) -> None:
         """Persist the given preferences in JSON format."""
@@ -107,6 +110,8 @@ class ConfigManager:
     def _write_payload(self, payload: Dict[str, Any]) -> None:
         with self.file_path.open("w", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2, ensure_ascii=False)
+        with self.file_path.open("w", encoding="utf-8") as handle:
+            json.dump(preferences.to_dict(), handle, indent=2, ensure_ascii=False)
 
 
 __all__ = ["ConfigManager", "UserPreferences"]

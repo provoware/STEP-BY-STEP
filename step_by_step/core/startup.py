@@ -11,6 +11,7 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 from .color_audit import ColorAuditor
 from .diagnostics import DiagnosticsManager
@@ -25,6 +26,140 @@ from .security import SecurityManager, SecuritySummary
 from .validators import SettingsValidator
 
 MAX_STARTUP_LOG_LINES = 2000
+from .security import SecurityManager, SecuritySummary
+
+REQUIRED_FOLDERS: Sequence[Path] = (
+    Path("data"),
+    Path("logs"),
+    Path("data/exports"),
+    Path("data/converted_audio"),
+    Path("data/backups"),
+)
+
+REQUIRED_FILES: Dict[Path, str] = {
+    Path("data/settings.json"): json.dumps(
+        {
+            "font_scale": 1.2,
+            "theme": "light",
+            "autosave_interval_minutes": 10,
+            "accessibility_mode": True,
+            "shortcuts_enabled": True,
+            "contrast_theme": "accessible",
+            "color_mode": "accessible",
+            "audio_volume": 0.8,
+        },
+        indent=2,
+    ),
+    Path("data/todo_items.json"): json.dumps({"items": []}, indent=2),
+    Path("data/playlists.json"): json.dumps({"tracks": []}, indent=2),
+    Path("data/archive.json"): json.dumps({"entries": []}, indent=2),
+    Path("data/persistent_notes.txt"): "",
+    Path("data/usage_stats.json"): json.dumps({}, indent=2),
+    Path("data/selftest_report.json"): json.dumps(
+        {
+            "last_run": "",
+            "all_passed": False,
+            "self_tests": [],
+            "messages": [],
+            "repaired_paths": [],
+            "dependency_messages": [],
+            "security_summary": {
+                "status": "unknown",
+                "verified": 0,
+                "issues": [],
+                "backups": [],
+                "size_alerts": [],
+                "pruned_backups": [],
+                "updated_manifest": False,
+                "timestamp": "",
+            },
+            "color_audit": {
+                "generated_at": "",
+                "overall_status": "unknown",
+                "worst_ratio": 0.0,
+                "themes": [],
+                "issues": [],
+            },
+            "diagnostics": {
+                "generated_at": "",
+                "python": {},
+                "virtualenv": {},
+                "paths": [],
+                "packages": [],
+                "summary": {"status": "unknown", "issues": [], "recommendations": []},
+                "startup": {},
+            },
+            "diagnostics_messages": [],
+            "diagnostics_report_path": "",
+        },
+        indent=2,
+        ensure_ascii=False,
+    ),
+    Path("data/release_checklist.json"): json.dumps(
+        {
+            "items": [
+                {
+                    "title": "Automatischer Start inklusive Selbsttests",
+                    "done": True,
+                    "details": "Launcher führt Abhängigkeitsprüfung und Reparaturen durch.",
+                },
+                {
+                    "title": "Audioformat-Prüfung und Normalisierung",
+                    "done": True,
+                    "details": "Playlist-Bereich bietet Prüfen und Konvertieren auf WAV-Basis.",
+                },
+                {
+                    "title": "Archiv-Export als CSV und JSON",
+                    "done": True,
+                    "details": "Schnelllinks exportieren Datenbankeinträge in data/exports/.",
+                },
+                {
+                    "title": "Startprotokoll durchsuchbar in der Oberfläche",
+                    "done": True,
+                    "details": "Eigenes Panel filtert logs/startup.log nach Begriffen.",
+                },
+                {
+                    "title": "Abschließender Release-Review",
+                    "done": False,
+                    "details": "Letzte End-to-End-Prüfung und Handbuch-Freigabe.",
+                },
+            ],
+            "updated_at": "",
+        },
+        indent=2,
+        ensure_ascii=False,
+    ),
+    Path("data/color_audit.json"): json.dumps(
+        {
+            "generated_at": "",
+            "overall_status": "unknown",
+            "worst_ratio": 0.0,
+            "themes": [],
+            "issues": [],
+        },
+        indent=2,
+        ensure_ascii=False,
+    ),
+    Path("data/diagnostics_report.json"): json.dumps(
+        {
+            "generated_at": "",
+            "python": {},
+            "virtualenv": {},
+            "paths": [],
+            "packages": [],
+            "summary": {"status": "unknown", "issues": [], "recommendations": []},
+            "startup": {},
+        },
+        indent=2,
+        ensure_ascii=False,
+    ),
+}
+
+
+def _default_settings() -> Dict[str, object]:
+    """Return a fresh copy of the default settings payload."""
+
+    return json.loads(REQUIRED_FILES[Path("data/settings.json")])
 
 DEPENDENCY_COMMANDS: Dict[str, List[str]] = {
     "ttkbootstrap": ["-m", "pip", "install", "ttkbootstrap"],
@@ -112,6 +247,14 @@ class StartupManager:
         for label, step in steps:
             self._run_step(label, step)
 
+
+        self.ensure_structure()
+        self.ensure_virtual_environment()
+        self.ensure_dependencies()
+        self.verify_data_security()
+        self.audit_color_contrast()
+        self.run_self_tests()
+        self.capture_diagnostics()
         self._persist_report()
 
         self.logger.info("Startroutine beendet")
@@ -124,6 +267,7 @@ class StartupManager:
             folder.mkdir(parents=True, exist_ok=True)
             self._log_progress(f"Ordner geprüft: {folder}")
         for path, template in iter_required_files():
+        for path, template in REQUIRED_FILES.items():
             if not path.exists():
                 path.write_text(template, encoding="utf-8")
                 self.report.repaired_paths.append(path)
@@ -262,6 +406,7 @@ class StartupManager:
             self._log_progress(f"Farbaudit fehlgeschlagen: {error}", level="error")
             return
 
+        report = auditor.generate_report()
         payload = report.to_dict()
         self.report.color_audit = payload
         target = Path("data/color_audit.json")
@@ -375,6 +520,14 @@ class StartupManager:
         self.report.diagnostics_messages = summary_lines
         if html_path:
             self._log_progress(f"Diagnose als HTML gespeichert: {html_path}")
+        diagnostics = manager.collect(self.report)
+        diagnostics_path = manager.save(diagnostics)
+        self.report.diagnostics = diagnostics.to_dict()
+        self.report.diagnostics_path = diagnostics_path
+        summary_lines = manager.summary_lines(diagnostics)
+        self.report.diagnostics_messages = summary_lines
+        for line in summary_lines:
+            self._log_progress(line)
 
     # ------------------------------------------------------------------
     def _persist_report(self) -> None:
@@ -460,12 +613,18 @@ class StartupManager:
         except FileNotFoundError:
             template = required_file_content(settings_path)
             settings_path.write_text(template, encoding="utf-8")
+        desired_scale = 1.2
+        try:
+            raw = json.loads(settings_path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             return False, "Einstellungsdatei fehlte und wurde ersetzt."
         except json.JSONDecodeError:
             template = required_file_content(settings_path)
             settings_path.write_text(template, encoding="utf-8")
+            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             return False, "Einstellungsdatei war defekt und wurde erneuert."
@@ -482,6 +641,24 @@ class StartupManager:
             if adjustments:
                 detail = f"{detail} {' '.join(adjustments)}"
             return True, detail
+        changed = False
+        default_settings = _default_settings()
+        for key, value in default_settings.items():
+            if key not in raw:
+                raw[key] = value
+                changed = True
+        try:
+            scale_value = float(raw.get("font_scale", desired_scale))
+        except (TypeError, ValueError):
+            scale_value = desired_scale
+        if scale_value < desired_scale:
+            raw["font_scale"] = desired_scale
+            changed = True
+        if changed:
+            settings_path.write_text(json.dumps(raw, indent=2), encoding="utf-8")
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            return True, "Einstellungen wurden automatisch aktualisiert."
         return True, "Einstellungen sind vollständig."
 
     def _ensure_settings_defaults(self, settings_path: Path) -> None:
@@ -513,6 +690,26 @@ class StartupManager:
             self._log_progress("Einstellungen automatisch aktualisiert.")
             for note in adjustments:
                 self._log_progress(f"Einstellungs-Hinweis: {note}")
+        desired_scale = 1.2
+        try:
+            content = json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            self._log_progress("Einstellungen zurückgesetzt (ungültiges Format).", level="error")
+            return
+
+        try:
+            current_scale = float(content.get("font_scale", desired_scale))
+        except (TypeError, ValueError):
+            current_scale = desired_scale
+        if current_scale < desired_scale:
+            content["font_scale"] = desired_scale
+            settings_path.write_text(json.dumps(content, indent=2), encoding="utf-8")
+            if settings_path not in self.report.repaired_paths:
+                self.report.repaired_paths.append(settings_path)
+            self._log_progress("Schriftgröße dauerhaft auf 1.2 angehoben.")
 
     def _python_in_venv(self) -> Path:
         if sys.platform == "win32":

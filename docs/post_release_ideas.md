@@ -14,6 +14,7 @@ Diese Sammlung hilft dabei, nach dem aktuellen Release strukturierte Verbesserun
 
 ## Daten & Interoperabilität
 - **SQLite-Abfragen teilen**: Exportvorlagen (Views = gespeicherte Abfragen) anlegen, die häufige Filter direkt als CSV oder JSON bereitstellen.
+- **Direkte SQLite-Anbindung**: Option, die Datenbankeinträge zusätzlich in einer SQLite-Datei (leichte Datenbank) zu speichern, um externe Programme anzubinden.
 - **API-Schnittstelle**: Ein kleines Web-Interface (Programmierschnittstelle) stellt ausgewählte Daten und Aktionen für andere Tools bereit.
 - **Synchronisation zwischen Geräten**: Nutzung eines gemeinsamen Speicherorts (z.B. Netzwerkordner oder Cloud) inklusive Konfliktlösung, wenn Änderungen gleichzeitig erfolgen.
 

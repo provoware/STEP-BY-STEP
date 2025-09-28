@@ -12,7 +12,13 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, TYPE_CHECKING
-
+import json
+import os
+import platform
+import sys
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional, Sequence, TYPE_CHECKING
 from .logging_manager import get_logger
 
 try:  # Python 3.8 compatibility guard
@@ -349,6 +355,13 @@ class DiagnosticsManager:
                 version = importlib_metadata.version(package)
                 meets_requirement, hint = self._check_requirement(version, required_spec)
                 message = hint or "Paket verfügbar."
+        requirements: Sequence[tuple[str, str]] = (
+            ("ttkbootstrap", "Theming (Oberflächen-Gestaltung)"),
+            ("simpleaudio", "Audiowiedergabe"),
+        )
+        for package, purpose in requirements:
+            try:
+                version = importlib_metadata.version(package)
                 yield PackageStatus(
                     name=package,
                     purpose=purpose,
@@ -360,6 +373,9 @@ class DiagnosticsManager:
                 )
             except importlib_metadata.PackageNotFoundError:
                 required_text = f" – benötigt {required_spec}" if required_spec else ""
+                    message="Paket verfügbar.",
+                )
+            except importlib_metadata.PackageNotFoundError:
                 yield PackageStatus(
                     name=package,
                     purpose=purpose,
@@ -369,6 +385,9 @@ class DiagnosticsManager:
                     message=(
                         "Nicht installiert. Installation mit 'python -m pip install "
                         f"{package}' empfohlen{required_text}."
+                    message=(
+                        "Nicht installiert. Installation mit 'python -m pip install "
+                        f"{package}' empfohlen."
                     ),
                 )
 

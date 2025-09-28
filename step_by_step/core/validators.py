@@ -7,6 +7,7 @@ from typing import Any, Dict, Iterable, List, Tuple
 
 from .defaults import DEFAULT_SETTINGS
 from .themes import THEME_ORDER
+from typing import Iterable
 
 
 def ensure_unique(values: Iterable[str]) -> bool:

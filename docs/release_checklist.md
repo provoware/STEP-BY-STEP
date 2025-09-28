@@ -60,6 +60,7 @@ Release-Register).
 4. Im Info-Center die Tabs „Daten“, „Palette“, „Farbaudit“ und „Sicherheit“ prüfen:
    Der Daten-Tab muss die Anzahl der Einträge und ggf. die letzten Datensätze anzeigen,
    auch wenn die Liste noch leer ist (Hinweistexte erscheinen).
+4. Im Info-Center die Tabs „Palette“, „Farbaudit“ und „Sicherheit“ prüfen:
    Kontraste müssen mindestens 4,5:1 erreichen, das Manifest darf keine
    Auffälligkeiten melden und der Farbaudit sollte keine Warnungen enthalten.
 5. Im Bereich „Startprotokoll“ nach Begriffen wie „installiert“ oder „Fehler"

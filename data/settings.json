@@ -1,0 +1,10 @@
+{
+  "font_scale": 1.2,
+  "theme": "light",
+  "autosave_interval_minutes": 10,
+  "accessibility_mode": true,
+  "shortcuts_enabled": true,
+  "contrast_theme": "accessible",
+  "color_mode": "accessible",
+  "audio_volume": 0.8
+}

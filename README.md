@@ -53,6 +53,14 @@ python start_tool.py --headless
   `requirements.txt` ab. Alle Details landen in `data/diagnostics_report.json`
   sowie in einer barrierefreundlichen HTML-Ansicht
   (`data/diagnostics_report.html`), während das Dashboard eine kurze,
+- **Detailiertes Logging:** Zentraler Logger mit drehenden Dateien (`logs/tool.log`)
+  sowie einer separaten Startprotokollierung (`logs/startup.log`).
+- **Automatische Selbsttests:** Beim Start wird der komplette Codebaum mit
+  `compileall` (Syntaxprüfung) getestet und die `data/settings.json` wird auf
+  Vollständigkeit und barrierefreie Standardeinstellungen geprüft.
+- **Systemdiagnose (Pro-Report):** Der Startlauf prüft Python-Version,
+  virtuelle Umgebung, Pfad-Rechte und benötigte Pakete. Alle Details landen in
+  `data/diagnostics_report.json`, während das Dashboard eine kurze,
   leicht verständliche Zusammenfassung anzeigt.
 - **Hoher Kontrast & Accessible Palette:** Die Oberfläche startet mit einer
   farbenblindenfreundlichen Accessible-Palette (dunkelblau + orange) und bietet
@@ -90,6 +98,8 @@ python start_tool.py --headless
   Diagnose-Tab für Systeminformationen, einen Farbaudit-Tab mit
   Optimierungstipps sowie einen Daten-Tab mit SQLite-Überblick (neueste Einträge
   und häufigste Anfangsbuchstaben).
+  Diagnose-Tab für Systeminformationen und einen Farbaudit-Tab mit
+  Optimierungstipps.
 - **Datensicherheits-Manifest:** Beim Start wird ein Checksummen-Manifest für
   zentrale JSON/TXT-Dateien verifiziert. Abweichungen erzeugen automatische
   Backups unter `data/backups/`, Größenabweichungen werden hervorgehoben und
@@ -117,6 +127,11 @@ python start_tool.py --headless
 - `data/security_manifest.json` dokumentiert nach dem ersten Start die letzten
   Checksummen-Prüfungen aller wichtigen Dateien und speichert
   Restore-Checks für jede Sicherung.
+- `data/` enthält alle persistenten Informationen (Notizen, Aufgaben, Playlists,
+  Statistiken, Einstellungen).
+- `logs/` speichert Start- und Laufzeitprotokolle für eine einfache Analyse.
+- `data/security_manifest.json` dokumentiert die letzten Checksummen-Prüfungen
+  aller wichtigen Dateien und speichert Restore-Checks für jede Sicherung.
 - `data/color_audit.json` hält die Ergebnisse der automatischen
   Farbkontrast-Prüfung inklusive Empfehlungen fest.
 - `data/diagnostics_report.json` speichert die Systemdiagnose (Python,
@@ -146,6 +161,9 @@ python start_tool.py --headless
 - Der neue Daten-Tab im Info-Center fasst die letzten Einträge, die Gesamtzahl
   der Datensätze und die häufigsten Anfangsbuchstaben zusammen und erklärt
   dabei zentrale Begriffe (Eintrag = Datensatz, SQLite = leichte Datenbank).
+- Das Archiv-Modul (`step_by_step/modules/database/module.py`) bietet jetzt
+  Such- und Präfixfilter sowie das Entfernen einzelner Einträge.
+- Über Schnelllinks können CSV- und JSON-Exporte erstellt werden (`data/exports/`).
 - Die Aufgabenliste zeigt Fälligkeitsdaten im Format `⏳/✔ Titel (bis DD.MM.YYYY)`
   und erlaubt das Umschalten per Tastatur (Enter/Leertaste) oder Button. Der
   aktuelle Status wird im Dashboard zusammen mit dem Sitzungszähler angezeigt.

@@ -1,4 +1,5 @@
 """Database helper module for managing archive entries via SQLite."""
+"""Database helper module for managing archive entries."""
 
 from __future__ import annotations
 
@@ -15,6 +16,12 @@ from ...core.resources import ARCHIVE_DB_PATH
 
 ARCHIVE_DB = ARCHIVE_DB_PATH
 LEGACY_ARCHIVE_JSON = Path("data/archive.json")
+from pathlib import Path
+from typing import Dict, List, Optional
+
+from ...core.validators import ensure_unique
+
+ARCHIVE_FILE = Path("data/archive.json")
 EXPORT_DIR = Path("data/exports")
 
 
@@ -157,6 +164,72 @@ class DatabaseModule:
     def export_entries_to_csv(self, target: Optional[Path] = None) -> Path:
         """Export the archive to CSV."""
 
+    """Simple record store with duplicate checking."""
+
+    def __init__(self, storage_file: Path = ARCHIVE_FILE) -> None:
+        self.storage_file = storage_file
+        self.storage_file.parent.mkdir(parents=True, exist_ok=True)
+
+    def list_entries(self) -> List[Dict[str, str]]:
+        if not self.storage_file.exists():
+            return []
+        try:
+            data = json.loads(self.storage_file.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return []
+        return sorted(
+            data.get("entries", []),
+            key=lambda entry: entry.get("title", "").casefold(),
+        )
+
+    def add_entry(self, title: str, description: str) -> bool:
+        entries = self.list_entries()
+        titles = [entry.get("title", "") for entry in entries] + [title]
+        if not ensure_unique(titles):
+            return False
+        entries.append({"title": title, "description": description})
+        self._write(entries)
+        return True
+
+    def search(self, term: str) -> List[Dict[str, str]]:
+        term_cf = term.casefold()
+        return [
+            entry
+            for entry in self.list_entries()
+            if term_cf in entry.get("title", "").casefold()
+            or term_cf in entry.get("description", "").casefold()
+        ]
+
+    def filter_by_prefix(self, prefix: str) -> List[Dict[str, str]]:
+        prefix_cf = prefix.casefold()
+        return [
+            entry
+            for entry in self.list_entries()
+            if entry.get("title", "").casefold().startswith(prefix_cf)
+        ]
+
+    def remove(self, title: str) -> bool:
+        entries = self.list_entries()
+        filtered = [entry for entry in entries if entry.get("title") != title]
+        if len(filtered) == len(entries):
+            return False
+        self._write(filtered)
+        return True
+
+    def get_entry(self, title: str) -> Optional[Dict[str, str]]:
+        for entry in self.list_entries():
+            if entry.get("title") == title:
+                return entry
+        return None
+
+    def _write(self, entries: List[Dict[str, str]]) -> None:
+        payload = {"entries": sorted(entries, key=lambda entry: entry.get("title", "").casefold())}
+        self.storage_file.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    def export_entries_to_csv(self, target: Optional[Path] = None) -> Path:
         entries = self.list_entries()
         EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         target_path = target or EXPORT_DIR / "archive_export.csv"
@@ -171,6 +244,16 @@ class DatabaseModule:
     def export_entries_to_json(self, target: Optional[Path] = None) -> Path:
         """Export the archive to JSON."""
 
+            writer = csv.DictWriter(handle, fieldnames=["title", "description"])
+            writer.writeheader()
+            for entry in entries:
+                writer.writerow({
+                    "title": entry.get("title", ""),
+                    "description": entry.get("description", ""),
+                })
+        return target_path
+
+    def export_entries_to_json(self, target: Optional[Path] = None) -> Path:
         entries = self.list_entries()
         EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         target_path = target or EXPORT_DIR / "archive_export.json"
@@ -277,6 +360,9 @@ class DatabaseModule:
             "description": str(row["description"]),
             "created_at": str(row["created_at"]),
         }
+
+        target_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        return target_path
 
 
 __all__ = ["DatabaseModule"]

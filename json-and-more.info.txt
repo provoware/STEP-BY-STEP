@@ -5,6 +5,8 @@ Dieser Ordner ersetzt die frühere ZIP-Datei und fasst alle Basisdateien
 als sofort lesbare Textübersicht zusammen. Das Git-Repository liefert nur
 Platzhalterordner – die aufgelisteten Dateien werden beim Start automatisch
 erstellt, geprüft und bei Bedarf repariert.
+als sofort lesbare Textübersicht zusammen. Die aufgelisteten Dateien werden
+beim Start automatisch geprüft und bei Bedarf repariert oder neu erzeugt.
 
 Enthaltene Kernressourcen
 ------------------------
@@ -14,6 +16,10 @@ Enthaltene Kernressourcen
 - data/playlists.json: Audioplaylist mit Titeln und Quellen.
 - data/archive.db: Hauptarchiv als SQLite-Datei (leichte Datenbank).
 - data/archive.json: Lesbares Backup der Archivstruktur für manuelle Einblicke.
+  Farbmodus, Audiolautstärke).
+- data/todo_items.json: Aufgabenlisten mit Datum und Status.
+- data/playlists.json: Audioplaylist mit Titeln und Quellen.
+- data/archive.json: Ablage für erledigte Einträge.
 - data/persistent_notes.txt: Notizblock mit Autospeicher.
 - data/usage_stats.json: Nutzungsstatistiken, Sitzungszähler.
 - data/selftest_report.json: Ergebnisse der automatischen Startroutine
@@ -21,6 +27,7 @@ Enthaltene Kernressourcen
   UI-Anzeige.
 - data/release_checklist.json: Fortschritt der Release-Checkliste (alle
   Pflichtschritte erledigt, dient als Nachweis).
+- data/release_checklist.json: Fortschritt der Release-Checkliste.
 - data/security_manifest.json: Checksummen, Prüfzeitpunkt und Restore-Abgleich
   aller wichtigen JSON/TXT-Dateien.
 - data/color_audit.json: Ergebnisse des automatischen Farbaudits mit
@@ -31,6 +38,8 @@ Enthaltene Kernressourcen
   Kontrast – ideal zum Weitergeben an Support oder Dokumentation.
 - data/backups/: Sicherungskopien mit Zeitstempel, wenn das Manifest Abweichungen
   feststellt (Ordner ist leer, bis der erste Lauf eine Datei schützt).
+- data/backups/: Sicherungskopien mit Zeitstempel, wenn das Manifest Abweichungen
+  feststellt.
 - data/converted_audio/: automatisch erzeugte WAV-Kopien (16-Bit).
 - data/exports/: Archiv-Exporte im CSV- und JSON-Format.
 - docs/post_release_ideas.md: Ideensammlung für spätere Ausbauten mit einfachen
@@ -49,6 +58,10 @@ So wird alles repariert
 6. Das Startprotokoll `logs/startup.log` wird dabei auf die letzten 2 000 Zeilen
    gekürzt, damit alte Einträge nicht überhandnehmen.
 7. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
+4. Anschließend laufen automatische Selbsttests (Syntax-Check und
+   Einstellungen). Ergebnisse stehen in ``logs/startup.log``.
+5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an.
+6. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
    120 %-Basisschrift, ein ToDo-Kontrollfeld zum direkten Abhaken, ein
    Kontrast-Checker samt Farbpaletten- und Farbaudit-Tab, ein Diagnose-Tab
    (Systemprüfung) sowie ein Sicherheits-Tab bereit, damit alles sichtbar und
