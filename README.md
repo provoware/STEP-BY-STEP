@@ -79,7 +79,16 @@ python -m step_by_step --headless
 Eine ausführliche Schritt-für-Schritt-Anleitung (Onboarding & Troubleshooting)
 findet sich in `docs/onboarding.md`. Für Desktop-Umgebungen liegt eine
 Starter-Verknüpfung unter `packaging/step-by-step.desktop` und das Icon in
-`assets/step-by-step-icon.svg` bereit.
+`assets/step-by-step-icon.svg` bereit. Die Installation erfolgt mit:
+
+```bash
+bash packaging/install_desktop.sh
+```
+
+Das Skript kopiert Icon und Starter automatisch in die
+Benutzerverzeichnisse (`~/.local/share/applications/` und
+`~/.local/share/icons/`) und erzeugt ein lauffähiges Launcher-Skript
+(`~/.local/bin/step-by-step-launcher`) für den Klick-&-Start-Einsatz.
 
 ## Standardkonformes Packaging (PEP-517)
 

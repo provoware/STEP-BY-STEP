@@ -55,5 +55,5 @@
 - [x] Produktions- und Entwickler-Abhängigkeiten trennen und Bootstrap/Start-Routine anpassen
 - [x] PEP-517-Package bereitstellen (`pyproject.toml`, Konsolen-Einstiegspunkt)
 - [x] Offline-Modus für Paketinstallationen inkl. Anwender-Hinweisen ergänzen
-- [ ] Icon-Installationsskript automatisieren und testen
+- [x] Icon-Installationsskript automatisieren und testen
 - [ ] Regelmäßige Sicherungstests (wöchentlich `python -m step_by_step --headless`) einplanen

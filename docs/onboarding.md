@@ -31,12 +31,18 @@ Die Datei `bootstrap.sh` richtet alles ein und startet das Tool:
 
 ## 3. Desktop-Verknüpfung (Klick & Start)
 
-1. Kopiere `packaging/step-by-step.desktop` nach `~/.local/share/applications/` (Linux).
-2. Passe bei Bedarf den Pfad im Eintrag `Exec=` an.
-3. Lege das Icon ab (`assets/step-by-step-icon.svg`) unter `~/.local/share/icons/hicolor/scalable/apps/` und benenne es `step-by-step-icon.svg`.
-4. Führe `update-desktop-database ~/.local/share/applications/` aus.
+Das Skript `packaging/install_desktop.sh` richtet Starter, Icon und Launcher automatisch ein:
 
-Jetzt erscheint "STEP-BY-STEP" im App-Menü.
+```bash
+bash packaging/install_desktop.sh
+```
+
+- Kopiert das Icon (`assets/step-by-step-icon.svg`) nach `~/.local/share/icons/hicolor/scalable/apps/`.
+- Erstellt ein Starter-Skript unter `~/.local/bin/step-by-step-launcher`, das `bootstrap.sh` im Projekt aufruft (inkl. Abhängigkeitsprüfung).
+- Schreibt einen personalisierten Desktop-Eintrag nach `~/.local/share/applications/step-by-step.desktop`.
+- Aktualisiert nach Möglichkeit den Desktop- und Icon-Cache (`update-desktop-database`, `gtk-update-icon-cache`).
+
+Danach erscheint "STEP-BY-STEP" im App-Menü und löst alle Abhängigkeiten beim Klick automatisch auf.
 
 ## 4. Erstes UI-Wochenende
 
