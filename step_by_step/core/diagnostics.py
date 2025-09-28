@@ -12,13 +12,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, TYPE_CHECKING
-import json
-import os
-import platform
-import sys
-from dataclasses import dataclass
-from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, TYPE_CHECKING
+
 from .logging_manager import get_logger
 
 try:  # Python 3.8 compatibility guard
@@ -348,6 +342,7 @@ class DiagnosticsManager:
         }
         requirements = self._parse_requirements()
         package_names = sorted({*purpose_map.keys(), *requirements.keys()})
+
         for package in package_names:
             purpose = purpose_map.get(package, "Abhängigkeit")
             required_spec = requirements.get(package, "")
@@ -355,13 +350,6 @@ class DiagnosticsManager:
                 version = importlib_metadata.version(package)
                 meets_requirement, hint = self._check_requirement(version, required_spec)
                 message = hint or "Paket verfügbar."
-        requirements: Sequence[tuple[str, str]] = (
-            ("ttkbootstrap", "Theming (Oberflächen-Gestaltung)"),
-            ("simpleaudio", "Audiowiedergabe"),
-        )
-        for package, purpose in requirements:
-            try:
-                version = importlib_metadata.version(package)
                 yield PackageStatus(
                     name=package,
                     purpose=purpose,
@@ -373,9 +361,6 @@ class DiagnosticsManager:
                 )
             except importlib_metadata.PackageNotFoundError:
                 required_text = f" – benötigt {required_spec}" if required_spec else ""
-                    message="Paket verfügbar.",
-                )
-            except importlib_metadata.PackageNotFoundError:
                 yield PackageStatus(
                     name=package,
                     purpose=purpose,
@@ -385,9 +370,6 @@ class DiagnosticsManager:
                     message=(
                         "Nicht installiert. Installation mit 'python -m pip install "
                         f"{package}' empfohlen{required_text}."
-                    message=(
-                        "Nicht installiert. Installation mit 'python -m pip install "
-                        f"{package}' empfohlen."
                     ),
                 )
 
@@ -511,12 +493,5 @@ class DiagnosticsManager:
         return 0
 
 
-def VENV_FALLBACK() -> str:
-    """Determine the fallback VENV path when no environment variable is set."""
-
-    if sys.prefix and Path(sys.prefix).exists():
-        return sys.prefix
-    return str(Path(".venv").resolve())
-
-
 __all__ = ["DiagnosticsManager", "DiagnosticsReport", "PackageStatus", "PathStatus"]
+

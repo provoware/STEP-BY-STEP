@@ -40,5 +40,5 @@
 - [x] Diagnose- und Farbaudit-Läufe gegen unerwartete Fehler absichern
 - [x] Startprotokoll automatisch bereinigen und Ressourcentemplates bündeln
 - [x] SQLite-Auswertung (z.B. Favoritenlisten) als Zusatzansicht planen
-- [ ] Live-Vergleich der Paketversionen gegen requirements.txt ergänzen
-- [ ] Optionalen Export des Diagnoseberichts als HTML vorbereiten
+- [x] Live-Vergleich der Paketversionen gegen requirements.txt ergänzen
+- [x] Optionalen Export des Diagnoseberichts als HTML vorbereiten

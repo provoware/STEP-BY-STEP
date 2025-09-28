@@ -1,9 +1,11 @@
-"""Configuration management utilities for the STEP-BY-STEP tool.
+"""Configuration helpers for persistent user preferences.
 
-This module centralises loading and saving persistent configuration
-values that are shared across the application.  The configuration is
-stored as JSON (JavaScript Object Notation, ein textbasiertes Format für
-strukturierte Daten) to keep it both human and machine readable.
+The STEP-BY-STEP launcher stores user specific values (z.B. Schriftgröße
+und Thema) inside ``data/settings.json``.  This module takes care of reading
+and writing that file while ensuring that invalid payloads are replaced with
+safe defaults.  The concrete validation logic lives in
+``step_by_step.core.validators.SettingsValidator`` which performs automatic
+corrections and keeps a log of adjustments for the start report.
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ CONFIG_FILE = Path("data/settings.json")
 
 @dataclass
 class UserPreferences:
-    """Typed access (strukturierter Zugriff) to user preference values."""
+    """Typed access to the stored configuration values."""
 
     font_scale: float = 1.2
     theme: str = "light"
@@ -38,25 +40,25 @@ class UserPreferences:
 
     @classmethod
     def from_dict(cls, raw: Dict[str, Any]) -> "UserPreferences":
-        """Create a :class:`UserPreferences` from a dictionary."""
+        """Create an instance from an untyped dictionary."""
 
-        known_fields = {field.name for field in cls.__dataclass_fields__.values()}  # type: ignore[attr-defined]
+        known_fields = set(cls.__dataclass_fields__.keys())  # type: ignore[attr-defined]
         data = {key: value for key, value in raw.items() if key in known_fields}
         extras = {key: value for key, value in raw.items() if key not in known_fields}
-        preferences = cls(**data)
-        preferences.extra = extras
-        return preferences
+        instance = cls(**data)
+        instance.extra = extras
+        return instance
 
     def to_dict(self) -> Dict[str, Any]:
-        """Return a JSON serialisable (als JSON speicherbar) dictionary."""
+        """Return a JSON serialisable representation including extras."""
 
-        data = {field: getattr(self, field) for field in self.__dataclass_fields__}
-        data.update(self.extra)
-        return data
+        payload = {field: getattr(self, field) for field in self.__dataclass_fields__}
+        payload.update(self.extra)
+        return payload
 
 
 class ConfigManager:
-    """Handle persistence (dauerhaftes Speichern) of configuration values."""
+    """Load and persist configuration values with validation."""
 
     def __init__(self, file_path: Path = CONFIG_FILE) -> None:
         self.file_path = file_path
@@ -64,23 +66,22 @@ class ConfigManager:
         self.logger = get_logger("core.config")
         self.validator = SettingsValidator()
 
+    # ------------------------------------------------------------------
     def load_preferences(self) -> UserPreferences:
-        """Return stored user preferences or sensible defaults."""
+        """Return stored preferences, sanitising invalid payloads."""
 
         if not self.file_path.exists():
-            self.logger.warning(
-                "Einstellungsdatei fehlte – Standardwerte werden erzeugt."
-            )
+            self.logger.warning("Einstellungsdatei fehlte – Standardwerte werden angelegt.")
             defaults = dict(DEFAULT_SETTINGS)
             self._write_payload(defaults)
             return UserPreferences.from_dict(defaults)
-            return UserPreferences()
+
         try:
             with self.file_path.open("r", encoding="utf-8") as handle:
-                content = json.load(handle)
+                raw_content: Dict[str, Any] = json.load(handle)
         except json.JSONDecodeError:
             self.logger.error(
-                "Einstellungsdatei beschädigt – Standardwerte wiederhergestellt."
+                "Einstellungsdatei beschädigt – Standardwerte werden wiederhergestellt."
             )
             defaults = dict(DEFAULT_SETTINGS)
             self._write_payload(defaults)
@@ -89,29 +90,30 @@ class ConfigManager:
             self.logger.error("Einstellungen konnten nicht gelesen werden: %s", error)
             return UserPreferences()
 
-        sanitised, adjustments = self.validator.normalise(content)
-        if sanitised != content:
+        sanitised, adjustments = self.validator.normalise(raw_content)
+        if sanitised != raw_content:
             self._write_payload(sanitised)
             if adjustments:
-                self.logger.info(
-                    "Einstellungen korrigiert: %s", "; ".join(adjustments)
-                )
+                self.logger.info("Einstellungen korrigiert: %s", "; ".join(adjustments))
             else:
-                self.logger.info("Einstellungen auf Standardwerte aktualisiert.")
-        return UserPreferences.from_dict(sanitised)
-            return UserPreferences()
-        return UserPreferences.from_dict(content)
+                self.logger.info("Einstellungen auf empfohlene Standardwerte gebracht.")
 
+        return UserPreferences.from_dict(sanitised)
+
+    # ------------------------------------------------------------------
     def save_preferences(self, preferences: UserPreferences) -> None:
-        """Persist the given preferences in JSON format."""
+        """Persist the provided preferences as JSON."""
 
         self._write_payload(preferences.to_dict())
 
+    # ------------------------------------------------------------------
     def _write_payload(self, payload: Dict[str, Any]) -> None:
-        with self.file_path.open("w", encoding="utf-8") as handle:
-            json.dump(payload, handle, indent=2, ensure_ascii=False)
-        with self.file_path.open("w", encoding="utf-8") as handle:
-            json.dump(preferences.to_dict(), handle, indent=2, ensure_ascii=False)
+        try:
+            with self.file_path.open("w", encoding="utf-8") as handle:
+                json.dump(payload, handle, indent=2, ensure_ascii=False)
+        except OSError as error:
+            self.logger.error("Einstellungen konnten nicht gespeichert werden: %s", error)
 
 
 __all__ = ["ConfigManager", "UserPreferences"]
+
