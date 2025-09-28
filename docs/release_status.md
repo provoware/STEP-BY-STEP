@@ -17,6 +17,6 @@
 
 ## Empfohlene nächste Schritte
 - Typdefekte schrittweise korrigieren (Start bei `step_by_step/ui/main_window.py` und `step_by_step/core/diagnostics.py`).
-- Regelmäßige Prüfungen der neuen Basissicherungen durchführen (z. B. wöchentlich `python start_tool.py --headless`).
+- Regelmäßige Prüfungen der neuen Basissicherungen durchführen (z. B. wöchentlich `python -m step_by_step --headless`).
 - Audio-Dokumentation ergänzen: Hinweis auf OS-Einschränkungen oder alternativen Wiedergabeweg.
 - Abschließende Anwender-Dokumentation aktualisieren und Tests erneut laufen lassen.

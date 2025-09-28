@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "step-by-step"
+version = "0.2.0"
+description = "Barrierearmes Dashboard-Tool mit automatischer Startroutine"
+readme = "README.md"
+authors = [{ name = "STEP-BY-STEP Team" }]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "simpleaudio==1.0.4 ; platform_system != 'Linux'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==7.4.4",
+    "ruff==0.4.10",
+    "mypy==1.10.0",
+]
+
+[project.scripts]
+step-by-step = "step_by_step.cli:main"
+
+[project.urls]
+Homepage = "https://example.com/step-by-step"
+Repository = "https://example.com/step-by-step/repo"
+
+[tool.setuptools.packages.find]
+include = ["step_by_step", "step_by_step.*"]
+

@@ -15,11 +15,12 @@ Logging.
 
 Der Befehl erstellt bei Bedarf die virtuelle Umgebung `.venv`, aktualisiert
 `pip`, installiert alle Pakete aus `requirements.txt` (Produktionsabhängigkeiten
-für den täglichen Einsatz) und startet anschließend die barrierearme Oberfläche.
-Die Konsole zeigt danach eine zusammengefasste Auswertung (Security-Status,
-Farbaudit, Selbsttests, Systemdiagnose). Alternativ lässt sich der Start wie
-bisher mit `python start_tool.py` durchführen (zuvor manuell `.venv`
-aktivieren).
+für den täglichen Einsatz) und startet anschließend die barrierearme Oberfläche
+über den neuen Konsolen-Einstiegspunkt `python -m step_by_step`. Die Konsole
+zeigt danach eine zusammengefasste Auswertung (Security-Status, Farbaudit,
+Selbsttests, Systemdiagnose) inklusive Offline-Hinweisen. Alternativ lässt sich
+der Start jederzeit mit `python -m step_by_step` durchführen (zuvor manuell
+`.venv` aktivieren).
 
 **Entwicklungs-Werkzeuge nach Bedarf aktivieren:** Wer zusätzlich Prüf- und
 Entwicklungs-Tools (Tests, Linter, Typchecker) benötigt, setzt vor dem Aufruf
@@ -39,7 +40,7 @@ das Git-Repository keine echten Nutzerdaten enthält.
 Für einen Diagnoselauf ohne Fenster:
 
 ```bash
-python start_tool.py --headless
+python -m step_by_step --headless
 ```
 
 ## Zusätzliche Installationshinweise für Neulinge
@@ -58,13 +59,54 @@ python start_tool.py --headless
 
 - **Variable deaktivieren:** Um die Developer-Pakete wieder abzuschalten,
   genügt es, den Bootstrap-Befehl ohne gesetzte Umgebungsvariable aufzurufen.
-  Die Programme bleiben installiert, können aber bei Bedarf mit `pip uninstall`
-  entfernt werden (Entfernen von Paketen aus dem Python-Paketmanager).
+  Die Programme bleiben installiert, können aber bei Bedarf mit `python -m pip`
+  wieder entfernt werden (`python -m pip uninstall paketname`).
+
+- **Offline starten:** Wenn kein Internet verfügbar ist, startet das Tool im
+  Offline-Modus weiter. Eine spätere Nachinstallation gelingt mit:
+
+  ```bash
+  python -m pip install -r requirements.txt
+  ```
+
+  Optional kann für die Audiowiedergabe (simpleaudio) dieser Befehl ergänzt
+  werden, sobald wieder Internet vorhanden ist:
+
+  ```bash
+  python -m pip install simpleaudio==1.0.4
+  ```
 
 Eine ausführliche Schritt-für-Schritt-Anleitung (Onboarding & Troubleshooting)
 findet sich in `docs/onboarding.md`. Für Desktop-Umgebungen liegt eine
 Starter-Verknüpfung unter `packaging/step-by-step.desktop` und das Icon in
 `assets/step-by-step-icon.svg` bereit.
+
+## Standardkonformes Packaging (PEP-517)
+
+Mit der neuen `pyproject.toml` lässt sich das Tool wie ein reguläres Paket
+bauen und installieren. Alle Befehle sind vollständig aufgeführt:
+
+```bash
+python -m pip install --upgrade build
+python -m build
+```
+
+Der Befehl erzeugt unter `dist/` ein Wheel-Paket. Dieses lässt sich lokal
+installieren:
+
+```bash
+python -m pip install dist/step_by_step-0.2.0-py3-none-any.whl
+```
+
+Ein anschließender Start funktioniert über:
+
+```bash
+python -m step_by_step
+```
+
+Für Entwickler*innen steht zusätzlich die optionale Abhängigkeit
+`step-by-step[dev]` bereit, welche dieselben Pakete wie `requirements-dev.txt`
+enthält.
 
 ## Wesentliche Merkmale
 
@@ -130,6 +172,41 @@ Starter-Verknüpfung unter `packaging/step-by-step.desktop` und das Icon in
 - `data/diagnostics_report.html` stellt dieselben Informationen als
   kontraststarke HTML-Ansicht bereit (ideal für Support-Weitergabe).
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
+
+## Weitere Laienfreundliche Tipps
+
+- **Virtuelle Umgebung aufräumen:** (Entfernt den isolierten Python-Ordner)
+
+  ```bash
+  rm -rf .venv
+  ```
+
+  Danach kann mit `./bootstrap.sh` eine frische Umgebung erstellt werden.
+
+- **Konfigurationsdateien sichern:** (Kopie der wichtigsten JSON-Dateien)
+
+  ```bash
+  mkdir -p backups-manual
+  cp data/settings.json backups-manual/settings.json
+  cp data/todo_items.json backups-manual/todo_items.json
+  ```
+
+- **Audiomodul testen:** (Kurzer Check ohne Oberfläche)
+
+  ```bash
+  python -m step_by_step --headless
+  python - <<'PY'
+from step_by_step.modules.audio import PlaylistManager
+print("Playlist enthält", len(PlaylistManager().load_tracks()), "Einträge")
+PY
+  ```
+
+- **Diagnose teilen:** (HTML-Bericht für Support speichern)
+
+  ```bash
+  python -m step_by_step --headless
+  xdg-open data/diagnostics_report.html
+  ```
 
 ## Audio & Playlist
 

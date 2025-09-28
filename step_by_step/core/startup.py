@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from .color_audit import ColorAuditor
+from .dependency_manager import DependencyInstallOutcome, DependencyManager
 from .file_utils import atomic_write_json, atomic_write_text
 from .diagnostics import DiagnosticsManager
 from .logging_manager import get_logger
@@ -65,6 +66,9 @@ class StartupReport:
     diagnostics_messages: List[str] = field(default_factory=list)
     diagnostics_path: Optional[Path] = None
     diagnostics_html_path: Optional[Path] = None
+    offline_mode_enabled: bool = False
+    offline_reasons: List[str] = field(default_factory=list)
+    degraded_features: List[str] = field(default_factory=list)
 
     def add_message(self, message: str) -> None:
         self.messages.append(message)
@@ -170,7 +174,7 @@ class StartupManager:
             self._log_progress(f"Virtuelle Umgebung vorhanden: {python_in_venv}")
 
         if not self._running_inside_venv() and not os.environ.get(RELAUNCH_ENV_FLAG):
-            command = [str(python_in_venv), str(self._launcher_path())]
+            command = [str(python_in_venv), "-m", "step_by_step"]
             if len(self._argv) > 1:
                 command.extend(self._argv[1:])
             self.report.relaunch_command = command
@@ -179,39 +183,47 @@ class StartupManager:
     # ------------------------------------------------------------------
     def ensure_dependencies(self) -> None:
         python_exec = self._python_for_dependencies()
-        if REQUIREMENTS_FILE.exists():
-            command = [python_exec, "-m", "pip", "install", "-r", str(REQUIREMENTS_FILE)]
-            self._run_dependency_command(command, description="requirements.txt installieren")
-        else:
+        dependency_manager = DependencyManager(python_exec)
+
+        self._log_progress("Installationsbefehl gestartet: requirements.txt installieren")
+        outcome = dependency_manager.install_requirements(
+            REQUIREMENTS_FILE, "requirements.txt installieren"
+        )
+        if outcome is None:
             self._log_progress("Keine requirements.txt gefunden – überspringe Installation.")
+        else:
+            self._handle_dependency_outcome(outcome)
 
         if self._should_install_dev_dependencies():
             if DEV_REQUIREMENTS_FILE.exists():
-                description = "requirements-dev.txt installieren"
-                command = [
-                    python_exec,
-                    "-m",
-                    "pip",
-                    "install",
-                    "-r",
-                    str(DEV_REQUIREMENTS_FILE),
-                ]
                 self._log_progress(
                     "Entwicklungswerkzeuge werden installiert, da "
                     f"{INSTALL_DEV_ENV_FLAG} gesetzt ist."
                 )
-                self._run_dependency_command(command, description=description)
+                self._log_progress(
+                    "Installationsbefehl gestartet: requirements-dev.txt installieren"
+                )
+                outcome = dependency_manager.install_requirements(
+                    DEV_REQUIREMENTS_FILE, "requirements-dev.txt installieren"
+                )
+                if outcome is not None:
+                    self._handle_dependency_outcome(outcome)
             else:
                 self._log_progress(
                     "Umgebungsvariable STEP_BY_STEP_INSTALL_DEV ist gesetzt, "
                     "aber requirements-dev.txt fehlt."
                 )
         for package, command_args in DEPENDENCY_COMMANDS.items():
-            if not self._is_package_installed(package):
-                command = [python_exec, *command_args]
-                self._run_dependency_command(command, description=f"{package} installieren")
-            else:
+            if self._is_package_installed(package):
                 self._log_progress(f"Paket bereits verfügbar: {package}")
+                continue
+            self._log_progress(f"Installationsbefehl gestartet: {package} installieren")
+            outcome = dependency_manager.install_package(
+                package,
+                command_args,
+                description=f"{package} installieren",
+            )
+            self._handle_dependency_outcome(outcome, optional_feature=package)
 
     # ------------------------------------------------------------------
     def _should_install_dev_dependencies(self) -> bool:
@@ -416,23 +428,56 @@ class StartupManager:
             self._log_progress(f"Schritt abgeschlossen: {label}")
 
     # ------------------------------------------------------------------
-    def _run_dependency_command(self, command: List[str], *, description: str) -> None:
-        self._log_progress(f"Installationsbefehl gestartet: {description}")
-        try:
-            result = subprocess.run(command, capture_output=True, text=True, check=True)
-        except subprocess.CalledProcessError as error:
-            message = f"Installation fehlgeschlagen ({description}): {error.stderr.strip()}"
+    def _handle_dependency_outcome(
+        self,
+        outcome: DependencyInstallOutcome,
+        *,
+        optional_feature: Optional[str] = None,
+    ) -> None:
+        description = outcome.description
+        self._log_progress(f"Installationsbefehl ausgewertet: {description}")
+        if outcome.success:
+            self.report.installed_dependencies = True
+            detail = outcome.stdout or "abgeschlossen"
+            message = f"{description}: {detail}"
             self.report.dependency_messages.append(message)
-            self._log_progress(message, level="error")
+            self._log_progress(f"Installation erfolgreich: {description}")
+            if outcome.stderr:
+                self._log_progress(f"pip-Hinweis: {outcome.stderr}")
             return
 
-        self.report.installed_dependencies = True
-        stdout = (result.stdout or "").strip()
-        if stdout:
-            self.report.dependency_messages.append(f"{description}: {stdout}")
-        else:
-            self.report.dependency_messages.append(f"{description}: abgeschlossen")
-        self._log_progress(f"Installation erfolgreich: {description}")
+        detail = outcome.stderr or outcome.stdout or "Keine Ausgabedetails vorhanden."
+        message = f"Installation fehlgeschlagen ({description}): {detail}"
+        self.report.dependency_messages.append(message)
+        self._log_progress(message, level="error")
+
+        if outcome.offline_detected:
+            self.report.offline_mode_enabled = True
+            hint = outcome.offline_hint or "Internetverbindung nicht verfügbar."
+            if hint not in self.report.offline_reasons:
+                self.report.offline_reasons.append(hint)
+            offline_detail = (
+                "Offline-Modus aktiv: Installationen können später mit "
+                "'python -m pip install -r requirements.txt' nachgeholt werden."
+            )
+            if offline_detail not in self.report.messages:
+                self._log_progress(offline_detail, level="error")
+
+        if optional_feature:
+            feature_label = self._describe_optional_feature(optional_feature)
+            if feature_label not in self.report.degraded_features:
+                self.report.degraded_features.append(feature_label)
+                self._log_progress(
+                    f"Optionales Modul im Sparmodus: {feature_label}",
+                    level="error",
+                )
+
+    # ------------------------------------------------------------------
+    def _describe_optional_feature(self, package: str) -> str:
+        mapping = {
+            "simpleaudio": "Audiowiedergabe (simpleaudio)",
+        }
+        return mapping.get(package, package)
 
     # ------------------------------------------------------------------
     def _self_test_compileall(self) -> Tuple[bool, str]:
@@ -605,9 +650,5 @@ class StartupManager:
         return True
 
     # ------------------------------------------------------------------
-    def _launcher_path(self) -> Path:
-        return Path(__file__).resolve().parents[2] / "start_tool.py"
-
-
 __all__ = ["StartupManager", "StartupReport", "SelfTestResult", "RELAUNCH_ENV_FLAG"]
 
