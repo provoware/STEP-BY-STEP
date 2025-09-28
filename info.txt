@@ -17,8 +17,7 @@ Beschreibung:
 - Info-Center mit Legende, Mockup, Strukturbaum, Release-Checkliste,
   Schriftgrößen-Kompass, Kontrast-Checker, Farbpaletten-Tabelle, Farbaudit-Tab,
   Diagnose-Übersicht (Systemprüfung), Daten-Tab (SQLite-Überblick mit neuesten
-  Einträgen und häufigsten Anfangsbuchstaben) und Datensicherheitsstatus
-  Diagnose-Übersicht (Systemprüfung) und Datensicherheitsstatus
+  Einträgen und häufigsten Anfangsbuchstaben) sowie Datensicherheitsstatus
   (zeigt Manifest-, Backup- und Restore-Ergebnisse).
 - Datensicherheits-Manifest überwacht zentrale Dateien (Checksummen), merkt
   sich Dateigrößen und legt Sicherungskopien mit Zeitstempel unter
@@ -43,9 +42,7 @@ Beschreibung:
   gekürzt, damit die Datei schlank bleibt.
 - Playlist mit Formatprüfung und Normalisierung auf 16-Bit-WAV (`data/converted_audio/`).
 - Archiv nutzt eine SQLite-Datenbank (`data/archive.db`) und bietet Export per
-  Schnelllink als CSV und JSON (`data/exports/`).
-- Playlist mit Formatprüfung und Normalisierung auf 16-Bit-WAV (`data/converted_audio/`).
-- Archiv-Export per Schnelllink als CSV und JSON (`data/exports/`).
+   Schnelllink als CSV und JSON (`data/exports/`).
 
 Anleitung:
 1. Python 3.10+ installieren.
@@ -56,8 +53,6 @@ Anleitung:
 
 Wichtige Dateien (werden beim ersten Start automatisch angelegt):
 - `data/` enthält alle gespeicherten Daten (im Repository nur `.gitkeep`).
-Wichtige Dateien:
-- `data/` enthält alle gespeicherten Daten.
 - `data/selftest_report.json` speichert die Ergebnisse der automatischen
   Startroutine (Selbsttests, Reparaturen, Abhängigkeiten, Sicherheitsstatus).
 - `docs/coding_guidelines.md` fasst Code-Standards zusammen.
