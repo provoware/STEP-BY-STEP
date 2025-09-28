@@ -13,140 +13,18 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from .color_audit import ColorAuditor
-from .defaults import DEFAULT_SETTINGS
 from .diagnostics import DiagnosticsManager
 from .logging_manager import get_logger
+from .resources import (
+    ARCHIVE_DB_PATH,
+    REQUIRED_FOLDERS,
+    iter_required_files,
+    required_file_content,
+)
 from .security import SecurityManager, SecuritySummary
 from .validators import SettingsValidator
 
-REQUIRED_FOLDERS: Sequence[Path] = (
-    Path("data"),
-    Path("logs"),
-    Path("data/exports"),
-    Path("data/converted_audio"),
-    Path("data/backups"),
-)
-
-ARCHIVE_DB_PATH = Path("data/archive.db")
-
-
-REQUIRED_FILES: Dict[Path, str] = {
-    Path("data/settings.json"): json.dumps(
-        DEFAULT_SETTINGS,
-        indent=2,
-        ensure_ascii=False,
-    ),
-    Path("data/todo_items.json"): json.dumps({"items": []}, indent=2),
-    Path("data/playlists.json"): json.dumps({"tracks": []}, indent=2),
-    Path("data/archive.json"): json.dumps({"entries": []}, indent=2),
-    Path("data/persistent_notes.txt"): "",
-    Path("data/usage_stats.json"): json.dumps({}, indent=2),
-    Path("data/selftest_report.json"): json.dumps(
-        {
-            "last_run": "",
-            "all_passed": False,
-            "self_tests": [],
-            "messages": [],
-            "repaired_paths": [],
-            "dependency_messages": [],
-            "security_summary": {
-                "status": "unknown",
-                "verified": 0,
-                "issues": [],
-                "backups": [],
-                "size_alerts": [],
-                "pruned_backups": [],
-                "updated_manifest": False,
-                "timestamp": "",
-            },
-            "color_audit": {
-                "generated_at": "",
-                "overall_status": "unknown",
-                "worst_ratio": 0.0,
-                "themes": [],
-                "issues": [],
-            },
-            "diagnostics": {
-                "generated_at": "",
-                "python": {},
-                "virtualenv": {},
-                "paths": [],
-                "packages": [],
-                "summary": {"status": "unknown", "issues": [], "recommendations": []},
-                "startup": {},
-            },
-            "diagnostics_messages": [],
-            "diagnostics_report_path": "",
-            "diagnostics_report_html_path": "",
-        },
-        indent=2,
-        ensure_ascii=False,
-    ),
-    Path("data/release_checklist.json"): json.dumps(
-        {
-            "items": [
-                {
-                    "title": "Automatischer Start inklusive Selbsttests",
-                    "done": True,
-                    "details": "Launcher führt Abhängigkeitsprüfung und Reparaturen durch.",
-                },
-                {
-                    "title": "Audioformat-Prüfung und Normalisierung",
-                    "done": True,
-                    "details": "Playlist-Bereich bietet Prüfen und Konvertieren auf WAV-Basis.",
-                },
-                {
-                    "title": "Archiv-Export als CSV und JSON",
-                    "done": True,
-                    "details": "Schnelllinks exportieren Datenbankeinträge in data/exports/.",
-                },
-                {
-                    "title": "Startprotokoll durchsuchbar in der Oberfläche",
-                    "done": True,
-                    "details": "Eigenes Panel filtert logs/startup.log nach Begriffen.",
-                },
-                {
-                    "title": "Abschließender Release-Review",
-                    "done": True,
-                    "details": "End-to-End-Prüfung dokumentiert, Release freigegeben.",
-                },
-            ],
-            "updated_at": "",
-        },
-        indent=2,
-        ensure_ascii=False,
-    ),
-    Path("data/color_audit.json"): json.dumps(
-        {
-            "generated_at": "",
-            "overall_status": "unknown",
-            "worst_ratio": 0.0,
-            "themes": [],
-            "issues": [],
-        },
-        indent=2,
-        ensure_ascii=False,
-    ),
-    Path("data/diagnostics_report.json"): json.dumps(
-        {
-            "generated_at": "",
-            "python": {},
-            "virtualenv": {},
-            "paths": [],
-            "packages": [],
-            "summary": {"status": "unknown", "issues": [], "recommendations": []},
-            "startup": {},
-        },
-        indent=2,
-        ensure_ascii=False,
-    ),
-}
-
-
-def _default_settings() -> Dict[str, object]:
-    """Return a fresh copy of the default settings payload."""
-
-    return dict(DEFAULT_SETTINGS)
+MAX_STARTUP_LOG_LINES = 2000
 
 DEPENDENCY_COMMANDS: Dict[str, List[str]] = {
     "ttkbootstrap": ["-m", "pip", "install", "ttkbootstrap"],
@@ -208,10 +86,18 @@ class StartupManager:
     # ------------------------------------------------------------------
     def run_startup_checks(self, argv: Optional[List[str]] = None) -> StartupReport:
         self.logger.info("Startroutine beginnt")
+        trimmed = self._trim_diagnostics_log()
         self.report = StartupReport()
         if argv is not None:
             self._argv = list(argv)
         self._write_diagnostic("Startroutine wird ausgeführt...")
+        if trimmed:
+            self._log_progress(
+                (
+                    "Startprotokoll bereinigt: Ältere Einträge wurden entfernt, "
+                    f"es bleiben die letzten {MAX_STARTUP_LOG_LINES} Zeilen."
+                )
+            )
 
         steps: Sequence[Tuple[str, Callable[[], None]]] = (
             ("Strukturprüfung", self.ensure_structure),
@@ -237,7 +123,7 @@ class StartupManager:
         for folder in REQUIRED_FOLDERS:
             folder.mkdir(parents=True, exist_ok=True)
             self._log_progress(f"Ordner geprüft: {folder}")
-        for path, template in REQUIRED_FILES.items():
+        for path, template in iter_required_files():
             if not path.exists():
                 path.write_text(template, encoding="utf-8")
                 self.report.repaired_paths.append(path)
@@ -572,12 +458,14 @@ class StartupManager:
         try:
             raw = json.loads(settings_path.read_text(encoding="utf-8"))
         except FileNotFoundError:
-            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
+            template = required_file_content(settings_path)
+            settings_path.write_text(template, encoding="utf-8")
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             return False, "Einstellungsdatei fehlte und wurde ersetzt."
         except json.JSONDecodeError:
-            settings_path.write_text(REQUIRED_FILES[settings_path], encoding="utf-8")
+            template = required_file_content(settings_path)
+            settings_path.write_text(template, encoding="utf-8")
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             return False, "Einstellungsdatei war defekt und wurde erneuert."
@@ -656,6 +544,32 @@ class StartupManager:
     def _write_diagnostic(self, message: str) -> None:
         with self.diagnostics_file.open("a", encoding="utf-8") as handle:
             handle.write(f"{message}\n")
+
+    def _trim_diagnostics_log(self, max_lines: int = MAX_STARTUP_LOG_LINES) -> bool:
+        """Kürzt das Startprotokoll auf eine sinnvolle Länge (Hauskeeping)."""
+
+        if max_lines <= 0 or not self.diagnostics_file.exists():
+            return False
+        try:
+            with self.diagnostics_file.open("r", encoding="utf-8") as handle:
+                lines = handle.readlines()
+        except OSError as error:
+            self.logger.warning("Startprotokoll konnte nicht gelesen werden: %s", error)
+            return False
+        if len(lines) <= max_lines:
+            return False
+        trimmed = lines[-max_lines:]
+        try:
+            with self.diagnostics_file.open("w", encoding="utf-8") as handle:
+                handle.writelines(trimmed)
+        except OSError as error:
+            self.logger.warning("Startprotokoll konnte nicht gekürzt werden: %s", error)
+            return False
+        self.logger.info(
+            "Startprotokoll verkürzt: nur die letzten %s Zeilen bleiben erhalten.",
+            max_lines,
+        )
+        return True
 
     def _launcher_path(self) -> Path:
         return Path(__file__).resolve().parents[2] / "start_tool.py"

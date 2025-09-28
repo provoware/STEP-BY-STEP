@@ -38,7 +38,8 @@ python start_tool.py --headless
   `data/exports/`). Alle JSON-/Datenbankdateien erzeugt die Startroutine beim
   ersten Start automatisch mit sauberen Standardeinträgen.
 - **Detailiertes Logging:** Zentraler Logger mit drehenden Dateien (`logs/tool.log`)
-  sowie einer separaten Startprotokollierung (`logs/startup.log`).
+  sowie einer separaten Startprotokollierung (`logs/startup.log`), die automatisch
+  auf die letzten 2 000 Zeilen gekürzt wird.
 - **Automatische Selbsttests:** Beim Start wird der komplette Codebaum mit
   `compileall` (Syntaxprüfung) getestet und die `data/settings.json` wird auf
   Vollständigkeit und barrierefreie Standardeinstellungen geprüft.

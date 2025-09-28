@@ -46,7 +46,9 @@ So wird alles repariert
    korrigiert. Ergebnisse stehen in ``logs/startup.log``.
 5. Fehlt eine Datei, legt das Tool sie mit sinnvollen Standardwerten an und
    protokolliert jede automatische Reparatur.
-6. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
+6. Das Startprotokoll `logs/startup.log` wird dabei auf die letzten 2 000 Zeilen
+   gekürzt, damit alte Einträge nicht überhandnehmen.
+7. In der Oberfläche stehen ein Zoom-Regler (Schrift 80–160 %), eine dauerhafte
    120 %-Basisschrift, ein ToDo-Kontrollfeld zum direkten Abhaken, ein
    Kontrast-Checker samt Farbpaletten- und Farbaudit-Tab, ein Diagnose-Tab
    (Systemprüfung) sowie ein Sicherheits-Tab bereit, damit alles sichtbar und

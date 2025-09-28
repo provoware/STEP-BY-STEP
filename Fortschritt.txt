@@ -23,3 +23,5 @@ Aktuelle Highlights:
 - Automatischer Farbaudit für alle Themes mit Bericht unter data/color_audit.json.
 - Sicherheits-, Audit- und Release-Informationen direkt im Header sowie im Info-Center.
 - Diagnose-Tab zeigt Python-Version, Paketstatus und Schreibrechte direkt im Dashboard.
+- Startprotokoll wird beim Start bereinigt (nur die letzten 2 000 Zeilen) und
+  alle Standarddateien stammen aus einer zentralen Ressourcen-Vorlage.

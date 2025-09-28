@@ -37,6 +37,8 @@ Beschreibung:
   `data/selftest_report.json`.
 - Startprotokoll-Bereich im Dashboard mit Suchfeld, Kopierfunktion und direktem
   Öffnen von `logs/startup.log`.
+- Startprotokoll wird beim Start automatisch auf die letzten 2 000 Zeilen
+  gekürzt, damit die Datei schlank bleibt.
 - Playlist mit Formatprüfung und Normalisierung auf 16-Bit-WAV (`data/converted_audio/`).
 - Archiv nutzt eine SQLite-Datenbank (`data/archive.db`) und bietet Export per
   Schnelllink als CSV und JSON (`data/exports/`).

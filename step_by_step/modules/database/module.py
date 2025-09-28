@@ -11,8 +11,9 @@ from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Optional
 
 from ...core.logging_manager import get_logger
+from ...core.resources import ARCHIVE_DB_PATH
 
-ARCHIVE_DB = Path("data/archive.db")
+ARCHIVE_DB = ARCHIVE_DB_PATH
 LEGACY_ARCHIVE_JSON = Path("data/archive.json")
 EXPORT_DIR = Path("data/exports")
 
