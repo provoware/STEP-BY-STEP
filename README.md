@@ -200,6 +200,16 @@ enthält.
   cp data/todo_items.json backups-manual/todo_items.json
   ```
 
+- **Startbericht speichern:** (Startbericht = Textausgabe des Selbsttests)
+
+  ```bash
+  python -m step_by_step --headless > startup-bericht.txt
+  ```
+
+  Der Pfeil `>` (Umleitung = Weiterleitung der Konsolenausgabe in eine Datei)
+  legt eine Kopie der Meldungen an. Die Datei `startup-bericht.txt` enthält
+  alle Schritte und lässt sich bei Support-Anfragen direkt mitschicken.
+
 - **Audiomodul testen:** (Kurzer Check ohne Oberfläche)
 
   ```bash
