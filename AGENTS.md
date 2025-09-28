@@ -1,30 +1,3 @@
 #AGENTS.md
--
-- erweiterbares vollmodulares, vollportables Datenbanktool mit erstellbaren Untermodulen (z.B. individuelle Datenbank Eingabemaske mit eigenen Benennungen und dem Prüfen auf vorhanden sein, oder Anlegen eines Archivs. # oder ein Audioplayer mit persistenter Playlist und Anzeige von standardinfos. # oder ein ToDo-Modul mit Datum und abhakenbar, das die nächsten Termine ans Dashboard schickt, wo es angezeigt wird.) 
-- vollautomatische Prüfungen und Tests für robusten Code und Fehlerfreiheit
-- professioneller Debuggingmodus, aber für Laiennutzer Optimiert 
-- Best Practices und einheitliches Coden und bezeichnen, erzeuge eine datei mit den wichtigsten vorgaben
-- Vallidierung von input output und ergebnis von funktionen, oder vorhandensein vin dateien oder ordnern, ansonsten intelligentes selfhandling autonom durch das tool.
-- perfekt getrennte logik für beste wartbarkeit
-- optimale barrierefreiheit, optimiert für sehschwache oder bildschirmarbeiter. auch farbliche unterscheidungen der bereiche und felder, oder funktionen.
-- Responsive Design, Elemente und Fenstergrößen passen sich automatisch dynamisch an. Flexible Fenstergrößen, maximierbar, minimierbar, in position verschiebbar über buttons
-- alle felder und bereiche an ort und stelle gut erklären, perfekte hilfe und tooltips und optionale optimale vorgaben in eingabefeldern oder wichtigen auswahlbereichen
-- selfrepair, vollautomatische und autonome Abhängigkeitsauflösung und detailiertes nutzerfeedback
-- Tool mit 3x3 Grid Panel Hauptbereich und links und rechts auf und zu klappbare Sidebars und headerdashboard, im Dashboard persistenter Notizbereich mit Funktion kopieren/einfügen in zwischenablage
-- persistente nutzereinstellungen
-- Maximale Konfigurierbarkeit und Optionen über Menüs zum auswählen.
-- Flexible schriftgrößen
-- listen alphabestisch geordnet und duplikateprüfung input output
-- info.txt mit toolbeschreibung und Anleitung oder Hilfe und Tips und Abhängigkeiten oder anderen wichtigen infos. Am ende der Datei Kettenbefehle zu beheben von problemen oder anderen Konflikten mit kurzbeschreibung.
-- Fortschritt.txt in dem der Fortschritt bis zum release in Prozent angegeben ist und die kurz was demnächst für schritte anstehen
-- Tastatur navigation und shortcuts aber sichere kombis, auch unter linux.
-- Dashboard mit datum , ihrzeit und statistika, sowie toolsysteminfos, wie Pfad oder letztes speichern etc
-- optimiere, debugge professionell und fixe
-- moderne Elemente und Aussehen
-- Startroutine die alles abprüft und korregiert und informiert
-- präventive fehlerbehandlung oder auch fehlertoleranz, kein abruch oder abstürzen immer lösungen zur auswahl anbieten oder selbst reparieren
-- im projekt selbst eine ziip-datei anlegen mit den Standard und Basis dateien wie json oder konfigurationsdateien oder andere eventuell vom tool verwendete
-- Autospeichern beim Feld wechseln oder tool schließen und alle 10 min
-- Interoperabilität der Module gewährleisten, falls benötigt.
-- klick&start über eine startdatei die dann prüft was erforderlich ist und es tut, so das nutzer nach starten der startdatei direkt in die GUI kommt.
-- Versionierung, dateien benennen inklusive zeitstempel,  
+- fixe und debugge
+- Optimiere Fehlerhandling und Robustheit
