@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from typing import Dict, List
+
+from ...core.file_utils import atomic_write_json
 
 TODO_FILE = Path("data/todo_items.json")
 
@@ -39,6 +42,7 @@ class TodoModule:
     def __init__(self, storage_file: Path = TODO_FILE) -> None:
         self.storage_file = storage_file
         self.storage_file.parent.mkdir(parents=True, exist_ok=True)
+        self.logger = logging.getLogger("modules.todo")
 
     def load_items(self) -> List[TodoItem]:
         if not self.storage_file.exists():
@@ -51,10 +55,8 @@ class TodoModule:
 
     def save_items(self, items: List[TodoItem]) -> None:
         payload = {"items": [entry.to_dict() for entry in items]}
-        self.storage_file.write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        if not atomic_write_json(self.storage_file, payload, logger=self.logger):
+            self.logger.error("Aufgabenliste konnte nicht gespeichert werden: %s", self.storage_file)
 
     def add_item(self, item: TodoItem) -> None:
         items = self.load_items()

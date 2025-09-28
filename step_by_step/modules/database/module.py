@@ -10,6 +10,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Dict, Iterable, Iterator, List, Optional
 
+from ...core.file_utils import atomic_write_json
 from ...core.logging_manager import get_logger
 from ...core.resources import ARCHIVE_DB_PATH
 from ...core.validators import ensure_unique
@@ -179,7 +180,8 @@ class DatabaseModule:
         EXPORT_DIR.mkdir(parents=True, exist_ok=True)
         target_path = target or EXPORT_DIR / "archive_export.json"
         payload = {"entries": entries}
-        target_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        if not atomic_write_json(target_path, payload, logger=self.logger):
+            self.logger.error("Archiv-Export (JSON) fehlgeschlagen: %s", target_path)
         return target_path
 
     # ------------------------------------------------------------------

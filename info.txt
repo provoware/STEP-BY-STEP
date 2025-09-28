@@ -77,9 +77,9 @@ Wichtige Dateien:
 
 Abhängigkeiten:
 - Python-Standardbibliothek
-- ttkbootstrap (für modernes Design, wird automatisch nachinstalliert)
-- simpleaudio (für WAV-Wiedergabe, wird automatisch nachinstalliert)
+- simpleaudio (für WAV-Wiedergabe, optional – unter Linux ggf. `libasound2-dev` installieren)
 - compileall (Teil der Standardbibliothek, prüft den Code bei jedem Start)
+- pytest / ruff / mypy (für Tests und Qualitätsprüfungen, laufen automatisch in CI)
 
 Problembehebung (Kettenbefehle):
 - Hinweis: Alle Befehle mit `data/...` funktionieren, nachdem der erste Startlauf

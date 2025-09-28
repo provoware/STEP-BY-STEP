@@ -10,9 +10,10 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from .color_audit import ColorAuditor
+from .file_utils import atomic_write_json, atomic_write_text
 from .diagnostics import DiagnosticsManager
 from .logging_manager import get_logger
 from .resources import (
@@ -27,10 +28,9 @@ from .validators import SettingsValidator
 
 MAX_STARTUP_LOG_LINES = 2000
 
-DEPENDENCY_COMMANDS: Dict[str, List[str]] = {
-    "ttkbootstrap": ["-m", "pip", "install", "ttkbootstrap"],
-    "simpleaudio": ["-m", "pip", "install", "simpleaudio"],
-}
+DEPENDENCY_COMMANDS: Dict[str, List[str]] = {}
+if sys.platform.startswith("win") or sys.platform == "darwin":
+    DEPENDENCY_COMMANDS["simpleaudio"] = ["-m", "pip", "install", "simpleaudio"]
 
 VENV_PATH = Path(".venv")
 REQUIREMENTS_FILE = Path("requirements.txt")
@@ -127,7 +127,7 @@ class StartupManager:
 
         for path, template in iter_required_files():
             if not path.exists():
-                path.write_text(template, encoding="utf-8")
+                atomic_write_text(path, template, logger=self.logger)
                 self.report.repaired_paths.append(path)
                 self._log_progress(f"Datei ergänzt: {path}")
             else:
@@ -256,11 +256,7 @@ class StartupManager:
                 "recommendations": [],
             }
             target = Path("data/color_audit.json")
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(
-                json.dumps(payload, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
+            atomic_write_json(target, payload, logger=self.logger)
             self.report.color_audit = payload
             self._log_progress(f"Farbaudit fehlgeschlagen: {error}", level="error")
             return
@@ -268,8 +264,7 @@ class StartupManager:
         payload = report.to_dict()
         self.report.color_audit = payload
         target = Path("data/color_audit.json")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        atomic_write_json(target, payload, logger=self.logger)
         status = report.overall_status
         self._log_progress(
             (
@@ -330,11 +325,7 @@ class StartupManager:
                 "html_report_path": "",
             }
             target = Path("data/diagnostics_report.json")
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(
-                json.dumps(payload, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
+            atomic_write_json(target, payload, logger=self.logger)
             self.report.diagnostics = payload
             self.report.diagnostics_path = target
             self.report.diagnostics_html_path = None
@@ -422,24 +413,29 @@ class StartupManager:
     def _self_test_settings(self) -> Tuple[bool, str]:
         settings_path = Path("data/settings.json")
         if not settings_path.exists():
-            settings_path.write_text(required_file_content(settings_path), encoding="utf-8")
+            atomic_write_text(
+                settings_path,
+                required_file_content(settings_path),
+                logger=self.logger,
+            )
             self.report.repaired_paths.append(settings_path)
             return True, "Einstellungen wurden neu angelegt."
 
         try:
             content = json.loads(settings_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
-            settings_path.write_text(required_file_content(settings_path), encoding="utf-8")
+            atomic_write_text(
+                settings_path,
+                required_file_content(settings_path),
+                logger=self.logger,
+            )
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             return False, "Einstellungen waren beschädigt und wurden zurückgesetzt."
 
         sanitised, adjustments = self.settings_validator.normalise(content)
         if sanitised != content:
-            settings_path.write_text(
-                json.dumps(sanitised, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
+            atomic_write_json(settings_path, sanitised, logger=self.logger)
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             detail = "; ".join(adjustments) if adjustments else "automatisch korrigiert"
@@ -452,10 +448,7 @@ class StartupManager:
             content = json.loads(settings_path.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             content = json.loads(required_file_content(settings_path))
-            settings_path.write_text(
-                json.dumps(content, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
+            atomic_write_json(settings_path, content, logger=self.logger)
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             self._log_progress("Einstellungen zurückgesetzt (ungültiges Format).", level="error")
@@ -463,10 +456,7 @@ class StartupManager:
 
         sanitised, adjustments = self.settings_validator.normalise(content)
         if sanitised != content:
-            settings_path.write_text(
-                json.dumps(sanitised, indent=2, ensure_ascii=False),
-                encoding="utf-8",
-            )
+            atomic_write_json(settings_path, sanitised, logger=self.logger)
             if settings_path not in self.report.repaired_paths:
                 self.report.repaired_paths.append(settings_path)
             self._log_progress("Einstellungen automatisch aktualisiert.")
@@ -502,8 +492,7 @@ class StartupManager:
         }
 
         target = Path("data/selftest_report.json")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        atomic_write_json(target, payload, logger=self.logger)
         self._log_progress(f"Selbsttestbericht gespeichert: {target}")
 
     # ------------------------------------------------------------------

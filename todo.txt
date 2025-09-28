@@ -36,6 +36,13 @@
 - [x] Primärdaten erst beim Toolstart erzeugen (Repository ohne Nutzdaten)
 - [x] Live-Vergleich der Paketversionen gegen requirements.txt ergänzen
 - [x] Optionalen Export des Diagnoseberichts als HTML vorbereiten
+- [x] Bootstrap-Skript für Schnellstart ergänzen
+- [x] Scroll-Container im Info-Center einsetzen
+- [x] Atomare JSON-Speicherung mit Logging implementieren
+- [x] Farbaudit-Fallback aktiviert (automatischer Theme-Wechsel)
+- [x] Desktop-Verknüpfung und Icon bereitstellen
+- [x] CI-Workflow mit ruff, pytest und mypy ergänzen
+- [x] Onboarding- und Troubleshooting-Dokumentation verfassen
 - [x] Einstellungs-Validator zentralisieren und automatische Korrekturen protokollieren
 - [x] Diagnose- und Farbaudit-Läufe gegen unerwartete Fehler absichern
 - [x] Startprotokoll automatisch bereinigen und Ressourcentemplates bündeln

@@ -6,7 +6,6 @@ import tkinter as tk
 import tkinter.font as tkfont
 from tkinter import ttk
 from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
-from typing import Callable, Dict, Iterable, Optional, Sequence, Tuple
 
 
 def _hex_to_rgb(color: str) -> Tuple[float, float, float]:

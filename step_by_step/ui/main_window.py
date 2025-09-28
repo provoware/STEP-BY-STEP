@@ -14,13 +14,9 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Any, Dict, List, Optional
 
-try:
-    from ttkbootstrap import Style  # type: ignore
-except Exception:  # pragma: no cover - ttkbootstrap optional
-    Style = None  # type: ignore
-
 from step_by_step.core import LogReader
 from step_by_step.core.config_manager import UserPreferences
+from step_by_step.core.file_utils import atomic_write_json, atomic_write_text
 from step_by_step.core.logging_manager import get_logger
 from step_by_step.core.themes import THEME_ORDER, get_theme_colors
 from step_by_step.modules.audio.module import AudioFormatInspector, AudioPlayer, PlaylistManager
@@ -42,6 +38,7 @@ from .info_panels import (
     build_security_panel,
     build_diagnostics_panel,
 )
+from .widgets import ScrollableFrame
 
 NOTE_FILE = Path("data/persistent_notes.txt")
 STATS_FILE = Path("data/usage_stats.json")
@@ -474,8 +471,10 @@ class MainWindow(tk.Tk):
             font=self.fonts["heading"],
             style="HighContrast.TLabel",
         ).pack(anchor="w")
+        text_container = ttk.Frame(parent, style="HighContrast.TFrame")
+        text_container.pack(fill="both", expand=True)
         self.note_text = tk.Text(
-            parent,
+            text_container,
             wrap="word",
             height=10,
             background=self.colors["surface"],
@@ -489,7 +488,10 @@ class MainWindow(tk.Tk):
             highlightcolor=self.colors["accent"],
             highlightbackground=self.colors["background"],
         )
-        self.note_text.pack(fill="both", expand=True)
+        self.note_text.pack(side="left", fill="both", expand=True)
+        note_scroll = ttk.Scrollbar(text_container, command=self.note_text.yview)
+        note_scroll.pack(side="right", fill="y")
+        self.note_text.configure(yscrollcommand=note_scroll.set)
         self.note_text.bind("<FocusOut>", lambda _event: self._auto_save())
         self._bind_focus_highlight(
             self.note_text,
@@ -516,8 +518,10 @@ class MainWindow(tk.Tk):
             style="HighContrast.TLabel",
             font=self.fonts["small"],
         ).pack(anchor="w", pady=(0, 4))
+        todo_frame = ttk.Frame(parent, style="HighContrast.TFrame")
+        todo_frame.pack(fill="both", expand=True)
         self.todo_list = tk.Listbox(
-            parent,
+            todo_frame,
             height=6,
             background=self.colors["surface"],
             foreground=self.colors["on_surface"],
@@ -530,7 +534,10 @@ class MainWindow(tk.Tk):
             highlightcolor=self.colors["accent"],
             highlightbackground=self.colors["background"],
         )
-        self.todo_list.pack(fill="both", expand=True)
+        self.todo_list.pack(side="left", fill="both", expand=True)
+        todo_scroll = ttk.Scrollbar(todo_frame, command=self.todo_list.yview)
+        todo_scroll.pack(side="right", fill="y")
+        self.todo_list.configure(yscrollcommand=todo_scroll.set)
         self.todo_list.bind("<<ListboxSelect>>", self._on_todo_selected)
         self.todo_list.bind("<Return>", self._toggle_selected_todo)
         self.todo_list.bind("<space>", self._toggle_selected_todo)
@@ -584,8 +591,10 @@ class MainWindow(tk.Tk):
             style="HighContrast.TLabel",
             font=self.fonts["small"],
         ).pack(anchor="w", pady=(2, 4))
+        playlist_frame = ttk.Frame(parent, style="HighContrast.TFrame")
+        playlist_frame.pack(fill="both", expand=True)
         self.playlist_list = tk.Listbox(
-            parent,
+            playlist_frame,
             height=6,
             background=self.colors["surface"],
             foreground=self.colors["on_surface"],
@@ -598,7 +607,10 @@ class MainWindow(tk.Tk):
             highlightcolor=self.colors["accent"],
             highlightbackground=self.colors["background"],
         )
-        self.playlist_list.pack(fill="both", expand=True)
+        self.playlist_list.pack(side="left", fill="both", expand=True)
+        playlist_scroll = ttk.Scrollbar(playlist_frame, command=self.playlist_list.yview)
+        playlist_scroll.pack(side="right", fill="y")
+        self.playlist_list.configure(yscrollcommand=playlist_scroll.set)
         self._bind_focus_highlight(
             self.playlist_list,
             "Playlist aktiv. Pfeiltasten wählen Titel, Enter spielt den Titel.",
@@ -697,24 +709,28 @@ class MainWindow(tk.Tk):
         self._refresh_release_data()
         self._refresh_database_insights()
 
-        legend_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(legend_frame, text="Legende")
+        def add_tab(title: str) -> ttk.Frame:
+            scroll = ScrollableFrame(notebook, style="HighContrast.TFrame")
+            scroll.canvas.configure(background=self.colors["background"])
+            scroll.body.configure(style="HighContrast.TFrame")
+            notebook.add(scroll, text=title)
+            frame = ttk.Frame(scroll.body, padding=10, style="HighContrast.TFrame")
+            frame.pack(fill="both", expand=True)
+            return frame
+
+        legend_frame = add_tab("Legende")
         build_legend_panel(legend_frame, self.colors)
 
-        mockup_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(mockup_frame, text="Mockup")
+        mockup_frame = add_tab("Mockup")
         build_mockup_panel(mockup_frame, self.colors)
 
-        structure_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(structure_frame, text="Struktur")
+        structure_frame = add_tab("Struktur")
         build_structure_panel(structure_frame, STRUCTURE_SCHEMA, self.colors)
 
-        database_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(database_frame, text="Daten")
+        database_frame = add_tab("Daten")
         build_database_insights_panel(database_frame, self.database_insights_data, self.colors)
 
-        quicklinks_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(quicklinks_frame, text="Schnelllinks")
+        quicklinks_frame = add_tab("Schnelllinks")
         quick_links = [
             ("Aufgaben öffnen", "todo.txt im Standardprogramm anzeigen", lambda: self._open_path(Path("todo.txt"))),
             (
@@ -760,32 +776,25 @@ class MainWindow(tk.Tk):
         ]
         build_quicklinks_panel(quicklinks_frame, quick_links, self.colors)
 
-        font_tips_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(font_tips_frame, text="Schrift-Tipps")
+        font_tips_frame = add_tab("Schrift")
         build_font_tips_panel(font_tips_frame, self.colors, float(self.font_scale_var.get()))
 
-        contrast_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(contrast_frame, text="Kontrast")
+        contrast_frame = add_tab("Kontrast")
         build_contrast_panel(contrast_frame, self.colors)
 
-        palette_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(palette_frame, text="Palette")
+        palette_frame = add_tab("Palette")
         build_palette_panel(palette_frame, self.colors)
 
-        audit_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(audit_frame, text="Farbaudit")
+        audit_frame = add_tab("Farbaudit")
         build_color_audit_panel(audit_frame, self.color_audit_data or None, self.colors)
 
-        release_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(release_frame, text="Release")
+        release_frame = add_tab("Release")
         build_release_panel(release_frame, self.release_items, self.release_progress_text, self.colors)
 
-        security_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(security_frame, text="Sicherheit")
+        security_frame = add_tab("Sicherheit")
         build_security_panel(security_frame, self.security_summary_data or None, self.colors)
 
-        diagnostics_frame = ttk.Frame(notebook, padding=10, style="HighContrast.TFrame")
-        notebook.add(diagnostics_frame, text="Diagnose")
+        diagnostics_frame = add_tab("Diagnose")
         build_diagnostics_panel(diagnostics_frame, self.diagnostics_data or None, self.colors)
 
     def _build_log_viewer(self, parent: ttk.LabelFrame) -> None:
@@ -838,8 +847,10 @@ class MainWindow(tk.Tk):
             "Button neu laden. Zeigt die letzten Logzeilen ohne Filter.",
         )
 
+        log_frame = ttk.Frame(parent, style="HighContrast.TFrame")
+        log_frame.pack(fill="both", expand=True)
         self.log_listbox = tk.Listbox(
-            parent,
+            log_frame,
             height=10,
             background=self.colors["surface"],
             foreground=self.colors["on_surface"],
@@ -850,7 +861,10 @@ class MainWindow(tk.Tk):
             highlightcolor=self.colors["accent"],
             highlightbackground=self.colors["background"],
         )
-        self.log_listbox.pack(fill="both", expand=True)
+        self.log_listbox.pack(side="left", fill="both", expand=True)
+        log_scroll = ttk.Scrollbar(log_frame, command=self.log_listbox.yview)
+        log_scroll.pack(side="right", fill="y")
+        self.log_listbox.configure(yscrollcommand=log_scroll.set)
         self._bind_focus_highlight(
             self.log_listbox,
             "Logliste aktiv. Pfeiltasten bewegen den Fokus, Enter kopiert die Zeile in die Zwischenablage.",
@@ -1081,7 +1095,7 @@ class MainWindow(tk.Tk):
 
     def _save_notes(self) -> None:
         NOTE_FILE.parent.mkdir(parents=True, exist_ok=True)
-        NOTE_FILE.write_text(self.note_text.get("1.0", tk.END).strip(), encoding="utf-8")
+        atomic_write_text(NOTE_FILE, self.note_text.get("1.0", tk.END).strip(), logger=self.logger)
         self.stats_var.set("Notizen gespeichert")
         self.logger.info("Notizen gespeichert (%s)", NOTE_FILE)
 
@@ -1122,13 +1136,13 @@ class MainWindow(tk.Tk):
         data["session_count"] = counter
         self.session_count = counter
         self._update_stats_overview()
-        STATS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        atomic_write_json(STATS_FILE, data, logger=self.logger)
         self.logger.info("Statistik aktualisiert: Sitzungen=%s", counter)
 
     def _save_stats(self) -> None:
         data = self._load_json(STATS_FILE)
         data["manual_update"] = dt.datetime.now().isoformat()
-        STATS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        atomic_write_json(STATS_FILE, data, logger=self.logger)
         self.stats_var.set("Statistik gespeichert")
         self.logger.info("Statistik manuell gespeichert.")
 
@@ -1232,6 +1246,18 @@ class MainWindow(tk.Tk):
         worst_ratio = float(audit.get("worst_ratio", 0.0))
         timestamp = self._format_timestamp(audit.get("generated_at"))
         recommendations = audit.get("recommendations", []) or []
+
+        if status != "ok":
+            fallback_mode = "accessible"
+            active_mode = getattr(self.preferences, "color_mode", fallback_mode)
+            if active_mode != fallback_mode:
+                self.preferences.color_mode = fallback_mode
+                self.preferences.contrast_theme = fallback_mode
+                self._configure_theme()
+                self._refresh_theme_widgets(from_audit=True)
+                self.stats_var.set(
+                    "Farbschema automatisch auf barrierefreie Variante gestellt (Farbaudit)."
+                )
 
         if status == "ok":
             message = (
@@ -1369,8 +1395,6 @@ class MainWindow(tk.Tk):
 
     # Theme helpers ---------------------------------------------------------
     def _init_style(self):
-        if Style is not None:
-            return Style("superhero")
         style = ttk.Style(self)
         style.theme_use("clam")
         return style
@@ -1554,7 +1578,7 @@ class MainWindow(tk.Tk):
         self.stats_var.set(f"Farbschema aktiviert: {mode}")
         self.after(2500, self._update_stats_overview)
 
-    def _refresh_theme_widgets(self) -> None:
+    def _refresh_theme_widgets(self, *, from_audit: bool = False) -> None:
         if hasattr(self, "note_text"):
             self.note_text.configure(
                 background=self.colors["surface"],
@@ -1603,7 +1627,8 @@ class MainWindow(tk.Tk):
             self._refresh_todo_list()
         self._load_selftest_summary()
         self._apply_security_summary(self.security_summary_data or None)
-        self._apply_color_audit(self.color_audit_data or None)
+        if not from_audit:
+            self._apply_color_audit(self.color_audit_data or None)
 
 
 

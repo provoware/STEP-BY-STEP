@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, TYPE_CHECKING
 
+from .file_utils import atomic_write_json, atomic_write_text
 from .logging_manager import get_logger
 
 try:  # Python 3.8 compatibility guard
@@ -137,10 +138,11 @@ class DiagnosticsManager:
         """Persist the diagnostics report to the default JSON file."""
 
         target = self.TARGET_FILE
-        target.parent.mkdir(parents=True, exist_ok=True)
         payload = diagnostics.to_dict()
-        target.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
-        self.logger.info("Diagnosebericht gespeichert: %s", target)
+        if atomic_write_json(target, payload, logger=self.logger):
+            self.logger.info("Diagnosebericht gespeichert: %s", target)
+        else:
+            self.logger.error("Diagnosebericht konnte nicht gespeichert werden: %s", target)
         return target
 
     # ------------------------------------------------------------------
@@ -243,8 +245,10 @@ class DiagnosticsManager:
 </html>
 """
 
-        target.write_text(html_payload, encoding="utf-8")
-        self.logger.info("Diagnosebericht (HTML) gespeichert: %s", target)
+        if atomic_write_text(target, html_payload, logger=self.logger):
+            self.logger.info("Diagnosebericht (HTML) gespeichert: %s", target)
+        else:
+            self.logger.error("Diagnosebericht (HTML) konnte nicht gespeichert werden: %s", target)
         return target
 
     # ------------------------------------------------------------------
@@ -337,7 +341,6 @@ class DiagnosticsManager:
     # ------------------------------------------------------------------
     def _collect_packages(self) -> Iterable[PackageStatus]:
         purpose_map: Dict[str, str] = {
-            "ttkbootstrap": "Theming (Oberflächen-Gestaltung)",
             "simpleaudio": "Audiowiedergabe",
         }
         requirements = self._parse_requirements()

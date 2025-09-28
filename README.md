@@ -10,15 +10,17 @@ Logging.
 ## Schnellstart (Klick & Start)
 
 ```bash
-python start_tool.py
+./bootstrap.sh
 ```
 
-Der Befehl erstellt bei Bedarf die virtuelle Umgebung `.venv`, installiert alle
-Pakete aus `requirements.txt`, prüft den Code per Selbsttest (Syntax-Check
-und Einstellungs-Validierung), protokolliert jeden Schritt unter `logs/` und
-startet anschließend die barrierearme Oberfläche. Die Konsole zeigt danach
-eine zusammengefasste Auswertung (Security-Status, Farbaudit, Selbsttests,
-Systemdiagnose).
+Der Befehl erstellt bei Bedarf die virtuelle Umgebung `.venv`, aktualisiert
+`pip`, installiert alle Pakete aus `requirements.txt`, prüft den Code per
+Selbsttest (Syntax-Check und Einstellungs-Validierung), protokolliert jeden
+Schritt unter `logs/` und startet anschließend die barrierearme Oberfläche. Die
+Konsole zeigt danach eine zusammengefasste Auswertung (Security-Status,
+Farbaudit, Selbsttests, Systemdiagnose). Alternativ lässt sich der Start wie
+bisher mit `python start_tool.py` durchführen (zuvor manuell `.venv`
+aktivieren).
 Beim allerersten Start legt die Routine sämtliche Primärdaten-Dateien neu an
 (`data/settings.json`, `data/todo_items.json`, `data/archive.db` usw.), damit
 das Git-Repository keine echten Nutzerdaten enthält.
@@ -27,6 +29,11 @@ Für einen Diagnoselauf ohne Fenster:
 ```bash
 python start_tool.py --headless
 ```
+
+Eine ausführliche Schritt-für-Schritt-Anleitung (Onboarding & Troubleshooting)
+findet sich in `docs/onboarding.md`. Für Desktop-Umgebungen liegt eine
+Starter-Verknüpfung unter `packaging/step-by-step.desktop` und das Icon in
+`assets/step-by-step-icon.svg` bereit.
 
 ## Wesentliche Merkmale
 
@@ -98,6 +105,19 @@ python start_tool.py --headless
   Diagnose-Tab für Systeminformationen, einen Farbaudit-Tab mit
   Optimierungstipps sowie einen Daten-Tab mit SQLite-Überblick (neueste Einträge
   und häufigste Anfangsbuchstaben).
+- **Scroll-Container:** Alle Register im Info-Center liegen nun in einem
+  Scroll-Container, damit Inhalte unabhängig von der Bildschirmhöhe nicht
+  abgeschnitten werden und sich komfortabel per Maus oder Tastatur scrollen
+  lassen.
+- **Kontrast-Fallback:** Liefert der Farbaudit Hinweise, wechselt das UI
+  automatisch in das barrierefreie Basisthema und dokumentiert die Aktion im
+  Statusfeld.
+- **Atomare Speicherungen:** Alle JSON-Dateien werden über atomare Schreibvorgänge
+  mit Fehlerbehandlung aktualisiert, sodass beschädigte Zwischenstände bei
+  Strom- oder Prozess-Abbrüchen vermieden werden.
+- **Qualitätssicherung:** GitHub Actions führen `ruff`, `pytest` und `mypy`
+  (mit `--ignore-missing-imports`) aus; lokale Checks lassen sich mit dem gleichen
+  Befehlspaket starten.
   Diagnose-Tab für Systeminformationen und einen Farbaudit-Tab mit
   Optimierungstipps.
 - **Datensicherheits-Manifest:** Beim Start wird ein Checksummen-Manifest für
@@ -151,6 +171,9 @@ python start_tool.py --headless
 - Zusätzlich stehen Buttons zum Format-Check und zur Normalisierung bereit: das
   Tool liest Kanäle/Bitbreite und erzeugt bei Bedarf eine kompatible 16-Bit-WAV-
   Kopie unter `data/converted_audio/`.
+- Hinweis: Auf Linux-Systemen wird `simpleaudio` nicht automatisch installiert,
+  da systemweite ALSA-Header benötigt werden (`libasound2-dev`). Bei Bedarf
+  manuell per `python -m pip install simpleaudio` nachinstallieren.
 
 ## Datenbank & Aufgaben
 

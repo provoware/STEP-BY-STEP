@@ -17,6 +17,7 @@ from typing import Any, Dict
 import json
 
 from .defaults import DEFAULT_SETTINGS
+from .file_utils import atomic_write_json
 from .logging_manager import get_logger
 from .validators import SettingsValidator
 
@@ -108,11 +109,8 @@ class ConfigManager:
 
     # ------------------------------------------------------------------
     def _write_payload(self, payload: Dict[str, Any]) -> None:
-        try:
-            with self.file_path.open("w", encoding="utf-8") as handle:
-                json.dump(payload, handle, indent=2, ensure_ascii=False)
-        except OSError as error:
-            self.logger.error("Einstellungen konnten nicht gespeichert werden: %s", error)
+        if not atomic_write_json(self.file_path, payload, logger=self.logger):
+            self.logger.error("Einstellungen konnten nicht gespeichert werden.")
 
 
 __all__ = ["ConfigManager", "UserPreferences"]

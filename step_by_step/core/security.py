@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional
 
+from .file_utils import atomic_write_json
 from .logging_manager import get_logger
 from .resources import ARCHIVE_DB_PATH
 
@@ -190,8 +191,8 @@ class SecurityManager:
 
     def _write_manifest(self, manifest: Dict[str, object]) -> None:
         manifest["updated_at"] = dt.datetime.now().isoformat()
-        self.manifest_path.parent.mkdir(parents=True, exist_ok=True)
-        self.manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False), encoding="utf-8")
+        if not atomic_write_json(self.manifest_path, manifest, logger=self.logger):
+            self.logger.error("Sicherheitsmanifest konnte nicht gespeichert werden: %s", self.manifest_path)
 
     def _hash_file(self, path: Path) -> str:
         sha256 = hashlib.sha256()
